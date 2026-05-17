@@ -135,6 +135,7 @@ export default function StreamingModal({ onGoLive, onEndStream, status, liveTime
               state={twitch}
               onConnect={() => connect('twitch')}
               onDisconnect={() => disconnect('twitch')}
+              disabled={youtube.status === 'waiting'}
             />
           )}
 
@@ -145,6 +146,7 @@ export default function StreamingModal({ onGoLive, onEndStream, status, liveTime
               state={youtube}
               onConnect={() => connect('youtube')}
               onDisconnect={() => disconnect('youtube')}
+              disabled={twitch.status === 'waiting'}
             />
           )}
 
@@ -203,6 +205,7 @@ interface PlatformRowProps {
   state: PlatformState
   onConnect: () => void
   onDisconnect: () => void
+  disabled?: boolean
 }
 
 const PLATFORM_META = {
@@ -228,16 +231,22 @@ const PLATFORM_META = {
   },
 }
 
-function PlatformRow({ platform, state, onConnect, onDisconnect }: PlatformRowProps) {
+function PlatformRow({ platform, state, onConnect, onDisconnect, disabled }: PlatformRowProps) {
   const meta = PLATFORM_META[platform]
 
   if (state.status === 'waiting') {
     return (
       <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
-        <div className="w-3 h-3 border-2 border-brand-red border-t-transparent rounded-full animate-spin" />
+        <div className="w-3 h-3 border-2 border-brand-red border-t-transparent rounded-full animate-spin shrink-0" />
         <p className="text-sm text-gray-600 dark:text-gray-400 flex-1">
           Waiting for {meta.label} sign-in…
         </p>
+        <button
+          onClick={onDisconnect}
+          className="text-xs text-gray-400 hover:text-red-400 transition-colors shrink-0"
+        >
+          Cancel
+        </button>
       </div>
     )
   }
@@ -278,7 +287,8 @@ function PlatformRow({ platform, state, onConnect, onDisconnect }: PlatformRowPr
   return (
     <button
       onClick={onConnect}
-      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-white font-semibold text-sm transition-colors ${meta.color}`}
+      disabled={disabled}
+      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-white font-semibold text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${meta.color}`}
     >
       {meta.icon}
       Sign in with {meta.label}

@@ -319,7 +319,7 @@ async fn connect_twitch(client_id: String) -> Result<ConnectedAccount, String> {
 
 #[tauri::command]
 async fn connect_youtube(client_id: String, code_verifier: String, code_challenge: String) -> Result<ConnectedAccount, String> {
-    const PORT: u16 = 3737;
+    const PORT: u16 = 3738; // different port from Twitch (3737) so both can connect simultaneously
     let redirect_uri = format!("http://localhost:{}", PORT);
 
     let auth_url = format!(
