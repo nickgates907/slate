@@ -1,0 +1,24 @@
+[package]
+name = "slate"
+version = "0.1.0"
+description = "Slate — simple, clean screen recorder"
+authors = []
+license = ""
+repository = ""
+edition = "2021"
+rust-version = "1.57"
+
+[build-dependencies]
+tauri-build = { version = "1.5", features = [] }
+
+[dependencies]
+tauri = { version = "1.5", features = [ "path-all", "dialog-all", "fs-all", "window-all"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+screenshots = "0.8"
+base64 = "0.21"
+reqwest = { version = "0.11", features = ["json"] }
+
+[features]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]

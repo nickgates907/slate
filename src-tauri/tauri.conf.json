@@ -1,0 +1,82 @@
+{
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build",
+    "devPath": "http://localhost:1420",
+    "distDir": "../dist"
+  },
+  "package": {
+    "productName": "Slate",
+    "version": "0.1.0"
+  },
+  "tauri": {
+    "allowlist": {
+      "all": false,
+      "fs": {
+        "all": true,
+        "scope": ["$APPDATA/**", "$DOCUMENT/**", "$DOWNLOAD/**", "$DESKTOP/**", "$HOME/**"]
+      },
+      "path": { "all": true },
+      "dialog": { "all": true },
+      "window": { "all": true },
+      "updater": { "all": true }
+    },
+    "bundle": {
+      "active": true,
+      "targets": ["nsis", "msi"],
+      "identifier": "com.slate.app",
+      "publisher": "Slate",
+      "copyright": "Copyright © 2025 Slate",
+      "category": "Utility",
+      "shortDescription": "Simple screen recorder for streamers",
+      "longDescription": "Slate is a clean, simple screen recorder built for new streamers. Record your gameplay, face cam, and audio in one click — no complicated setup required.",
+      "icon": [
+        "icons/32x32.png",
+        "icons/128x128.png",
+        "icons/128x128@2x.png",
+        "icons/icon.icns",
+        "icons/icon.ico"
+      ],
+      "windows": {
+        "digestAlgorithm": "sha256",
+        "timestampUrl": "http://timestamp.sectigo.com",
+        "wix": {
+          "language": "en-US"
+        },
+        "nsis": {
+          "installMode": "currentUser"
+        }
+      },
+      "macOS": {
+        "frameworks": [],
+        "minimumSystemVersion": "10.15",
+        "exceptionDomain": "",
+        "signingIdentity": null,
+        "entitlements": null
+      },
+      "resources": []
+    },
+    "security": {
+      "csp": null
+    },
+    "updater": {
+      "active": true,
+      "dialog": true,
+      "endpoints": [
+        "https://github.com/nickgates907/slate/releases/latest/download/latest.json"
+      ],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDkxQkE4MkVBRDU1RUU1M0IKUldRNzVWN1Y2b0s2a2FBbndRalV0SUl5WjByYi9LRjQySnlyc1VnTXVYdDFNZlFXR2w0MUlyN1QK"
+    },
+    "windows": [
+      {
+        "fullscreen": false,
+        "resizable": true,
+        "title": "Slate",
+        "width": 1100,
+        "height": 700,
+        "minWidth": 800,
+        "minHeight": 500
+      }
+    ]
+  }
+}
