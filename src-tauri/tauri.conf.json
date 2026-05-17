@@ -18,8 +18,7 @@
       },
       "path": { "all": true },
       "dialog": { "all": true },
-      "window": { "all": true },
-      "updater": { "all": true }
+      "window": { "all": true }
     },
     "bundle": {
       "active": true,

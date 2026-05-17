@@ -168,7 +168,12 @@ fn stop_stream(state: tauri::State<Mutex<StreamState>>) -> Result<(), String> {
 
 fn open_url(url: &str) {
     #[cfg(target_os = "windows")]
-    Command::new("cmd").args(["/c", "start", "", url]).spawn().ok();
+    // cmd.exe treats & as a command separator, stripping everything after the first query param.
+    // PowerShell passes the full URL as a literal string, preserving all & chars.
+    Command::new("powershell")
+        .args(["-NoProfile", "-Command", &format!("Start-Process '{}'", url)])
+        .spawn()
+        .ok();
     #[cfg(target_os = "macos")]
     Command::new("open").arg(url).spawn().ok();
     #[cfg(target_os = "linux")]
