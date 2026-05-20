@@ -1,13 +1,13 @@
 // Slate — Tauri backend
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use base64::{engine::general_purpose, Engine as _};
 use serde::Serialize;
 use screenshots::Screen;
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::process::{Child, ChildStdin, Command, Stdio};
-use std::sync::Mutex;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex};
 
 // ── Screen sources ────────────────────────────────────────────────────────────
 
@@ -45,7 +45,7 @@ async fn convert_to_mp4(webm_path: String) -> Result<String, String> {
     let mp4 = mp4_path.clone();
 
     tauri::async_runtime::spawn_blocking(move || {
-        Command::new("ffmpeg")
+        Command::new(ffmpeg_bin())
             .args([
                 "-i", &webm,
                 "-c:v", "libx264", "-preset", "fast", "-crf", "18",
@@ -55,7 +55,7 @@ async fn convert_to_mp4(webm_path: String) -> Result<String, String> {
             .output()
             .map_err(|e| {
                 if e.kind() == std::io::ErrorKind::NotFound {
-                    "ffmpeg not installed — download it from ffmpeg.org".to_string()
+                    "ffmpeg not found — please reinstall Slate".to_string()
                 } else {
                     e.to_string()
                 }
@@ -75,46 +75,85 @@ async fn convert_to_mp4(webm_path: String) -> Result<String, String> {
 
 // ── RTMP Streaming (supports simultaneous multi-destination) ──────────────────
 
+// stdins are shared between the Tauri command thread and the WebSocket reader thread
+type StdinList = Arc<Mutex<Vec<ChildStdin>>>;
+
 struct StreamState {
     children: Vec<Child>,
-    stdins: Vec<ChildStdin>,
+    stdin_list: StdinList,
+    ws_running: Option<Arc<AtomicBool>>,
 }
 
 impl Default for StreamState {
     fn default() -> Self {
-        Self { children: Vec::new(), stdins: Vec::new() }
+        Self {
+            children: Vec::new(),
+            stdin_list: Arc::new(Mutex::new(Vec::new())),
+            ws_running: None,
+        }
     }
 }
 
-fn spawn_ffmpeg(rtmp_url: &str, bitrate_kbps: u32, fps: u32) -> Result<(Child, ChildStdin), String> {
-    let maxrate = format!("{}k", bitrate_kbps);
-    let bufsize = format!("{}k", bitrate_kbps * 2);
-    let gop = (fps * 2).to_string();
+/// Returns the path to ffmpeg: bundled copy next to the exe, or falls back to PATH.
+fn ffmpeg_bin() -> std::path::PathBuf {
+    if let Ok(exe) = std::env::current_exe() {
+        if let Some(dir) = exe.parent() {
+            let bundled = dir.join("ffmpeg.exe");
+            if bundled.exists() { return bundled; }
+        }
+    }
+    std::path::PathBuf::from("ffmpeg")
+}
 
-    let mut child = Command::new("ffmpeg")
-        .args([
-            "-f", "webm", "-i", "pipe:0",
-            "-c:v", "libx264", "-preset", "veryfast", "-tune", "zerolatency",
-            "-b:v", &maxrate, "-maxrate", &maxrate, "-bufsize", &bufsize,
-            "-pix_fmt", "yuv420p", "-g", &gop,
-            "-c:a", "aac", "-b:a", "128k", "-ar", "44100",
-            "-f", "flv", rtmp_url,
-        ])
-        .stdin(Stdio::piped())
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .spawn()
-        .map_err(|e| {
-            if e.kind() == std::io::ErrorKind::NotFound {
-                "ffmpeg not installed — download it from ffmpeg.org to stream live".to_string()
-            } else {
-                e.to_string()
-            }
-        })?;
+fn spawn_ffmpeg(rtmp_url: &str, bitrate_kbps: u32, fps: u32, copy_video: bool) -> Result<(Child, ChildStdin), String> {
+    let ffmpeg = ffmpeg_bin();
+    let err_map = |e: std::io::Error| {
+        if e.kind() == std::io::ErrorKind::NotFound {
+            "ffmpeg not found — please reinstall Slate".to_string()
+        } else {
+            e.to_string()
+        }
+    };
+
+    let mut child = if copy_video {
+        // WebCodecs path: browser already encoded H.264 into Matroska — just remux, no re-encode
+        Command::new(&ffmpeg)
+            .args([
+                "-fflags", "+nobuffer",
+                "-flags", "low_delay",
+                "-f", "matroska", "-i", "pipe:0",
+                "-c:v", "copy",
+                "-c:a", "aac", "-b:a", "128k", "-ar", "44100",
+                "-f", "flv", rtmp_url,
+            ])
+            .stdin(Stdio::piped()).stdout(Stdio::null()).stderr(Stdio::null())
+            .spawn().map_err(err_map)?
+    } else {
+        // VP8 fallback path: re-encode to H.264
+        let maxrate = format!("{}k", bitrate_kbps);
+        let bufsize = format!("{}k", bitrate_kbps * 2);
+        let gop = (fps * 2).to_string();
+        Command::new(&ffmpeg)
+            .args([
+                "-fflags", "+nobuffer",
+                "-flags", "low_delay",
+                "-f", "matroska", "-i", "pipe:0",
+                "-c:v", "libx264", "-preset", "veryfast", "-tune", "zerolatency",
+                "-threads", "0",
+                "-b:v", &maxrate, "-maxrate", &maxrate, "-bufsize", &bufsize,
+                "-pix_fmt", "yuv420p", "-g", &gop, "-sc_threshold", "0",
+                "-c:a", "aac", "-b:a", "128k", "-ar", "44100",
+                "-f", "flv", rtmp_url,
+            ])
+            .stdin(Stdio::piped()).stdout(Stdio::null()).stderr(Stdio::null())
+            .spawn().map_err(err_map)?
+    };
 
     let stdin = child.stdin.take().ok_or("could not open ffmpeg stdin")?;
     Ok((child, stdin))
 }
+
+const WS_PORT: u16 = 9737;
 
 #[tauri::command]
 fn start_stream(
@@ -122,44 +161,82 @@ fn start_stream(
     rtmp_urls: Vec<String>,
     bitrate_kbps: u32,
     fps: u32,
+    copy_video: bool,
 ) -> Result<(), String> {
     let mut s = state.lock().map_err(|e| e.to_string())?;
 
-    // Stop any existing streams
-    s.stdins.clear();
+    // Stop any previous stream
+    if let Some(running) = s.ws_running.take() { running.store(false, Ordering::Relaxed); }
+    s.stdin_list.lock().map_err(|e| e.to_string())?.clear();
     for mut child in s.children.drain(..) { child.kill().ok(); }
 
+    // Spawn ffmpeg instances
     for url in &rtmp_urls {
-        let (child, stdin) = spawn_ffmpeg(url, bitrate_kbps, fps)?;
+        let (child, stdin) = spawn_ffmpeg(url, bitrate_kbps, fps, copy_video)?;
         s.children.push(child);
-        s.stdins.push(stdin);
+        s.stdin_list.lock().map_err(|e| e.to_string())?.push(stdin);
     }
 
-    Ok(())
-}
+    // Bind the WebSocket server synchronously so the port is ready before we return
+    let listener = TcpListener::bind(format!("127.0.0.1:{}", WS_PORT))
+        .map_err(|e| format!("Could not bind stream IPC port {}: {}", WS_PORT, e))?;
+    listener.set_nonblocking(true).map_err(|e| e.to_string())?;
 
-#[tauri::command]
-fn send_stream_chunk(
-    state: tauri::State<Mutex<StreamState>>,
-    data: String,
-) -> Result<(), String> {
-    let bytes = general_purpose::STANDARD
-        .decode(&data)
-        .map_err(|e| format!("decode error: {}", e))?;
+    let running = Arc::new(AtomicBool::new(true));
+    let running_clone = Arc::clone(&running);
+    let stdin_list_clone = Arc::clone(&s.stdin_list);
 
-    let mut s = state.lock().map_err(|e| e.to_string())?;
-    // Write to all active destinations; ignore per-destination errors so one
-    // failed destination doesn't kill the others.
-    for stdin in &mut s.stdins {
-        stdin.write_all(&bytes).ok();
-    }
+    std::thread::spawn(move || {
+        // Wait for the JS side to connect (non-blocking accept with polling)
+        let stream = loop {
+            match listener.accept() {
+                Ok((s, _)) => break s,
+                Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {
+                    if !running_clone.load(Ordering::Relaxed) { return; }
+                    std::thread::sleep(std::time::Duration::from_millis(50));
+                }
+                Err(_) => return,
+            }
+        };
+
+        // Switch to blocking with a short read timeout so we can check the running flag
+        stream.set_nonblocking(false).ok();
+        stream.set_read_timeout(Some(std::time::Duration::from_millis(300))).ok();
+
+        let mut ws = match tungstenite::accept(stream) {
+            Ok(ws) => ws,
+            Err(_) => return,
+        };
+
+        while running_clone.load(Ordering::Relaxed) {
+            match ws.read() {
+                Ok(tungstenite::Message::Binary(data)) => {
+                    if let Ok(mut stds) = stdin_list_clone.lock() {
+                        for s in stds.iter_mut() { s.write_all(&data).ok(); }
+                    }
+                }
+                Ok(tungstenite::Message::Close(_)) => break,
+                // Read timeout: check running flag and continue
+                Err(tungstenite::Error::Io(e))
+                    if e.kind() == std::io::ErrorKind::WouldBlock
+                    || e.kind() == std::io::ErrorKind::TimedOut => {}
+                Err(_) => break,
+                Ok(_) => {} // ping/pong/text — ignore
+            }
+        }
+    });
+
+    s.ws_running = Some(running);
     Ok(())
 }
 
 #[tauri::command]
 fn stop_stream(state: tauri::State<Mutex<StreamState>>) -> Result<(), String> {
     let mut s = state.lock().map_err(|e| e.to_string())?;
-    s.stdins.clear();
+    // Signal WS thread to stop (it will exit within one read timeout cycle)
+    if let Some(running) = s.ws_running.take() { running.store(false, Ordering::Relaxed); }
+    // Drop all stdins — this sends EOF to ffmpeg
+    s.stdin_list.lock().map_err(|e| e.to_string())?.clear();
     for mut child in s.children.drain(..) { child.wait().ok(); }
     Ok(())
 }
@@ -269,6 +346,7 @@ struct ConnectedAccount {
     #[serde(rename = "streamKey")]
     stream_key: String,
     platform: String,
+    token: String,
 }
 
 #[tauri::command]
@@ -312,7 +390,7 @@ async fn connect_twitch(client_id: String) -> Result<ConnectedAccount, String> {
     let stream_key = key_resp["data"][0]["stream_key"]
         .as_str().ok_or("Could not get your Twitch stream key")?.to_string();
 
-    Ok(ConnectedAccount { username, stream_key, platform: "twitch".to_string() })
+    Ok(ConnectedAccount { username, stream_key, platform: "twitch".to_string(), token })
 }
 
 // ── OAuth — YouTube (PKCE — no client secret needed) ─────────────────────────
@@ -373,7 +451,7 @@ async fn connect_youtube(client_id: String, code_verifier: String, code_challeng
         .ok_or("No YouTube stream key found. Go to YouTube Studio → Go Live → Stream to create one first.")?
         .to_string();
 
-    Ok(ConnectedAccount { username, stream_key, platform: "youtube".to_string() })
+    Ok(ConnectedAccount { username, stream_key, platform: "youtube".to_string(), token: String::new() })
 }
 
 // ── Entry point ───────────────────────────────────────────────────────────────
@@ -385,7 +463,6 @@ fn main() {
             list_capture_sources,
             convert_to_mp4,
             start_stream,
-            send_stream_chunk,
             stop_stream,
             connect_twitch,
             connect_youtube,

@@ -9,6 +9,7 @@ interface ConnectedAccount {
   username: string
   streamKey: string
   platform: Platform
+  token: string
 }
 
 interface PlatformState {
@@ -18,7 +19,7 @@ interface PlatformState {
 }
 
 interface StreamingModalProps {
-  onGoLive: (rtmpUrls: string[]) => void
+  onGoLive: (rtmpUrls: string[], twitchToken?: string) => void
   onEndStream: () => void
   status: StreamStatus
   liveTime: string
@@ -34,6 +35,17 @@ function getRtmpUrl(account: ConnectedAccount): string {
 const IDLE: PlatformState = { status: 'idle', account: null, error: '' }
 const NO_CREDENTIALS = !TWITCH_CLIENT_ID && !YOUTUBE_CLIENT_ID
 
+const SlateLogo = () => (
+  <svg width="26" height="26" viewBox="0 0 72 72" fill="none">
+    <rect width="72" height="72" rx="18" fill="#FF4D4D"/>
+    <circle cx="36" cy="36" r="17" stroke="white" strokeWidth="3" fill="none"/>
+    <circle cx="36" cy="36" r="10" stroke="white" strokeWidth="2.5" fill="none"/>
+    <circle cx="36" cy="36" r="4" fill="white"/>
+    <circle cx="52" cy="20" r="5" fill="white"/>
+    <circle cx="52" cy="20" r="2.5" fill="#FF4D4D"/>
+  </svg>
+)
+
 export default function StreamingModal({ onGoLive, onEndStream, status, liveTime, onClose }: StreamingModalProps) {
   const [twitch, setTwitch] = useState<PlatformState>(IDLE)
   const [youtube, setYoutube] = useState<PlatformState>(IDLE)
@@ -41,27 +53,19 @@ export default function StreamingModal({ onGoLive, onEndStream, status, liveTime
   const isLive = status === 'live'
   const isConnecting = status === 'connecting'
   const isBusy = isLive || isConnecting
-
   const canGoLive = twitch.status === 'connected' || youtube.status === 'connected'
 
   const connect = async (platform: Platform) => {
     const set = platform === 'twitch' ? setTwitch : setYoutube
     set({ status: 'waiting', account: null, error: '' })
-
     try {
       let result: ConnectedAccount
-
       if (platform === 'twitch') {
         result = await invoke<ConnectedAccount>('connect_twitch', { clientId: TWITCH_CLIENT_ID })
       } else {
         const { codeVerifier, codeChallenge } = await generatePkce()
-        result = await invoke<ConnectedAccount>('connect_youtube', {
-          clientId: YOUTUBE_CLIENT_ID,
-          codeVerifier,
-          codeChallenge,
-        })
+        result = await invoke<ConnectedAccount>('connect_youtube', { clientId: YOUTUBE_CLIENT_ID, codeVerifier, codeChallenge })
       }
-
       set({ status: 'connected', account: result, error: '' })
     } catch (e: unknown) {
       set({ status: 'error', account: null, error: e instanceof Error ? e.message : String(e) })
@@ -74,10 +78,8 @@ export default function StreamingModal({ onGoLive, onEndStream, status, liveTime
   }
 
   const handleGoLive = () => {
-    const urls = [twitch.account, youtube.account]
-      .filter((a): a is ConnectedAccount => a !== null)
-      .map(getRtmpUrl)
-    onGoLive(urls)
+    const accounts = [twitch.account, youtube.account].filter((a): a is ConnectedAccount => a !== null)
+    onGoLive(accounts.map(getRtmpUrl), twitch.account?.token)
   }
 
   const connectedPlatforms = [twitch.account, youtube.account]
@@ -90,45 +92,87 @@ export default function StreamingModal({ onGoLive, onEndStream, status, liveTime
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/75 backdrop-blur-sm"
         onClick={canClose ? onClose : undefined}
       />
 
-      <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden">
+      <div className="relative w-full max-w-[360px] mx-4 rounded-2xl overflow-hidden shadow-2xl border border-white/5"
+        style={{ background: 'linear-gradient(180deg, #111118 0%, #0d0d13 100%)' }}
+      >
+        {/* Brand accent bar */}
+        <div className="h-px w-full" style={{ background: 'linear-gradient(90deg, transparent, #FF4D4D 40%, #FF4D4D 60%, transparent)' }} />
 
         {/* Header */}
-        <div className="px-6 pt-6 pb-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
-          {isLive ? (
-            <div className="flex items-center gap-3">
-              <span className="flex items-center gap-2 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full">
-                <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-                LIVE {liveTime}
-              </span>
-              {connectedPlatforms && (
-                <span className="text-xs text-gray-500 dark:text-gray-400">{connectedPlatforms}</span>
-              )}
-            </div>
-          ) : (
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white">Go Live</h2>
-          )}
+        <div className="px-5 pt-4 pb-3.5 flex items-center justify-between border-b border-white/[0.06]">
+          <div className="flex items-center gap-2.5">
+            <SlateLogo />
+            {isLive ? (
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 bg-brand-red text-white text-[11px] font-bold px-2.5 py-1 rounded-full tracking-wide">
+                  <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                  LIVE {liveTime}
+                </span>
+                {connectedPlatforms && (
+                  <span className="text-[11px] text-gray-500">{connectedPlatforms}</span>
+                )}
+              </div>
+            ) : (
+              <div>
+                <p className="text-sm font-bold text-white leading-tight">Go Live</p>
+                <p className="text-[10px] text-gray-600 uppercase tracking-widest">Slate Stream Manager</p>
+              </div>
+            )}
+          </div>
+
           {canClose && (
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <button
+              onClick={onClose}
+              className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-600 hover:text-gray-300 hover:bg-white/5 transition-all"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <path d="M18 6L6 18M6 6l12 12"/>
               </svg>
             </button>
           )}
         </div>
 
-        <div className="px-6 py-5 space-y-3">
+        {/* Body */}
+        <div className="px-5 py-4 space-y-2">
 
           {NO_CREDENTIALS && (
-            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg px-4 py-3 text-xs text-amber-800 dark:text-amber-300">
+            <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-[11px] text-amber-400">
               Streaming is not configured yet. Contact support.
             </div>
           )}
 
-          {/* Twitch row */}
+          {/* Live / connecting state */}
+          {isBusy && (
+            <div className="py-6 flex flex-col items-center gap-3">
+              {isConnecting ? (
+                <>
+                  <div className="relative w-14 h-14 flex items-center justify-center">
+                    <div className="absolute inset-0 rounded-full border-2 border-white/5" />
+                    <div className="w-10 h-10 rounded-full border-2 border-brand-red border-t-transparent animate-spin" />
+                    <SlateLogo />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm text-white font-semibold">Starting stream…</p>
+                    <p className="text-[11px] text-gray-500 mt-0.5">{connectedPlatforms}</p>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center space-y-1">
+                  <div className="inline-flex items-center gap-2 text-xs text-gray-400 bg-white/5 rounded-full px-4 py-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                    You're streaming live
+                  </div>
+                  <p className="text-[11px] text-gray-600">Close this window to keep streaming</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Platform rows */}
           {TWITCH_CLIENT_ID && !isBusy && (
             <PlatformRow
               platform="twitch"
@@ -139,7 +183,6 @@ export default function StreamingModal({ onGoLive, onEndStream, status, liveTime
             />
           )}
 
-          {/* YouTube row */}
           {YOUTUBE_CLIENT_ID && !isBusy && (
             <PlatformRow
               platform="youtube"
@@ -149,50 +192,46 @@ export default function StreamingModal({ onGoLive, onEndStream, status, liveTime
               disabled={twitch.status === 'waiting'}
             />
           )}
-
-          {/* Live / connecting status */}
-          {isBusy && (
-            <div className="text-center py-4 space-y-2">
-              {isConnecting ? (
-                <>
-                  <div className="w-10 h-10 border-4 border-brand-red border-t-transparent rounded-full animate-spin mx-auto" />
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Starting stream to {connectedPlatforms}…
-                  </p>
-                </>
-              ) : (
-                <p className="text-xs text-gray-400">You're live. Close this window to keep streaming.</p>
-              )}
-            </div>
-          )}
-
         </div>
 
         {/* Footer */}
-        <div className="px-6 pb-6">
+        <div className="px-5 pb-5 pt-1">
           {isLive ? (
             <button
               onClick={onEndStream}
-              className="w-full py-2.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-white font-semibold text-sm transition-colors"
+              className="w-full py-3 rounded-xl font-bold text-sm text-white transition-colors"
+              style={{ background: 'rgba(255,255,255,0.08)' }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.12)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.08)')}
             >
               End Stream
             </button>
           ) : isConnecting ? (
-            <button onClick={onEndStream} className="w-full py-2.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-500 font-semibold text-sm">
+            <button
+              onClick={onEndStream}
+              className="w-full py-3 rounded-xl font-semibold text-sm text-gray-500"
+              style={{ background: 'rgba(255,255,255,0.05)' }}
+            >
               Cancel
             </button>
           ) : (
             <button
               onClick={handleGoLive}
               disabled={!canGoLive}
-              className="w-full py-2.5 rounded-lg bg-brand-red hover:bg-red-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold text-sm transition-colors flex items-center justify-center gap-2"
+              className="w-full py-3 rounded-xl font-bold text-sm text-white transition-all disabled:opacity-25 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              style={canGoLive ? { background: 'linear-gradient(135deg, #FF4D4D 0%, #e03030 100%)', boxShadow: '0 4px 20px rgba(255,77,77,0.35)' } : { background: 'rgba(255,255,255,0.06)' }}
             >
-              <span className="w-2 h-2 rounded-full bg-white" />
-              {canGoLive ? `Go Live${connectedPlatforms ? ` · ${connectedPlatforms}` : ''}` : 'Connect an account to go live'}
+              {canGoLive ? (
+                <>
+                  <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+                  Go Live{connectedPlatforms ? ` · ${connectedPlatforms}` : ''}
+                </>
+              ) : (
+                <span className="text-gray-500">Connect an account to go live</span>
+              )}
             </button>
           )}
         </div>
-
       </div>
     </div>
   )
@@ -211,20 +250,22 @@ interface PlatformRowProps {
 const PLATFORM_META = {
   twitch: {
     label: 'Twitch',
-    color: 'bg-purple-600 hover:bg-purple-500',
-    badge: 'bg-purple-600',
+    color: '#9147ff',
+    dimColor: 'rgba(145,71,255,0.15)',
+    borderColor: 'rgba(145,71,255,0.3)',
     icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
         <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"/>
       </svg>
     ),
   },
   youtube: {
     label: 'YouTube',
-    color: 'bg-red-600 hover:bg-red-500',
-    badge: 'bg-red-600',
+    color: '#ff0000',
+    dimColor: 'rgba(255,0,0,0.12)',
+    borderColor: 'rgba(255,0,0,0.25)',
     icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
         <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
       </svg>
     ),
@@ -236,15 +277,13 @@ function PlatformRow({ platform, state, onConnect, onDisconnect, disabled }: Pla
 
   if (state.status === 'waiting') {
     return (
-      <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
-        <div className="w-3 h-3 border-2 border-brand-red border-t-transparent rounded-full animate-spin shrink-0" />
-        <p className="text-sm text-gray-600 dark:text-gray-400 flex-1">
-          Waiting for {meta.label} sign-in…
-        </p>
-        <button
-          onClick={onDisconnect}
-          className="text-xs text-gray-400 hover:text-red-400 transition-colors shrink-0"
-        >
+      <div
+        className="flex items-center gap-3 px-4 py-3 rounded-xl border"
+        style={{ background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.07)' }}
+      >
+        <div className="w-3 h-3 rounded-full border-2 border-t-transparent animate-spin flex-shrink-0" style={{ borderColor: meta.color, borderTopColor: 'transparent' }} />
+        <p className="text-sm text-gray-400 flex-1">Waiting for {meta.label} sign-in…</p>
+        <button onClick={onDisconnect} className="text-[11px] text-gray-600 hover:text-red-400 transition-colors flex-shrink-0">
           Cancel
         </button>
       </div>
@@ -253,15 +292,27 @@ function PlatformRow({ platform, state, onConnect, onDisconnect, disabled }: Pla
 
   if (state.status === 'connected' && state.account) {
     return (
-      <div className="flex items-center gap-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl px-4 py-3">
-        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 ${meta.badge}`}>
+      <div
+        className="flex items-center gap-3 px-4 py-3 rounded-xl border"
+        style={{ background: meta.dimColor, borderColor: meta.borderColor }}
+      >
+        {/* Avatar */}
+        <div
+          className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+          style={{ background: meta.color }}
+        >
           {state.account.username[0]?.toUpperCase()}
         </div>
+
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{state.account.username}</p>
-          <p className="text-xs text-green-600 dark:text-green-400">{meta.label} · ready</p>
+          <p className="text-sm font-semibold text-white truncate">{state.account.username}</p>
+          <div className="flex items-center gap-1.5 mt-0.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
+            <span className="text-[11px] text-gray-500">{meta.label} · Ready to go live</span>
+          </div>
         </div>
-        <button onClick={onDisconnect} className="text-xs text-gray-400 hover:text-red-400 transition-colors shrink-0">
+
+        <button onClick={onDisconnect} className="text-[11px] text-gray-600 hover:text-red-400 transition-colors flex-shrink-0">
           Remove
         </button>
       </div>
@@ -270,13 +321,13 @@ function PlatformRow({ platform, state, onConnect, onDisconnect, disabled }: Pla
 
   if (state.status === 'error') {
     return (
-      <div className="space-y-2">
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg px-4 py-3 text-xs text-red-700 dark:text-red-300">
+      <div className="space-y-1.5">
+        <div className="rounded-xl border border-red-500/20 bg-red-500/8 px-4 py-2.5 text-[11px] text-red-400">
           {meta.label}: {state.error}
         </div>
         <button
           onClick={onConnect}
-          className="w-full py-2 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 border border-gray-200 dark:border-gray-700 rounded-lg transition-colors"
+          className="w-full py-2 text-[11px] text-gray-500 hover:text-gray-300 rounded-xl transition-colors border border-white/5 hover:border-white/10"
         >
           Retry {meta.label}
         </button>
@@ -284,14 +335,34 @@ function PlatformRow({ platform, state, onConnect, onDisconnect, disabled }: Pla
     )
   }
 
+  // Idle — connect button
   return (
     <button
       onClick={onConnect}
       disabled={disabled}
-      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-white font-semibold text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${meta.color}`}
+      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all group disabled:opacity-30 disabled:cursor-not-allowed"
+      style={{ background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.07)' }}
+      onMouseEnter={e => {
+        if (!disabled) {
+          e.currentTarget.style.background = meta.dimColor
+          e.currentTarget.style.borderColor = meta.borderColor
+        }
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.background = 'rgba(255,255,255,0.03)'
+        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)'
+      }}
     >
-      {meta.icon}
-      Sign in with {meta.label}
+      <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: meta.color }}>
+        <span className="text-white">{meta.icon}</span>
+      </div>
+      <div className="flex-1 text-left">
+        <p className="text-sm font-semibold text-white">Sign in with {meta.label}</p>
+        <p className="text-[11px] text-gray-600 mt-0.5">Connect your account to stream</p>
+      </div>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-700 group-hover:text-gray-400 transition-colors flex-shrink-0">
+        <path d="M9 18l6-6-6-6"/>
+      </svg>
     </button>
   )
 }

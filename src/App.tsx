@@ -5,17 +5,19 @@ import Canvas from './components/Canvas'
 import SourcesPanel from './components/SourcesPanel'
 import PlaybackModal from './components/PlaybackModal'
 import OverlaysModal from './components/OverlaysModal'
-import { Scene, Source, SceneBackground, SlateProject, loadProject, saveProject, defaultProject, defaultSettings } from './store'
+import { Scene, Source, SceneBackground, Loadout, SlateProject, loadProject, saveProject, defaultProject, defaultSettings } from './store'
 import { TooltipContext } from './contexts/TooltipContext'
 import SettingsModal from './components/SettingsModal'
 import StreamingModal from './components/StreamingModal'
 import SplashScreen from './components/SplashScreen'
 import { useRecorder, RecordingResult } from './hooks/useRecorder'
 import { useStreamer } from './hooks/useStreamer'
+import { useAlerts } from './hooks/useAlerts'
 import { useAudioCapture } from './hooks/useAudioCapture'
 import { useCameraDevices } from './hooks/useCameraDevices'
 import { exportLayout, importLayout } from './lib/layoutShare'
 import { OverlayTemplate } from './lib/overlayTemplates'
+import { TWITCH_CLIENT_ID } from './config/platforms'
 
 function formatTime(seconds: number): string {
   const h = Math.floor(seconds / 3600).toString().padStart(2, '0')
@@ -43,6 +45,7 @@ export default function App() {
 
   const recorder = useRecorder()
   const streamer = useStreamer()
+  const alerts = useAlerts()
   const audio = useAudioCapture()
   const cameraDevices = useCameraDevices()
 
@@ -134,6 +137,7 @@ export default function App() {
       recorder.start(
         activeScene,
         previewRef.current,
+        project.settings?.resolution ?? '1080p',
         audio.active && audio.stream.current ? audio.stream.current : undefined,
       )
     }
@@ -239,7 +243,41 @@ export default function App() {
     setProject(p => ({ ...p, scenes: [...p.scenes, newScene], activeSceneId: id }))
   }
 
-  const goLive = async (rtmpUrls: string[]) => {
+  const addAssetSource = useCallback((source: Omit<Source, 'id'>) => {
+    const newSource: Source = { ...source, id: `src-${Date.now()}` }
+    setProject(p => ({
+      ...p,
+      scenes: p.scenes.map(scene =>
+        scene.id === p.activeSceneId
+          ? { ...scene, sources: [...scene.sources, newSource] }
+          : scene
+      ),
+    }))
+  }, [])
+
+  const saveLoadout = useCallback((name: string) => {
+    const loadout: Loadout = {
+      id: `loadout-${Date.now()}`,
+      name,
+      scenes: project.scenes.map(s => ({ ...s })),
+      createdAt: new Date().toISOString(),
+    }
+    setProject(p => ({ ...p, loadouts: [...(p.loadouts ?? []), loadout] }))
+  }, [project.scenes])
+
+  const loadLoadout = useCallback((loadout: Loadout) => {
+    setProject(p => ({
+      ...p,
+      scenes: loadout.scenes.map(s => ({ ...s })),
+      activeSceneId: loadout.scenes[0]?.id ?? p.activeSceneId,
+    }))
+  }, [])
+
+  const deleteLoadout = useCallback((id: string) => {
+    setProject(p => ({ ...p, loadouts: (p.loadouts ?? []).filter(l => l.id !== id) }))
+  }, [])
+
+  const goLive = async (rtmpUrls: string[], twitchToken?: string) => {
     if (!previewRef.current || rtmpUrls.length === 0) return
     setStreamStatus('connecting')
     try {
@@ -249,9 +287,14 @@ export default function App() {
         rtmpUrls,
         project.settings?.bitrate ?? 8,
         project.settings?.fps ?? 30,
+        project.settings?.resolution ?? '1080p',
         audio.active && audio.stream.current ? audio.stream.current : undefined,
+        alerts.alertRef,
       )
       setStreamStatus('live')
+      if (twitchToken && TWITCH_CLIENT_ID) {
+        alerts.connect(twitchToken, TWITCH_CLIENT_ID).catch(console.error)
+      }
     } catch (e) {
       console.error('Stream start failed:', e)
       setStreamStatus('idle')
@@ -259,6 +302,7 @@ export default function App() {
   }
 
   const endStream = async () => {
+    alerts.disconnect()
     await streamer.stop()
     setStreamStatus('idle')
     setShowStreaming(false)
@@ -326,10 +370,14 @@ export default function App() {
           <Sidebar
             scenes={project.scenes}
             activeSceneId={project.activeSceneId}
+            loadouts={project.loadouts ?? []}
             onSelectScene={selectScene}
             onAddScene={addScene}
             onRemoveScene={removeScene}
             onRenameScene={renameScene}
+            onSaveLoadout={saveLoadout}
+            onLoadLoadout={loadLoadout}
+            onDeleteLoadout={deleteLoadout}
           />
           <Canvas
             scene={activeScene}
@@ -367,6 +415,7 @@ export default function App() {
       {showOverlays && (
         <OverlaysModal
           onLoad={handleLoadTemplate}
+          onAddAsset={addAssetSource}
           onClose={() => setShowOverlays(false)}
         />
       )}

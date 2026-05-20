@@ -52,15 +52,24 @@ export const defaultSettings: RecordingSettings = {
   showTooltips: true,
 }
 
+export interface Loadout {
+  id: string
+  name: string
+  scenes: Scene[]
+  createdAt: string
+}
+
 export interface SlateProject {
-  version: '1.2'
+  version: '1.3'
   scenes: Scene[]
   activeSceneId: string
   settings: RecordingSettings
+  loadouts: Loadout[]
 }
 
 export const defaultProject: SlateProject = {
-  version: '1.2',
+  version: '1.3',
+  loadouts: [],
   settings: defaultSettings,
   activeSceneId: 'scene-1',
   scenes: [
@@ -116,13 +125,14 @@ export async function loadProject(): Promise<SlateProject> {
     const path = await getProjectPath()
     const text = await readTextFile(path)
     const parsed = JSON.parse(text) as SlateProject
-    if (!parsed || parsed.version !== '1.2' || !Array.isArray(parsed.scenes) || parsed.scenes.length === 0) {
+    if (!parsed || !Array.isArray(parsed.scenes) || parsed.scenes.length === 0) {
       return defaultProject
     }
     const activeExists = parsed.scenes.some(s => s.id === parsed.activeSceneId)
     if (!activeExists) parsed.activeSceneId = parsed.scenes[0].id
     if (!parsed.settings) parsed.settings = defaultSettings
-    return parsed
+    if (!parsed.loadouts) parsed.loadouts = []
+    return { ...parsed, version: '1.3' }
   } catch {
     return defaultProject
   }
