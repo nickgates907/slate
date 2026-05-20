@@ -303,13 +303,28 @@ fn urldecode(s: &str) -> String {
     out
 }
 
+fn slate_success_page(platform: &str) -> String {
+    // Use ##-delimited raw string so "# inside SVG fill attributes doesn't close the literal
+    format!(r##"<!DOCTYPE html><html><head><meta charset="utf-8"><title>Connected to Slate</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 72 72'%3E%3Crect width='72' height='72' rx='18' fill='%23FF4D4D'/%3E%3Ccircle cx='36' cy='36' r='17' stroke='white' stroke-width='3' fill='none'/%3E%3Ccircle cx='36' cy='36' r='10' stroke='white' stroke-width='2.5' fill='none'/%3E%3Ccircle cx='36' cy='36' r='4' fill='white'/%3E%3Ccircle cx='52' cy='20' r='5' fill='white'/%3E%3Ccircle cx='52' cy='20' r='2.5' fill='%23FF4D4D'/%3E%3C/svg%3E">
+<style>*{{margin:0;padding:0;box-sizing:border-box}}body{{background:#0d0d13;color:white;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center}}.card{{text-align:center;padding:48px 40px}}.logo{{margin-bottom:28px}}.check{{width:60px;height:60px;border-radius:50%;background:rgba(34,197,94,.12);border:1.5px solid rgba(34,197,94,.3);display:flex;align-items:center;justify-content:center;margin:0 auto 20px}}h1{{font-size:20px;font-weight:700;margin-bottom:6px}}p{{font-size:13px;color:#6b7280;margin-bottom:4px}}.hint{{margin-top:20px;font-size:11px;color:#374151}}</style></head>
+<body><div class="card">
+<div class="logo"><svg width="52" height="52" viewBox="0 0 72 72" fill="none"><rect width="72" height="72" rx="18" fill="#FF4D4D"/><circle cx="36" cy="36" r="17" stroke="white" stroke-width="3" fill="none"/><circle cx="36" cy="36" r="10" stroke="white" stroke-width="2.5" fill="none"/><circle cx="36" cy="36" r="4" fill="white"/><circle cx="52" cy="20" r="5" fill="white"/><circle cx="52" cy="20" r="2.5" fill="#FF4D4D"/></svg></div>
+<div class="check"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+<h1>Connected to {}!</h1>
+<p>Return to Slate to go live.</p>
+<p class="hint">This tab will close automatically&#8230;</p>
+</div>
+<script>setTimeout(()=>window.close(),2500)</script></body></html>"##, platform)
+}
+
 /// Twitch uses implicit flow — token arrives in the URL fragment.
 /// We serve a bridge page that reads the fragment and sends the token as a query param.
 fn oauth_listen_fragment(port: u16) -> Result<String, String> {
     let listener = TcpListener::bind(format!("127.0.0.1:{}", port))
         .map_err(|e| format!("Port {} is busy — close any app using it and try again. ({})", port, e))?;
 
-    // First request: serve bridge page that extracts the fragment
+    // First request: serve silent JS bridge that extracts the fragment and redirects
     let (mut s1, _) = listener.accept().map_err(|e| e.to_string())?;
     let _r1 = read_http_request(&mut s1);
     let bridge = "<script>const p=new URLSearchParams(location.hash.slice(1));const t=p.get('access_token');if(t){location.replace('/cb?t='+encodeURIComponent(t))}else{document.body.textContent='Auth failed or cancelled'}</script>";
@@ -320,7 +335,7 @@ fn oauth_listen_fragment(port: u16) -> Result<String, String> {
     let (mut s2, _) = listener.accept().map_err(|e| e.to_string())?;
     let r2 = read_http_request(&mut s2);
     let token = extract_query_param(&r2, "t").ok_or("No access token received — did you complete the login?")?;
-    send_html(&mut s2, "<h2 style='font-family:sans-serif;text-align:center;margin-top:80px'>&#10003; Connected to Slate! You can close this tab.</h2>");
+    send_html(&mut s2, &slate_success_page("Twitch"));
 
     Ok(token)
 }
@@ -333,7 +348,7 @@ fn oauth_listen_code(port: u16) -> Result<String, String> {
     let (mut stream, _) = listener.accept().map_err(|e| e.to_string())?;
     let req = read_http_request(&mut stream);
     let code = extract_query_param(&req, "code").ok_or("No authorization code received — did you complete the login?")?;
-    send_html(&mut stream, "<h2 style='font-family:sans-serif;text-align:center;margin-top:80px'>&#10003; Connected to Slate! You can close this tab.</h2>");
+    send_html(&mut stream, &slate_success_page("YouTube"));
 
     Ok(code)
 }
@@ -347,6 +362,8 @@ struct ConnectedAccount {
     stream_key: String,
     platform: String,
     token: String,
+    #[serde(rename = "broadcasterId")]
+    broadcaster_id: String,
 }
 
 #[tauri::command]
@@ -390,7 +407,7 @@ async fn connect_twitch(client_id: String) -> Result<ConnectedAccount, String> {
     let stream_key = key_resp["data"][0]["stream_key"]
         .as_str().ok_or("Could not get your Twitch stream key")?.to_string();
 
-    Ok(ConnectedAccount { username, stream_key, platform: "twitch".to_string(), token })
+    Ok(ConnectedAccount { username, stream_key, platform: "twitch".to_string(), token, broadcaster_id: user_id })
 }
 
 // ── OAuth — YouTube (PKCE — no client secret needed) ─────────────────────────
@@ -401,7 +418,7 @@ async fn connect_youtube(client_id: String, code_verifier: String, code_challeng
     let redirect_uri = format!("http://localhost:{}", PORT);
 
     let auth_url = format!(
-        "https://accounts.google.com/o/oauth2/v2/auth?client_id={}&redirect_uri={}&response_type=code&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fyoutube.readonly&access_type=offline&prompt=consent&code_challenge={}&code_challenge_method=S256",
+        "https://accounts.google.com/o/oauth2/v2/auth?client_id={}&redirect_uri={}&response_type=code&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fyoutube&access_type=offline&prompt=consent&code_challenge={}&code_challenge_method=S256",
         client_id, redirect_uri, code_challenge
     );
 
@@ -451,7 +468,7 @@ async fn connect_youtube(client_id: String, code_verifier: String, code_challeng
         .ok_or("No YouTube stream key found. Go to YouTube Studio → Go Live → Stream to create one first.")?
         .to_string();
 
-    Ok(ConnectedAccount { username, stream_key, platform: "youtube".to_string(), token: String::new() })
+    Ok(ConnectedAccount { username, stream_key, platform: "youtube".to_string(), token: String::new(), broadcaster_id: String::new() })
 }
 
 // ── Entry point ───────────────────────────────────────────────────────────────

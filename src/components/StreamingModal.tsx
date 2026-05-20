@@ -10,6 +10,7 @@ interface ConnectedAccount {
   streamKey: string
   platform: Platform
   token: string
+  broadcasterId: string
 }
 
 interface PlatformState {
@@ -49,11 +50,17 @@ const SlateLogo = () => (
 export default function StreamingModal({ onGoLive, onEndStream, status, liveTime, onClose }: StreamingModalProps) {
   const [twitch, setTwitch] = useState<PlatformState>(IDLE)
   const [youtube, setYoutube] = useState<PlatformState>(IDLE)
+  const [streamTitle, setStreamTitle] = useState('')
+  const [gameInput, setGameInput] = useState('')
+  const [metaSaving, setMetaSaving] = useState(false)
 
   const isLive = status === 'live'
   const isConnecting = status === 'connecting'
   const isBusy = isLive || isConnecting
   const canGoLive = twitch.status === 'connected' || youtube.status === 'connected'
+
+  // Allow closing whenever NOT in the middle of connecting or waiting for OAuth
+  const canClose = !isConnecting && twitch.status !== 'waiting' && youtube.status !== 'waiting'
 
   const connect = async (platform: Platform) => {
     const set = platform === 'twitch' ? setTwitch : setYoutube
@@ -77,7 +84,60 @@ export default function StreamingModal({ onGoLive, onEndStream, status, liveTime
     set(IDLE)
   }
 
-  const handleGoLive = () => {
+  const handleGoLive = async () => {
+    setMetaSaving(true)
+    try {
+      // ── Twitch: set title + game via Helix API ──────────────────────────────
+      if (twitch.account && TWITCH_CLIENT_ID && (streamTitle.trim() || gameInput.trim())) {
+        try {
+          let gameId: string | undefined
+          if (gameInput.trim()) {
+            const gResp = await fetch(
+              `https://api.twitch.tv/helix/games?name=${encodeURIComponent(gameInput.trim())}`,
+              { headers: { Authorization: `Bearer ${twitch.account.token}`, 'Client-Id': TWITCH_CLIENT_ID } }
+            )
+            const gData = await gResp.json()
+            gameId = gData.data?.[0]?.id
+          }
+          const body: Record<string, string> = {}
+          if (streamTitle.trim()) body.title = streamTitle.trim()
+          if (gameId) body.game_id = gameId
+          if (Object.keys(body).length > 0) {
+            await fetch(
+              `https://api.twitch.tv/helix/channels?broadcaster_id=${twitch.account.broadcasterId}`,
+              {
+                method: 'PATCH',
+                headers: { Authorization: `Bearer ${twitch.account.token}`, 'Client-Id': TWITCH_CLIENT_ID, 'Content-Type': 'application/json' },
+                body: JSON.stringify(body),
+              }
+            )
+          }
+        } catch (e) { console.warn('Twitch metadata update failed (non-fatal):', e) }
+      }
+
+      // ── YouTube: update the next upcoming live broadcast title ──────────────
+      if (youtube.account && streamTitle.trim()) {
+        try {
+          const bResp = await fetch(
+            'https://www.googleapis.com/youtube/v3/liveBroadcasts?part=snippet&mine=true&broadcastStatus=upcoming&maxResults=1',
+            { headers: { Authorization: `Bearer ${youtube.account.token}` } }
+          )
+          const bData = await bResp.json()
+          const broadcast = bData.items?.[0]
+          if (broadcast?.id) {
+            const snippet = { ...broadcast.snippet, title: streamTitle.trim() }
+            await fetch('https://www.googleapis.com/youtube/v3/liveBroadcasts?part=snippet', {
+              method: 'PUT',
+              headers: { Authorization: `Bearer ${youtube.account.token}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ id: broadcast.id, snippet }),
+            })
+          }
+        } catch (e) { console.warn('YouTube metadata update failed (non-fatal):', e) }
+      }
+    } finally {
+      setMetaSaving(false)
+    }
+
     const accounts = [twitch.account, youtube.account].filter((a): a is ConnectedAccount => a !== null)
     onGoLive(accounts.map(getRtmpUrl), twitch.account?.token)
   }
@@ -87,16 +147,16 @@ export default function StreamingModal({ onGoLive, onEndStream, status, liveTime
     .map(a => a.platform === 'twitch' ? 'Twitch' : 'YouTube')
     .join(' + ')
 
-  const canClose = !isBusy && twitch.status !== 'waiting' && youtube.status !== 'waiting'
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
+      {/* Backdrop — always closes when canClose */}
       <div
         className="absolute inset-0 bg-black/75 backdrop-blur-sm"
         onClick={canClose ? onClose : undefined}
       />
 
-      <div className="relative w-full max-w-[360px] mx-4 rounded-2xl overflow-hidden shadow-2xl border border-white/5"
+      <div
+        className="relative w-full max-w-[380px] mx-4 rounded-2xl overflow-hidden shadow-2xl border border-white/5"
         style={{ background: 'linear-gradient(180deg, #111118 0%, #0d0d13 100%)' }}
       >
         {/* Brand accent bar */}
@@ -124,6 +184,7 @@ export default function StreamingModal({ onGoLive, onEndStream, status, liveTime
             )}
           </div>
 
+          {/* X is always visible when canClose — including while live */}
           {canClose && (
             <button
               onClick={onClose}
@@ -145,52 +206,81 @@ export default function StreamingModal({ onGoLive, onEndStream, status, liveTime
             </div>
           )}
 
-          {/* Live / connecting state */}
-          {isBusy && (
-            <div className="py-6 flex flex-col items-center gap-3">
-              {isConnecting ? (
-                <>
-                  <div className="relative w-14 h-14 flex items-center justify-center">
-                    <div className="absolute inset-0 rounded-full border-2 border-white/5" />
-                    <div className="w-10 h-10 rounded-full border-2 border-brand-red border-t-transparent animate-spin" />
-                    <SlateLogo />
-                  </div>
-                  <div className="text-center">
-                    <p className="text-sm text-white font-semibold">Starting stream…</p>
-                    <p className="text-[11px] text-gray-500 mt-0.5">{connectedPlatforms}</p>
-                  </div>
-                </>
-              ) : (
-                <div className="text-center space-y-1">
-                  <div className="inline-flex items-center gap-2 text-xs text-gray-400 bg-white/5 rounded-full px-4 py-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                    You're streaming live
-                  </div>
-                  <p className="text-[11px] text-gray-600">Close this window to keep streaming</p>
-                </div>
-              )}
+          {/* Live state — show hint, not the platform rows */}
+          {isLive && (
+            <div className="py-4 flex flex-col items-center gap-3">
+              <div className="inline-flex items-center gap-2 text-xs text-gray-400 bg-white/5 rounded-full px-4 py-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                You're streaming live
+              </div>
+              <p className="text-[11px] text-gray-600 text-center">
+                Close this window to keep streaming and adjust your scene.
+              </p>
             </div>
           )}
 
-          {/* Platform rows */}
-          {TWITCH_CLIENT_ID && !isBusy && (
-            <PlatformRow
-              platform="twitch"
-              state={twitch}
-              onConnect={() => connect('twitch')}
-              onDisconnect={() => disconnect('twitch')}
-              disabled={youtube.status === 'waiting'}
-            />
+          {/* Connecting spinner */}
+          {isConnecting && (
+            <div className="py-6 flex flex-col items-center gap-3">
+              <div className="relative w-14 h-14 flex items-center justify-center">
+                <div className="absolute inset-0 rounded-full border-2 border-white/5" />
+                <div className="w-10 h-10 rounded-full border-2 border-brand-red border-t-transparent animate-spin" />
+                <div className="absolute"><SlateLogo /></div>
+              </div>
+              <div className="text-center">
+                <p className="text-sm text-white font-semibold">Starting stream…</p>
+                <p className="text-[11px] text-gray-500 mt-0.5">{connectedPlatforms}</p>
+              </div>
+            </div>
           )}
 
-          {YOUTUBE_CLIENT_ID && !isBusy && (
-            <PlatformRow
-              platform="youtube"
-              state={youtube}
-              onConnect={() => connect('youtube')}
-              onDisconnect={() => disconnect('youtube')}
-              disabled={twitch.status === 'waiting'}
-            />
+          {/* Platform rows — only shown when not connecting or live */}
+          {!isBusy && (
+            <>
+              {TWITCH_CLIENT_ID && (
+                <PlatformRow
+                  platform="twitch"
+                  state={twitch}
+                  onConnect={() => connect('twitch')}
+                  onDisconnect={() => disconnect('twitch')}
+                  disabled={youtube.status === 'waiting'}
+                />
+              )}
+              {YOUTUBE_CLIENT_ID && (
+                <PlatformRow
+                  platform="youtube"
+                  state={youtube}
+                  onConnect={() => connect('youtube')}
+                  onDisconnect={() => disconnect('youtube')}
+                  disabled={twitch.status === 'waiting'}
+                />
+              )}
+
+              {/* Stream metadata — shown when at least one platform is connected */}
+              {canGoLive && (
+                <div className="pt-1 space-y-2">
+                  <div className="h-px w-full bg-white/[0.05]" />
+                  <div className="space-y-2">
+                    <input
+                      type="text"
+                      placeholder="Stream title  (optional)"
+                      value={streamTitle}
+                      onChange={e => setStreamTitle(e.target.value)}
+                      className="w-full text-sm bg-white/[0.04] border border-white/[0.08] rounded-xl px-3.5 py-2.5 text-white placeholder-gray-600 outline-none focus:border-brand-red/50 transition-colors"
+                    />
+                    {twitch.status === 'connected' && (
+                      <input
+                        type="text"
+                        placeholder="Game / category  (e.g. Marvel Rivals)"
+                        value={gameInput}
+                        onChange={e => setGameInput(e.target.value)}
+                        className="w-full text-sm bg-white/[0.04] border border-white/[0.08] rounded-xl px-3.5 py-2.5 text-white placeholder-gray-600 outline-none focus:border-brand-red/50 transition-colors"
+                      />
+                    )}
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
 
@@ -201,7 +291,7 @@ export default function StreamingModal({ onGoLive, onEndStream, status, liveTime
               onClick={onEndStream}
               className="w-full py-3 rounded-xl font-bold text-sm text-white transition-colors"
               style={{ background: 'rgba(255,255,255,0.08)' }}
-              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.12)')}
+              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.13)')}
               onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.08)')}
             >
               End Stream
@@ -217,11 +307,16 @@ export default function StreamingModal({ onGoLive, onEndStream, status, liveTime
           ) : (
             <button
               onClick={handleGoLive}
-              disabled={!canGoLive}
+              disabled={!canGoLive || metaSaving}
               className="w-full py-3 rounded-xl font-bold text-sm text-white transition-all disabled:opacity-25 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               style={canGoLive ? { background: 'linear-gradient(135deg, #FF4D4D 0%, #e03030 100%)', boxShadow: '0 4px 20px rgba(255,77,77,0.35)' } : { background: 'rgba(255,255,255,0.06)' }}
             >
-              {canGoLive ? (
+              {metaSaving ? (
+                <>
+                  <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Setting up…
+                </>
+              ) : canGoLive ? (
                 <>
                   <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
                   Go Live{connectedPlatforms ? ` · ${connectedPlatforms}` : ''}
@@ -277,33 +372,20 @@ function PlatformRow({ platform, state, onConnect, onDisconnect, disabled }: Pla
 
   if (state.status === 'waiting') {
     return (
-      <div
-        className="flex items-center gap-3 px-4 py-3 rounded-xl border"
-        style={{ background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.07)' }}
-      >
-        <div className="w-3 h-3 rounded-full border-2 border-t-transparent animate-spin flex-shrink-0" style={{ borderColor: meta.color, borderTopColor: 'transparent' }} />
+      <div className="flex items-center gap-3 px-4 py-3 rounded-xl border" style={{ background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.07)' }}>
+        <div className="w-3 h-3 rounded-full border-2 animate-spin flex-shrink-0" style={{ borderColor: meta.color, borderTopColor: 'transparent' }} />
         <p className="text-sm text-gray-400 flex-1">Waiting for {meta.label} sign-in…</p>
-        <button onClick={onDisconnect} className="text-[11px] text-gray-600 hover:text-red-400 transition-colors flex-shrink-0">
-          Cancel
-        </button>
+        <button onClick={onDisconnect} className="text-[11px] text-gray-600 hover:text-red-400 transition-colors flex-shrink-0">Cancel</button>
       </div>
     )
   }
 
   if (state.status === 'connected' && state.account) {
     return (
-      <div
-        className="flex items-center gap-3 px-4 py-3 rounded-xl border"
-        style={{ background: meta.dimColor, borderColor: meta.borderColor }}
-      >
-        {/* Avatar */}
-        <div
-          className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-          style={{ background: meta.color }}
-        >
+      <div className="flex items-center gap-3 px-4 py-3 rounded-xl border" style={{ background: meta.dimColor, borderColor: meta.borderColor }}>
+        <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0" style={{ background: meta.color }}>
           {state.account.username[0]?.toUpperCase()}
         </div>
-
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-white truncate">{state.account.username}</p>
           <div className="flex items-center gap-1.5 mt-0.5">
@@ -311,10 +393,7 @@ function PlatformRow({ platform, state, onConnect, onDisconnect, disabled }: Pla
             <span className="text-[11px] text-gray-500">{meta.label} · Ready to go live</span>
           </div>
         </div>
-
-        <button onClick={onDisconnect} className="text-[11px] text-gray-600 hover:text-red-400 transition-colors flex-shrink-0">
-          Remove
-        </button>
+        <button onClick={onDisconnect} className="text-[11px] text-gray-600 hover:text-red-400 transition-colors flex-shrink-0">Remove</button>
       </div>
     )
   }
@@ -322,36 +401,24 @@ function PlatformRow({ platform, state, onConnect, onDisconnect, disabled }: Pla
   if (state.status === 'error') {
     return (
       <div className="space-y-1.5">
-        <div className="rounded-xl border border-red-500/20 bg-red-500/8 px-4 py-2.5 text-[11px] text-red-400">
+        <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-2.5 text-[11px] text-red-400">
           {meta.label}: {state.error}
         </div>
-        <button
-          onClick={onConnect}
-          className="w-full py-2 text-[11px] text-gray-500 hover:text-gray-300 rounded-xl transition-colors border border-white/5 hover:border-white/10"
-        >
+        <button onClick={onConnect} className="w-full py-2 text-[11px] text-gray-500 hover:text-gray-300 rounded-xl transition-colors border border-white/5 hover:border-white/10">
           Retry {meta.label}
         </button>
       </div>
     )
   }
 
-  // Idle — connect button
   return (
     <button
       onClick={onConnect}
       disabled={disabled}
       className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all group disabled:opacity-30 disabled:cursor-not-allowed"
       style={{ background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.07)' }}
-      onMouseEnter={e => {
-        if (!disabled) {
-          e.currentTarget.style.background = meta.dimColor
-          e.currentTarget.style.borderColor = meta.borderColor
-        }
-      }}
-      onMouseLeave={e => {
-        e.currentTarget.style.background = 'rgba(255,255,255,0.03)'
-        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)'
-      }}
+      onMouseEnter={e => { if (!disabled) { e.currentTarget.style.background = meta.dimColor; e.currentTarget.style.borderColor = meta.borderColor } }}
+      onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)' }}
     >
       <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: meta.color }}>
         <span className="text-white">{meta.icon}</span>
