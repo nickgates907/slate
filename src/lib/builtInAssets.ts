@@ -140,47 +140,52 @@ const ALERT_CARD = svg(`
 
 // ── Twitch channel panels (320×100) ──────────────────────────────────────────
 
+// Slate brand colors: #FF4D4D red, #0d0d13 dark bg
 function panel(title: string, iconPath: string): string {
   return svg(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 100">
   <defs>
     <linearGradient id="pg" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#1a1a24"/>
-      <stop offset="100%" stop-color="#18181b"/>
+      <stop offset="0%" stop-color="#111118"/>
+      <stop offset="100%" stop-color="#0d0d13"/>
+    </linearGradient>
+    <linearGradient id="ra" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#FF4D4D"/>
+      <stop offset="100%" stop-color="#cc2200"/>
     </linearGradient>
   </defs>
   <rect width="320" height="100" fill="url(#pg)"/>
-  <rect y="93" width="320" height="7" fill="#9147ff"/>
-  <rect width="4" height="100" fill="#9147ff"/>
-  <rect x="4" y="0" width="316" height="1" fill="#9147ff" fill-opacity="0.3"/>
-  <rect x="4" y="92" width="316" height="1" fill="#9147ff" fill-opacity="0.2"/>
-  <g transform="translate(272,18)" fill="#9147ff" fill-opacity="0.55">${iconPath}</g>
+  <rect y="93" width="320" height="7" fill="url(#ra)"/>
+  <rect width="4" height="100" fill="url(#ra)"/>
+  <rect x="4" y="0" width="316" height="1" fill="#FF4D4D" fill-opacity="0.25"/>
+  <rect x="4" y="92" width="316" height="1" fill="#FF4D4D" fill-opacity="0.15"/>
+  <g transform="translate(272,18)" fill="#FF4D4D" fill-opacity="0.5">${iconPath}</g>
   <text x="22" y="46" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="20" fill="white">${title}</text>
-  <text x="22" y="68" font-family="Arial,Helvetica,sans-serif" font-weight="400" font-size="11" fill="#9147ff" fill-opacity="0.75" letter-spacing="1.5">TWITCH AFFILIATE</text>
+  <text x="22" y="66" font-family="Arial,Helvetica,sans-serif" font-weight="400" font-size="10" fill="#FF4D4D" fill-opacity="0.7" letter-spacing="2">STREAMS WITH SLATE</text>
 </svg>`)
 }
 
 const PANEL_ABOUT = panel('About Me',
-  `<circle cx="24" cy="16" r="10"/><path d="M4,64 Q4,44 24,44 Q44,44 44,64" fill="#9147ff" fill-opacity="0.55"/>`)
+  `<circle cx="24" cy="16" r="10"/><path d="M4,64 Q4,44 24,44 Q44,44 44,64" fill="#FF4D4D" fill-opacity="0.5"/>`)
 
 const PANEL_SCHEDULE = panel('Schedule',
-  `<rect width="44" height="44" rx="6" fill="none" stroke="#9147ff" stroke-width="2.5" stroke-opacity="0.55"/>
+  `<rect width="44" height="44" rx="6" fill="none" stroke="#FF4D4D" stroke-width="2.5" stroke-opacity="0.5"/>
    <rect x="10" y="0" width="4" height="10" rx="2"/><rect x="30" y="0" width="4" height="10" rx="2"/>
-   <rect x="4" y="14" width="36" height="2" fill-opacity="0.55"/>
+   <rect x="4" y="14" width="36" height="2" fill-opacity="0.5"/>
    <rect x="8"  y="22" width="6" height="5" rx="1"/><rect x="19" y="22" width="6" height="5" rx="1"/><rect x="30" y="22" width="6" height="5" rx="1"/>
    <rect x="8"  y="32" width="6" height="5" rx="1"/><rect x="19" y="32" width="6" height="5" rx="1"/>`)
 
 const PANEL_SUBSCRIBE = panel('Subscribe',
-  `<path d="M22,8 C22,2 14,2 14,10 C14,18 22,26 22,26 C22,26 30,18 30,10 C30,2 22,2 22,8Z" fill-opacity="0.55"/>
-   <path d="M4,30 L4,44 L40,44 L40,30 L22,36 Z" fill-opacity="0.45"/>`)
+  `<path d="M22,8 C22,2 14,2 14,10 C14,18 22,26 22,26 C22,26 30,18 30,10 C30,2 22,2 22,8Z" fill-opacity="0.5"/>
+   <path d="M4,30 L4,44 L40,44 L40,30 L22,36 Z" fill-opacity="0.4"/>`)
 
 const PANEL_DISCORD = panel('Discord',
-  `<path d="M36,6 C30,3 23,2 22,2 C21,2 14,3 8,6 C2,12 2,30 2,30 C6,36 14,38 22,38 C30,38 38,36 42,30 C42,30 42,12 36,6Z M16,26 C13,26 11,24 11,21 C11,18 13,16 16,16 C19,16 21,18 21,21 C21,24 19,26 16,26Z M28,26 C25,26 23,24 23,21 C23,18 25,16 28,16 C31,16 33,18 33,21 C33,24 31,26 28,26Z" fill-opacity="0.55"/>`)
+  `<path d="M36,6 C30,3 23,2 22,2 C21,2 14,3 8,6 C2,12 2,30 2,30 C6,36 14,38 22,38 C30,38 38,36 42,30 C42,30 42,12 36,6Z M16,26 C13,26 11,24 11,21 C11,18 13,16 16,16 C19,16 21,18 21,21 C21,24 19,26 16,26Z M28,26 C25,26 23,24 23,21 C23,18 25,16 28,16 C31,16 33,18 33,21 C33,24 31,26 28,26Z" fill-opacity="0.5"/>`)
 
 const PANEL_DONATE = panel('Support Me',
-  `<path d="M22,40 L6,24 C2,20 2,13 6,9 C10,5 16,5 20,9 L22,11 L24,9 C28,5 34,5 38,9 C42,13 42,20 38,24 Z" fill-opacity="0.55"/>`)
+  `<path d="M22,40 L6,24 C2,20 2,13 6,9 C10,5 16,5 20,9 L22,11 L24,9 C28,5 34,5 38,9 C42,13 42,20 38,24 Z" fill-opacity="0.5"/>`)
 
 const PANEL_SETUP = panel('PC Setup',
-  `<rect x="2" y="2" width="40" height="28" rx="3" fill="none" stroke="#9147ff" stroke-width="2.5" stroke-opacity="0.55"/>
+  `<rect x="2" y="2" width="40" height="28" rx="3" fill="none" stroke="#FF4D4D" stroke-width="2.5" stroke-opacity="0.5"/>
    <rect x="8" y="8" width="28" height="16" rx="1" fill-opacity="0.3"/>
    <rect x="16" y="32" width="12" height="4" rx="1"/>
    <rect x="10" y="36" width="24" height="3" rx="1.5"/>`)
