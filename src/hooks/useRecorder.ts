@@ -2,12 +2,22 @@ import { useRef, useCallback } from 'react'
 import { writeBinaryFile, createDir } from '@tauri-apps/api/fs'
 import { join, documentDir } from '@tauri-apps/api/path'
 import { videoRegistry } from '../lib/videoRegistry'
+import { drawAlert } from '../lib/drawAlert'
+import { ActiveAlert } from './useAlerts'
 import { Scene } from '../store'
+
+type MutRef<T> = { current: T }
 
 export interface RecordingResult {
   blobUrl: string
   blob: Blob
   durationSecs: number
+}
+
+const RES = {
+  '720p':  { w: 1280, h: 720 },
+  '1080p': { w: 1920, h: 1080 },
+  '1440p': { w: 2560, h: 1440 },
 }
 
 export function useRecorder() {
@@ -20,14 +30,22 @@ export function useRecorder() {
   const bgImageRef = useRef<HTMLImageElement | null>(null)
   const bgImageSrcRef = useRef<string | null>(null)
 
-  const start = useCallback((scene: Scene, previewEl: HTMLDivElement, audioStream?: MediaStream) => {
+  const alertRef = useRef<MutRef<ActiveAlert | null> | null>(null)
+
+  const start = useCallback((
+    scene: Scene,
+    previewEl: HTMLDivElement,
+    resolution: '720p' | '1080p' | '1440p',
+    audioStream?: MediaStream,
+    alertRefArg?: MutRef<ActiveAlert | null>,
+  ) => {
+    alertRef.current = alertRefArg ?? null
     sceneRef.current = scene
     startTimeRef.current = Date.now()
 
     const previewW = previewEl.offsetWidth || 640
     const previewH = previewEl.offsetHeight || 360
-    const outW = 1920
-    const outH = 1080
+    const { w: outW, h: outH } = RES[resolution] ?? RES['1080p']
     const scaleX = outW / previewW
     const scaleY = outH / previewH
 
@@ -35,6 +53,9 @@ export function useRecorder() {
     canvas.width = outW
     canvas.height = outH
     const ctx = canvas.getContext('2d')!
+
+    const imgCache = new Map<string, HTMLImageElement>()
+    const scrollOffsets = new Map<string, number>()
 
     const draw = () => {
       const s = sceneRef.current
@@ -59,31 +80,79 @@ export function useRecorder() {
 
       if (s) {
         for (const source of s.sources) {
-          if (!source.visible || source.type === 'audio' || source.type === 'image' || source.type === 'text') continue
-          const el = videoRegistry.get(source.id)
-          if (!el) continue
-          // HTMLVideoElement needs readyState check; HTMLCanvasElement is always ready
-          if (el instanceof HTMLVideoElement && el.readyState < 2) continue
-          const video = el
+          if (!source.visible || source.type === 'audio') continue
 
           const dx = source.x * scaleX
           const dy = source.y * scaleY
           const dw = source.width * scaleX
           const dh = source.height * scaleY
 
+          if (source.type === 'image') {
+            if (!source.imageSrc) continue
+            let img = imgCache.get(source.id)
+            if (!img || (img as any)._src !== source.imageSrc) {
+              const newImg = new Image()
+              newImg.src = source.imageSrc
+              ;(newImg as any)._src = source.imageSrc
+              imgCache.set(source.id, newImg)
+              img = newImg
+            }
+            if (img.complete && img.naturalWidth > 0) {
+              ctx.drawImage(img, dx, dy, dw, dh)
+            }
+            continue
+          }
+
+          if (source.type === 'text' && source.text) {
+            const isBottom = source.anchor === 'bottom'
+            const tx = isBottom ? 0 : dx
+            const ty = isBottom ? outH - dh : dy
+            const tw = isBottom ? outW : dw
+            const scaledFont = (source.fontSize ?? 16) * scaleX
+
+            ctx.fillStyle = 'rgba(0,0,0,0.6)'
+            ctx.fillRect(tx, ty, tw, dh)
+
+            ctx.font = `600 ${scaledFont}px sans-serif`
+            ctx.fillStyle = source.color ?? '#ffffff'
+            ctx.save()
+            ctx.beginPath()
+            ctx.rect(tx, ty, tw, dh)
+            ctx.clip()
+
+            if (source.scrolling) {
+              const offset = scrollOffsets.get(source.id) ?? 0
+              const measured = ctx.measureText(source.text).width + 80 * scaleX
+              ctx.fillText(source.text, tx + 8 * scaleX - offset, ty + scaledFont * 1.1)
+              ctx.fillText(source.text, tx + 8 * scaleX - offset + measured, ty + scaledFont * 1.1)
+              scrollOffsets.set(source.id, (offset + 2) % measured)
+            } else {
+              ctx.fillText(source.text, tx + 8 * scaleX, ty + scaledFont * 1.1)
+            }
+
+            ctx.restore()
+            continue
+          }
+
+          // Video sources (camera, screen, avatar)
+          const el = videoRegistry.get(source.id)
+          if (!el) continue
+          if (el instanceof HTMLVideoElement && el.readyState < 2) continue
+
           if (source.type === 'avatar') {
             ctx.save()
             ctx.beginPath()
             ctx.arc(dx + dw / 2, dy + dh / 2, Math.min(dw, dh) / 2, 0, Math.PI * 2)
             ctx.clip()
-            ctx.drawImage(video, dx, dy, dw, dh)
+            ctx.drawImage(el, dx, dy, dw, dh)
             ctx.restore()
           } else {
-            ctx.drawImage(video, dx, dy, dw, dh)
+            ctx.drawImage(el, dx, dy, dw, dh)
           }
         }
       }
 
+      if (alertRef.current?.current) drawAlert(ctx, alertRef.current.current, outW, outH)
       rafRef.current = requestAnimationFrame(draw)
     }
     draw()
@@ -93,13 +162,13 @@ export function useRecorder() {
       audioStream.getAudioTracks().forEach(t => canvasStream.addTrack(t))
     }
 
-    const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')
-      ? 'video/webm;codecs=vp9,opus'
-      : MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus')
-        ? 'video/webm;codecs=vp8,opus'
+    // VP8 encodes ~3× faster than VP9 with minimal quality difference at recording bitrates
+    const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus')
+      ? 'video/webm;codecs=vp8,opus'
+      : MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')
+        ? 'video/webm;codecs=vp9,opus'
         : 'video/webm'
 
-    // 8 Mbps video — matches YouTube's recommended 1080p upload bitrate
     const recorder = new MediaRecorder(canvasStream, {
       mimeType,
       videoBitsPerSecond: 8_000_000,

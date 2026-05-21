@@ -19,6 +19,7 @@ import { exportLayout, importLayout } from './lib/layoutShare'
 import { OverlayTemplate } from './lib/overlayTemplates'
 import { TWITCH_CLIENT_ID } from './config/platforms'
 import { audioRegistry } from './lib/audioRegistry'
+import { ActiveAlert } from './hooks/useAlerts'
 
 function formatTime(seconds: number): string {
   const h = Math.floor(seconds / 3600).toString().padStart(2, '0')
@@ -159,6 +160,7 @@ export default function App() {
         previewRef.current,
         project.settings?.resolution ?? '1080p',
         buildAudioStream(),
+        alerts.alertRef,
       )
     }
   }
@@ -399,17 +401,20 @@ export default function App() {
             onLoadLoadout={loadLoadout}
             onDeleteLoadout={deleteLoadout}
           />
-          <Canvas
-            scene={activeScene}
-            isRecording={isRecording}
-            recordingTime={formatTime(recordSeconds)}
-            onUpdateSource={updateSource}
-            onUpdateBackground={updateBackground}
-            previewRef={previewRef}
-            onExportLayout={handleExportLayout}
-            onImportLayout={handleImportLayout}
-            onOpenOverlays={() => setShowOverlays(true)}
-          />
+          <div className="relative flex-1 min-w-0 flex flex-col">
+            <Canvas
+              scene={activeScene}
+              isRecording={isRecording}
+              recordingTime={formatTime(recordSeconds)}
+              onUpdateSource={updateSource}
+              onUpdateBackground={updateBackground}
+              previewRef={previewRef}
+              onExportLayout={handleExportLayout}
+              onImportLayout={handleImportLayout}
+              onOpenOverlays={() => setShowOverlays(true)}
+            />
+            {alerts.activeAlert && <AlertOverlay alert={alerts.activeAlert} />}
+          </div>
           <SourcesPanel
             sources={activeScene.sources}
             onToggleVisible={toggleSourceVisible}
@@ -460,5 +465,44 @@ export default function App() {
       )}
     </>
     </TooltipContext.Provider>
+  )
+}
+
+const ALERT_LABELS: Record<string, string> = {
+  follow: 'New Follower', subscribe: 'New Subscriber', gift_sub: 'Gift Subs',
+  cheer: 'Bits Cheer', raid: 'Raid',
+}
+const ALERT_MAIN: Record<string, (a: ActiveAlert) => string> = {
+  follow:    a => `${a.event.username} followed!`,
+  subscribe: a => `${a.event.username} subscribed!`,
+  gift_sub:  a => `${a.event.username} gifted ${a.event.amount ?? ''} subs!`,
+  cheer:     a => `${a.event.username} cheered ${a.event.amount ?? ''} bits!`,
+  raid:      a => `${a.event.username} raided with ${a.event.amount ?? ''} viewers!`,
+}
+
+function AlertOverlay({ alert }: { alert: ActiveAlert }) {
+  return (
+    <div className="absolute inset-x-0 top-3 flex justify-center pointer-events-none z-40">
+      <div
+        key={alert.startedAt}
+        style={{
+          animation: `alert-slide ${alert.duration}ms ease forwards`,
+          background: 'rgba(14,14,26,0.93)',
+          border: '1.5px solid #7c3aed',
+          minWidth: 240, maxWidth: 320, borderRadius: 12,
+        }}
+        className="flex items-stretch overflow-hidden shadow-2xl"
+      >
+        <div style={{ width: 4, background: 'linear-gradient(#7c3aed,#7c3aed)', borderRadius: '12px 0 0 12px', flexShrink: 0 }} />
+        <div className="px-3 py-2.5">
+          <div className="text-violet-300 text-[11px] font-medium leading-none mb-1">
+            {ALERT_LABELS[alert.event.type] ?? ''}
+          </div>
+          <div className="text-white text-sm font-bold leading-none">
+            {(ALERT_MAIN[alert.event.type] ?? (() => ''))(alert)}
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }

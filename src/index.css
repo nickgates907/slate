@@ -7,6 +7,13 @@
   100% { transform: translateX(-50%); }
 }
 
+@keyframes alert-slide {
+  0%   { transform: translateY(-48px); opacity: 0; }
+  12%  { transform: translateY(0);     opacity: 1; }
+  85%  { transform: translateY(0);     opacity: 1; }
+  100% { transform: translateY(-48px); opacity: 0; }
+}
+
 @layer base {
   * {
     box-sizing: border-box;

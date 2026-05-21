@@ -1,4 +1,4 @@
-import { useRef, useCallback } from 'react'
+import { useRef, useCallback, useState } from 'react'
 
 export type AlertType = 'follow' | 'subscribe' | 'gift_sub' | 'cheer' | 'raid'
 
@@ -22,11 +22,14 @@ export function useAlerts() {
   const queueRef     = useRef<AlertEvent[]>([])
   const timerRef     = useRef<ReturnType<typeof setTimeout> | null>(null)
   const activeRef    = useRef(false)
+  const [activeAlert, setActiveAlert] = useState<ActiveAlert | null>(null)
 
   const advance = useCallback(() => {
     const next = queueRef.current.shift()
-    if (!next) { alertRef.current = null; return }
-    alertRef.current = { event: next, startedAt: performance.now(), duration: ALERT_DURATION }
+    if (!next) { alertRef.current = null; setActiveAlert(null); return }
+    const alert: ActiveAlert = { event: next, startedAt: performance.now(), duration: ALERT_DURATION }
+    alertRef.current = alert
+    setActiveAlert(alert)
     timerRef.current = setTimeout(advance, ALERT_DURATION)
   }, [])
 
@@ -117,6 +120,7 @@ export function useAlerts() {
     wsRef.current = null
     if (timerRef.current) clearTimeout(timerRef.current)
     alertRef.current = null
+    setActiveAlert(null)
     queueRef.current = []
   }, [])
 
@@ -125,5 +129,5 @@ export function useAlerts() {
     enqueue({ type, username: 'TestUser', amount: type === 'cheer' ? 100 : type === 'gift_sub' ? 5 : type === 'raid' ? 42 : undefined })
   }, [enqueue])
 
-  return { connect, disconnect, testAlert, alertRef }
+  return { connect, disconnect, testAlert, alertRef, activeAlert }
 }
