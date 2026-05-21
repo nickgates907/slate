@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { writeBinaryFile, createDir } from '@tauri-apps/api/fs'
+import { join, documentDir } from '@tauri-apps/api/path'
 import { overlayTemplates, OverlayTemplate } from '../lib/overlayTemplates'
 import { builtInAssets, BuiltInAsset } from '../lib/builtInAssets'
 import { Source } from '../store'
@@ -16,12 +18,33 @@ const CATEGORY_LABELS: Record<string, string> = {
   lowerthird: 'Lower Thirds',
   fullscreen: 'Full-Screen',
   alert: 'Alert Cards',
+  panel: 'Twitch Channel Panels',
 }
 
 export default function OverlaysModal({ onLoad, onAddAsset, onClose }: OverlaysModalProps) {
   const [tab, setTab] = useState<Tab>('templates')
+  const [downloadedId, setDownloadedId] = useState<string | null>(null)
 
-  const categories = ['frame', 'lowerthird', 'fullscreen', 'alert'] as const
+  const categories = ['frame', 'lowerthird', 'fullscreen', 'alert', 'panel'] as const
+
+  const generalTemplates = overlayTemplates.filter(t => t.category === 'general')
+  const affiliateTemplates = overlayTemplates.filter(t => t.category === 'affiliate')
+
+  const downloadPanel = async (asset: BuiltInAsset) => {
+    try {
+      const encoded = asset.src.split(',')[1]
+      const svgText = decodeURIComponent(encoded)
+      const bytes = new TextEncoder().encode(svgText)
+      const dir = await join(await documentDir(), 'Slate', 'Twitch Panels')
+      await createDir(dir, { recursive: true })
+      const path = await join(dir, `${asset.name}.svg`)
+      await writeBinaryFile(path, bytes)
+      setDownloadedId(asset.id)
+      setTimeout(() => setDownloadedId(null), 2000)
+    } catch (e) {
+      console.error('Panel download failed:', e)
+    }
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70" onClick={onClose}>
@@ -55,38 +78,58 @@ export default function OverlaysModal({ onLoad, onAddAsset, onClose }: OverlaysM
 
         <div className="overflow-y-auto flex-1">
           {tab === 'templates' ? (
-            <div className="p-4 flex flex-col gap-2">
-              {overlayTemplates.map(t => (
-                <button
-                  key={t.id}
-                  onClick={() => { onLoad(t); onClose() }}
-                  className="flex items-center gap-3 w-full text-left px-4 py-3 rounded-xl bg-gray-800 hover:bg-gray-700 transition-colors group"
-                >
-                  <span className="text-2xl">{t.icon}</span>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-white text-sm font-semibold">{t.label}</div>
-                    <div className="text-gray-400 text-xs">{t.description}</div>
-                  </div>
-                  <span className="text-xs text-brand-red font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
-                    Load →
-                  </span>
-                </button>
+            <div className="p-4 flex flex-col gap-1">
+
+              {/* General templates */}
+              <p className="text-gray-500 text-xs font-semibold uppercase tracking-widest px-1 pb-1">General</p>
+              {generalTemplates.map(t => (
+                <TemplateRow key={t.id} template={t} onLoad={() => { onLoad(t); onClose() }} />
               ))}
-              <p className="text-gray-600 text-xs px-1 pt-1">Loads as a new scene. Your existing scenes are not changed.</p>
+
+              {/* Affiliate templates */}
+              <div className="flex items-center gap-2 mt-3 mb-1 px-1">
+                <p className="text-[#9147ff] text-xs font-semibold uppercase tracking-widest">Twitch Affiliate</p>
+                <div className="flex-1 h-px bg-[#9147ff]/20" />
+              </div>
+              {affiliateTemplates.map(t => (
+                <TemplateRow key={t.id} template={t} onLoad={() => { onLoad(t); onClose() }} affiliate />
+              ))}
+
+              <p className="text-gray-600 text-xs px-1 pt-2">Loads as a new scene. Your existing scenes are not changed.</p>
             </div>
           ) : (
             <div className="p-4 space-y-5">
               {categories.map(cat => {
                 const items = builtInAssets.filter(a => a.category === cat)
+                const isPanels = cat === 'panel'
                 return (
                   <div key={cat}>
-                    <p className="text-gray-500 text-xs font-semibold uppercase tracking-widest mb-2">
-                      {CATEGORY_LABELS[cat]}
-                    </p>
-                    <div className="grid grid-cols-3 gap-2">
-                      {items.map(asset => (
-                        <AssetCard key={asset.id} asset={asset} onAdd={(src) => { onAddAsset(src); onClose() }} />
-                      ))}
+                    <div className="flex items-center gap-2 mb-2">
+                      <p className={`text-xs font-semibold uppercase tracking-widest ${isPanels ? 'text-[#9147ff]' : 'text-gray-500'}`}>
+                        {CATEGORY_LABELS[cat]}
+                      </p>
+                      {isPanels && (
+                        <span className="text-[10px] text-[#9147ff]/60 font-medium">— upload to Twitch About page</span>
+                      )}
+                    </div>
+                    <div className={`grid gap-2 ${isPanels ? 'grid-cols-2' : 'grid-cols-3'}`}>
+                      {items.map(asset => isPanels
+                        ? (
+                          <PanelCard
+                            key={asset.id}
+                            asset={asset}
+                            downloaded={downloadedId === asset.id}
+                            onDownload={() => downloadPanel(asset)}
+                            onAdd={() => { onAddAsset({
+                              type: 'image', name: asset.name, visible: true,
+                              x: 160, y: 130, width: asset.defaultW, height: asset.defaultH,
+                              imageSrc: asset.src,
+                            }); onClose() }}
+                          />
+                        ) : (
+                          <AssetCard key={asset.id} asset={asset} onAdd={(src) => { onAddAsset(src); onClose() }} />
+                        )
+                      )}
                     </div>
                   </div>
                 )
@@ -95,6 +138,64 @@ export default function OverlaysModal({ onLoad, onAddAsset, onClose }: OverlaysM
             </div>
           )}
         </div>
+      </div>
+    </div>
+  )
+}
+
+function TemplateRow({ template, onLoad, affiliate }: { template: OverlayTemplate; onLoad: () => void; affiliate?: boolean }) {
+  return (
+    <button
+      onClick={onLoad}
+      className={`flex items-center gap-3 w-full text-left px-4 py-3 rounded-xl transition-colors group ${
+        affiliate
+          ? 'bg-[#9147ff]/10 hover:bg-[#9147ff]/20 border border-[#9147ff]/20'
+          : 'bg-gray-800 hover:bg-gray-700'
+      }`}
+    >
+      <span className="text-2xl">{template.icon}</span>
+      <div className="flex-1 min-w-0">
+        <div className="text-white text-sm font-semibold">{template.label}</div>
+        <div className="text-gray-400 text-xs">{template.description}</div>
+      </div>
+      <span className={`text-xs font-semibold opacity-0 group-hover:opacity-100 transition-opacity ${affiliate ? 'text-[#9147ff]' : 'text-brand-red'}`}>
+        Load →
+      </span>
+    </button>
+  )
+}
+
+function PanelCard({ asset, downloaded, onDownload, onAdd }: {
+  asset: BuiltInAsset
+  downloaded: boolean
+  onDownload: () => void
+  onAdd: () => void
+}) {
+  return (
+    <div className="flex flex-col rounded-xl bg-gray-800 overflow-hidden border border-[#9147ff]/20">
+      <div className="w-full h-14 bg-gray-950 flex items-center justify-center overflow-hidden">
+        <img src={asset.src} alt={asset.name} className="w-full h-full object-cover" />
+      </div>
+      <div className="flex items-center gap-1 px-2 py-1.5">
+        <span className="text-xs text-gray-300 flex-1 font-medium truncate">{asset.name}</span>
+        <button
+          onClick={onAdd}
+          title="Add to scene"
+          className="text-[10px] text-gray-500 hover:text-white px-1.5 py-0.5 rounded transition-colors"
+        >
+          + Scene
+        </button>
+        <button
+          onClick={onDownload}
+          title="Save SVG to Documents/Slate/Twitch Panels/"
+          className={`text-[10px] px-1.5 py-0.5 rounded transition-colors font-semibold ${
+            downloaded
+              ? 'text-green-400'
+              : 'text-[#9147ff] hover:text-white hover:bg-[#9147ff]/30'
+          }`}
+        >
+          {downloaded ? '✓ Saved' : '↓ Download'}
+        </button>
       </div>
     </div>
   )
