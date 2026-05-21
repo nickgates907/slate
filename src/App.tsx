@@ -18,6 +18,7 @@ import { useCameraDevices } from './hooks/useCameraDevices'
 import { exportLayout, importLayout } from './lib/layoutShare'
 import { OverlayTemplate } from './lib/overlayTemplates'
 import { TWITCH_CLIENT_ID } from './config/platforms'
+import { audioRegistry } from './lib/audioRegistry'
 
 function formatTime(seconds: number): string {
   const h = Math.floor(seconds / 3600).toString().padStart(2, '0')
@@ -42,6 +43,7 @@ export default function App() {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const liveTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const previewRef = useRef<HTMLDivElement>(null)
+  const mixCtxRef = useRef<AudioContext | null>(null)
 
   const recorder = useRecorder()
   const streamer = useStreamer()
@@ -126,9 +128,27 @@ export default function App() {
 
   // ── Handlers ──────────────────────────────────────────────────────────
 
+  // Mixes mic stream + any screen-capture audio streams into one MediaStream.
+  // Returns undefined if no audio is available at all.
+  const buildAudioStream = (): MediaStream | undefined => {
+    const streams: MediaStream[] = []
+    if (audio.stream.current) streams.push(audio.stream.current)
+    audioRegistry.getAll().forEach(s => { if (s.getAudioTracks().length > 0) streams.push(s) })
+    if (streams.length === 0) return undefined
+    if (streams.length === 1) return streams[0]
+    // Mix multiple sources via Web Audio API
+    if (mixCtxRef.current) mixCtxRef.current.close().catch(() => {})
+    const ctx = new AudioContext()
+    mixCtxRef.current = ctx
+    const dest = ctx.createMediaStreamDestination()
+    streams.forEach(s => ctx.createMediaStreamSource(s).connect(dest))
+    return dest.stream
+  }
+
   const toggleRecord = async () => {
     if (isRecording) {
       setIsRecording(false)
+      if (mixCtxRef.current) { mixCtxRef.current.close().catch(() => {}); mixCtxRef.current = null }
       const result = await recorder.stop()
       if (result) setRecordingResult(result)
     } else {
@@ -138,7 +158,7 @@ export default function App() {
         activeScene,
         previewRef.current,
         project.settings?.resolution ?? '1080p',
-        audio.active && audio.stream.current ? audio.stream.current : undefined,
+        buildAudioStream(),
       )
     }
   }
@@ -288,7 +308,7 @@ export default function App() {
         project.settings?.bitrate ?? 8,
         project.settings?.fps ?? 30,
         project.settings?.resolution ?? '1080p',
-        audio.active && audio.stream.current ? audio.stream.current : undefined,
+        buildAudioStream(),
         alerts.alertRef,
       )
       setStreamStatus('live')

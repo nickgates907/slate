@@ -3,6 +3,7 @@ import { SelfieSegmentation, Results } from '@mediapipe/selfie_segmentation'
 import { Source } from '../store'
 import { videoRegistry } from '../lib/videoRegistry'
 import { streamRegistry } from '../lib/streamRegistry'
+import { audioRegistry } from '../lib/audioRegistry'
 
 type StreamState = 'loading' | 'active' | 'idle' | 'error'
 
@@ -107,11 +108,25 @@ export default function VideoTile({ source }: VideoTileProps) {
     }
   }, [source.id, source.type, source.bgRemoval, streamState])
 
+  // Unregister screen audio when the VideoTile for a screen source unmounts
+  useEffect(() => {
+    if (source.type !== 'screen') return
+    return () => {
+      audioRegistry.unregister(source.id)
+      videoRegistry.unregister(source.id)
+      streamRef.current?.getTracks().forEach(t => t.stop())
+      streamRef.current = null
+    }
+  }, [source.id, source.type])
+
   const startScreenCapture = async () => {
     setStreamState('loading')
     try {
-      const stream = await navigator.mediaDevices.getDisplayMedia({ video: true })
+      const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true })
       streamRef.current = stream
+      if (stream.getAudioTracks().length > 0) {
+        audioRegistry.register(source.id, stream)
+      }
       if (videoRef.current) {
         videoRef.current.srcObject = stream
         videoRef.current.play().catch(() => {})
@@ -120,6 +135,7 @@ export default function VideoTile({ source }: VideoTileProps) {
       setStreamState('active')
       stream.getVideoTracks()[0]?.addEventListener('ended', () => {
         videoRegistry.unregister(source.id)
+        audioRegistry.unregister(source.id)
         setStreamState('idle')
         streamRef.current = null
       })
