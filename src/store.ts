@@ -77,6 +77,7 @@ export const defaultProject: SlateProject = {
       id: 'scene-1',
       name: 'Game capture',
       sources: [
+        { id: 'src-mic-1', type: 'audio', name: 'Microphone', visible: true, x: 0, y: 0, width: 0, height: 0, volume: 1 },
         { id: 'src-2', type: 'screen', name: 'Game window', visible: true, x: 0, y: 0, width: 640, height: 360 },
         { id: 'src-1', type: 'camera', name: 'Webcam', visible: true, x: 460, y: 200, width: 180, height: 100 },
       ],
@@ -85,6 +86,7 @@ export const defaultProject: SlateProject = {
       id: 'scene-2',
       name: 'Just chatting',
       sources: [
+        { id: 'src-mic-2', type: 'audio', name: 'Microphone', visible: true, x: 0, y: 0, width: 0, height: 0, volume: 1 },
         { id: 'src-3', type: 'avatar', name: 'Avatar cam', visible: true, x: 220, y: 80, width: 200, height: 200 },
       ],
     },
@@ -92,6 +94,7 @@ export const defaultProject: SlateProject = {
       id: 'scene-3',
       name: 'Screen share',
       sources: [
+        { id: 'src-mic-3', type: 'audio', name: 'Microphone', visible: true, x: 0, y: 0, width: 0, height: 0, volume: 1 },
         { id: 'src-4', type: 'screen', name: 'Desktop', visible: true, x: 0, y: 0, width: 640, height: 360 },
       ],
     },
@@ -100,6 +103,7 @@ export const defaultProject: SlateProject = {
       name: 'Starting Soon',
       background: { type: 'color', color: '#0d0d13' },
       sources: [
+        { id: 'src-mic-4', type: 'audio', name: 'Microphone', visible: true, x: 0, y: 0, width: 0, height: 0, volume: 1 },
         { id: 'src-5', type: 'text', name: 'Starting label', visible: true, x: 0, y: 130, width: 640, height: 60,
           text: 'Stream Starting Soon!', scrolling: false, anchor: 'free' },
         { id: 'src-6', type: 'text', name: 'Social scroll', visible: true, x: 0, y: 320, width: 640, height: 36,
@@ -112,6 +116,7 @@ export const defaultProject: SlateProject = {
       name: 'Sub Goal',
       background: { type: 'color', color: '#0d0d13' },
       sources: [
+        { id: 'src-mic-5', type: 'audio', name: 'Microphone', visible: true, x: 0, y: 0, width: 0, height: 0, volume: 1 },
         { id: 'src-7', type: 'screen', name: 'Game', visible: true, x: 0, y: 0, width: 640, height: 320 },
         { id: 'src-8', type: 'avatar', name: 'Cam', visible: true, x: 490, y: 220, width: 140, height: 140 },
         { id: 'src-9', type: 'text', name: 'Sub goal', visible: true, x: 0, y: 318, width: 640, height: 42,
@@ -123,6 +128,7 @@ export const defaultProject: SlateProject = {
       name: 'New Sub!',
       background: { type: 'color', color: '#0d0d13' },
       sources: [
+        { id: 'src-mic-6', type: 'audio', name: 'Microphone', visible: true, x: 0, y: 0, width: 0, height: 0, volume: 1 },
         { id: 'src-10', type: 'text', name: 'Hype banner', visible: true, x: 0, y: 100, width: 640, height: 70,
           text: '  🎉 NEW SUBSCRIBER!  🎉  THANK YOU!  🎉  NEW SUBSCRIBER!  🎉', scrolling: true, anchor: 'free' },
         { id: 'src-11', type: 'camera', name: 'Reaction cam', visible: true, x: 160, y: 185, width: 320, height: 180 },
@@ -135,6 +141,7 @@ export const defaultProject: SlateProject = {
       name: 'Raid!',
       background: { type: 'color', color: '#0d0d13' },
       sources: [
+        { id: 'src-mic-7', type: 'audio', name: 'Microphone', visible: true, x: 0, y: 0, width: 0, height: 0, volume: 1 },
         { id: 'src-13', type: 'text', name: 'Raid banner', visible: true, x: 0, y: 100, width: 640, height: 70,
           text: '  ⚔️  RAID INCOMING!  ⚔️  WELCOME RAIDERS!  ⚔️  RAID INCOMING!  ⚔️', scrolling: true, anchor: 'free' },
         { id: 'src-14', type: 'camera', name: 'Cam', visible: true, x: 200, y: 185, width: 240, height: 135 },
@@ -147,6 +154,7 @@ export const defaultProject: SlateProject = {
       name: 'End Screen',
       background: { type: 'color', color: '#0d0d13' },
       sources: [
+        { id: 'src-mic-8', type: 'audio', name: 'Microphone', visible: true, x: 0, y: 0, width: 0, height: 0, volume: 1 },
         { id: 'src-16', type: 'text', name: 'Thanks', visible: true, x: 0, y: 120, width: 640, height: 70,
           text: 'Thanks for watching!', scrolling: false, anchor: 'free' },
         { id: 'src-17', type: 'text', name: 'CTA scroll', visible: true, x: 0, y: 310, width: 640, height: 36,

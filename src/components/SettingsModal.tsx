@@ -6,10 +6,11 @@ interface SettingsModalProps {
   settings: RecordingSettings
   saveFolder: string
   onSave: (settings: RecordingSettings, saveFolder: string) => void
+  onRestoreScenes: () => void
   onClose: () => void
 }
 
-export default function SettingsModal({ settings, saveFolder, onSave, onClose }: SettingsModalProps) {
+export default function SettingsModal({ settings, saveFolder, onSave, onRestoreScenes, onClose }: SettingsModalProps) {
   const [s, setS] = useState(settings)
   const [folder, setFolder] = useState(saveFolder)
 
@@ -126,7 +127,18 @@ export default function SettingsModal({ settings, saveFolder, onSave, onClose }:
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end gap-2 px-5 pb-5">
+        <div className="flex items-center gap-2 px-5 pb-5">
+          <button
+            onClick={() => { onRestoreScenes(); onClose() }}
+            className="px-3 py-2 bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5"
+            title="Adds Starting Soon, Sub Goal, New Sub, Raid, and End Screen scenes if you don't have them"
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/>
+            </svg>
+            Restore default scenes
+          </button>
+          <div className="flex-1" />
           <button onClick={onClose} className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-semibold rounded-lg transition-colors">
             Cancel
           </button>

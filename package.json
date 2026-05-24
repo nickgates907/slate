@@ -1,7 +1,7 @@
 {
   "name": "slate",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -14,7 +14,8 @@
   "dependencies": {
     "@mediapipe/selfie_segmentation": "^0.1.1675465747",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "webm-muxer": "^5.1.4"
   },
   "devDependencies": {
     "@tauri-apps/api": "^1.5.0",

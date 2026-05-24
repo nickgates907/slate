@@ -13,6 +13,10 @@ src-tauri/target/
 *.key
 *.key.pub
 
+# Large bundled binaries (download via CI/setup script instead)
+src-tauri/binaries/*.exe
+src-tauri/binaries/*.dll
+
 # OS
 .DS_Store
 Thumbs.db

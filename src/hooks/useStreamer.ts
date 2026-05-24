@@ -1,5 +1,7 @@
-import { useRef, useCallback } from 'react'
+import { useRef, useCallback, useState } from 'react'
 import { invoke } from '@tauri-apps/api/tauri'
+import { writeBinaryFile } from '@tauri-apps/api/fs'
+import { appDir } from '@tauri-apps/api/path'
 import { Muxer, StreamTarget } from 'webm-muxer'
 import { videoRegistry } from '../lib/videoRegistry'
 import { Scene } from '../store'
@@ -149,6 +151,18 @@ export function useStreamer() {
   // VP8 fallback ref
   const recorderRef = useRef<MediaRecorder | null>(null)
 
+  // Clip buffer — rolling 30-second MediaRecorder running in parallel
+  const clipRecorderRef  = useRef<MediaRecorder | null>(null)
+  const clipInitRef      = useRef<Blob | null>(null)           // first chunk (WebM header)
+  const clipChunksRef    = useRef<{ blob: Blob; ts: number }[]>([])
+  const [isClipping, setIsClipping] = useState(false)
+
+  // Stream health stats
+  const [streamStats, setStreamStats] = useState({ fps: 0, kbps: 0 })
+  const statsFrames = useRef(0)
+  const statsBytes  = useRef(0)
+  const statsIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
   const start = useCallback(async (
     scene: Scene,
     previewEl: HTMLDivElement,
@@ -201,8 +215,47 @@ export function useStreamer() {
     const sendChunk = (data: Uint8Array) => {
       if (!activeRef.current) return
       const sock = wsRef.current
-      if (sock && sock.readyState === WebSocket.OPEN) sock.send(data)
+      if (sock && sock.readyState === WebSocket.OPEN) {
+        sock.send(data)
+        statsBytes.current += data.byteLength
+      }
     }
+
+    // ── Clip buffer: parallel low-bitrate MediaRecorder on the same canvas ──
+    // Keeps a rolling 30s window; clip() assembles and saves the last 30s.
+    const clipMime = MediaRecorder.isTypeSupported('video/webm;codecs=vp8')
+      ? 'video/webm;codecs=vp8'
+      : 'video/webm'
+    const clipStream = canvas.captureStream(fps)
+    if (audioStream) audioStream.getAudioTracks().forEach(t => clipStream.addTrack(t.clone()))
+    const clipRecorder = new MediaRecorder(clipStream, {
+      mimeType: clipMime,
+      videoBitsPerSecond: 2_000_000,
+    })
+    clipInitRef.current = null
+    clipChunksRef.current = []
+    clipRecorder.ondataavailable = (e) => {
+      if (e.data.size === 0) return
+      if (!clipInitRef.current) {
+        clipInitRef.current = e.data     // first chunk = WebM EBML header
+      } else {
+        const now = Date.now()
+        clipChunksRef.current.push({ blob: e.data, ts: now })
+        // Evict chunks older than 32 seconds
+        clipChunksRef.current = clipChunksRef.current.filter(c => now - c.ts < 32_000)
+      }
+    }
+    clipRecorder.start(1000) // 1-second slices
+    clipRecorderRef.current = clipRecorder
+
+    // Stats: update FPS + kbps every second
+    statsFrames.current = 0
+    statsBytes.current = 0
+    statsIntervalRef.current = setInterval(() => {
+      setStreamStats({ fps: statsFrames.current, kbps: Math.round(statsBytes.current * 8 / 1000) })
+      statsFrames.current = 0
+      statsBytes.current = 0
+    }, 1000)
 
     if (h264Codec !== null) {
       // ── WebCodecs path: H.264 video + Opus audio via webm-muxer ─────────────
@@ -312,6 +365,7 @@ export function useStreamer() {
             const frame = new VideoFrame(canvas, { timestamp: now * 1000 })
             videoEncoder.encode(frame, { keyFrame: isKeyFrame })
             frame.close()
+            statsFrames.current++
           }
         }
         rafRef.current = requestAnimationFrame(draw)
@@ -346,6 +400,7 @@ export function useStreamer() {
           lastFrameTime2 = now
           drawScene(ctx, sceneRef.current, outW, outH, scaleX, scaleY, imgCache, scrollOffsets, bgImgRef, bgImgSrcRef)
           if (alertRef?.current) drawAlert(ctx, alertRef.current, outW, outH)
+          statsFrames.current++
         }
         rafRef.current = requestAnimationFrame(draw)
       }
@@ -357,8 +412,38 @@ export function useStreamer() {
     sceneRef.current = scene
   }, [])
 
+  // Save the last 30 seconds as a clip file in Documents/Slate Recordings/
+  const clip = useCallback(async (saveFolder?: string): Promise<string | null> => {
+    const initBlob = clipInitRef.current
+    const chunks = clipChunksRef.current
+    if (!initBlob || chunks.length === 0) return null
+
+    setIsClipping(true)
+    try {
+      const cutoff = Date.now() - 30_000
+      const recent = chunks.filter(c => c.ts >= cutoff)
+      const blob = new Blob([initBlob, ...recent.map(c => c.blob)], { type: 'video/webm' })
+      const arrayBuf = await blob.arrayBuffer()
+      const uint8 = new Uint8Array(arrayBuf)
+
+      const folder = saveFolder || `${await appDir()}Slate Recordings`
+      const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
+      const filePath = `${folder}\\Clip_${stamp}.webm`
+      await writeBinaryFile(filePath, uint8)
+      return filePath
+    } catch (e) {
+      console.error('Clip save failed:', e)
+      return null
+    } finally {
+      setIsClipping(false)
+    }
+  }, [])
+
   const stop = useCallback(async () => {
     activeRef.current = false
+
+    if (statsIntervalRef.current) { clearInterval(statsIntervalRef.current); statsIntervalRef.current = null }
+    setStreamStats({ fps: 0, kbps: 0 })
 
     if (rafRef.current !== null) {
       cancelAnimationFrame(rafRef.current)
@@ -371,6 +456,15 @@ export function useStreamer() {
       wsRef.current.close()
       wsRef.current = null
     }
+
+    // Clip buffer cleanup
+    const clipRecorder = clipRecorderRef.current
+    clipRecorderRef.current = null
+    if (clipRecorder && clipRecorder.state !== 'inactive') {
+      clipRecorder.stop()
+    }
+    clipInitRef.current = null
+    clipChunksRef.current = []
 
     // VP8 fallback cleanup
     const recorder = recorderRef.current
@@ -404,5 +498,5 @@ export function useStreamer() {
     await invoke('stop_stream').catch(console.error)
   }, [])
 
-  return { start, stop, updateScene }
+  return { start, stop, updateScene, streamStats, clip, isClipping }
 }

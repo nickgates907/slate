@@ -31,7 +31,28 @@ export default function Canvas({
   scene, isRecording, recordingTime, onUpdateSource, onUpdateBackground, previewRef,
   onExportLayout, onImportLayout, onOpenOverlays,
 }: CanvasProps) {
-  const bg = scene.background ?? defaultBackground
+  // ── Scene transition: fade out → swap → fade in when scene.id changes ──
+  const [displayScene, setDisplayScene] = useState(scene)
+  const [fadeOpacity, setFadeOpacity] = useState(1)
+  const prevSceneIdRef = useRef(scene.id)
+
+  useEffect(() => {
+    if (scene.id === prevSceneIdRef.current) {
+      // Same scene — update sources/bg live without any fade
+      setDisplayScene(scene)
+      return
+    }
+    // New scene — crossfade
+    prevSceneIdRef.current = scene.id
+    setFadeOpacity(0)
+    const t = setTimeout(() => {
+      setDisplayScene(scene)
+      setFadeOpacity(1)
+    }, 150)
+    return () => clearTimeout(t)
+  }, [scene])
+
+  const bg = displayScene.background ?? defaultBackground
   const [showBgPicker, setShowBgPicker] = useState(false)
   const canvasRef = useRef<HTMLDivElement>(null)
   const letterboxRef = useRef<HTMLDivElement>(null)
@@ -148,7 +169,7 @@ export default function Canvas({
     onUpdateSource(sourceId, { imageSrc: dataUrl })
   }
 
-  const visibleSources = scene.sources.filter(s => s.visible && s.type !== 'audio')
+  const visibleSources = displayScene.sources.filter(s => s.visible && s.type !== 'audio')
 
   return (
     <div className="flex-1 flex flex-col min-w-0">
@@ -175,6 +196,8 @@ export default function Canvas({
             ...(bg.type === 'image' && bg.imageSrc
               ? { backgroundImage: `url(${bg.imageSrc})`, backgroundSize: 'cover', backgroundPosition: 'center' }
               : { backgroundColor: bg.color }),
+            opacity: fadeOpacity,
+            transition: 'opacity 150ms ease',
           }}
         >
 

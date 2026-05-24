@@ -29,6 +29,7 @@ export default function SplashScreen({ onDone }: { onDone: () => void }) {
       </div>
 
       <p className="absolute bottom-8 text-white/25 text-xs tracking-widest animate-pulse">CLICK ANYWHERE TO LAUNCH</p>
+      <p className="absolute bottom-4 left-4 text-white/20 text-[10px] font-mono tracking-wider">v0.2.0</p>
     </div>
   )
 }

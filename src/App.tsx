@@ -13,6 +13,8 @@ import SplashScreen from './components/SplashScreen'
 import { useRecorder, RecordingResult } from './hooks/useRecorder'
 import { useStreamer } from './hooks/useStreamer'
 import { useAlerts } from './hooks/useAlerts'
+import { useChat } from './hooks/useChat'
+import ChatOverlay from './components/ChatOverlay'
 import { useAudioCapture } from './hooks/useAudioCapture'
 import { useCameraDevices } from './hooks/useCameraDevices'
 import { exportLayout, importLayout } from './lib/layoutShare'
@@ -41,6 +43,13 @@ export default function App() {
   const [streamStatus, setStreamStatus] = useState<'idle' | 'connecting' | 'live'>('idle')
   const [liveSeconds, setLiveSeconds] = useState(0)
   const [dark, setDark] = useState(false)
+  const [subCurrent, setSubCurrent] = useState(0)
+  const [subGoal, setSubGoal] = useState(50)
+  // Refs so the onSubRef callback always sees the latest values without stale closures
+  const subCurrentRef = useRef(0)
+  const subGoalRef    = useRef(50)
+  subCurrentRef.current = subCurrent
+  subGoalRef.current    = subGoal
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const liveTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const previewRef = useRef<HTMLDivElement>(null)
@@ -49,6 +58,7 @@ export default function App() {
   const recorder = useRecorder()
   const streamer = useStreamer()
   const alerts = useAlerts()
+  const chat = useChat()
   const audio = useAudioCapture()
   const cameraDevices = useCameraDevices()
 
@@ -93,11 +103,32 @@ export default function App() {
     if (streamStatus === 'live') streamer.updateScene(activeScene)
   }, [activeScene, streamStatus]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Scene hotkeys: 1–9 switch to that scene index
+  // Global hotkeys
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement).tagName
       if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement).isContentEditable) return
+
+      // Ctrl+Shift+L — Go Live / open streaming modal
+      if (e.ctrlKey && e.shiftKey && e.key === 'L') {
+        e.preventDefault()
+        if (streamStatus === 'idle') setShowStreaming(true)
+        return
+      }
+      // Ctrl+Shift+E — End stream
+      if (e.ctrlKey && e.shiftKey && e.key === 'E') {
+        e.preventDefault()
+        if (streamStatus === 'live') endStream()
+        return
+      }
+      // Ctrl+Shift+R — Toggle recording
+      if (e.ctrlKey && e.shiftKey && e.key === 'R') {
+        e.preventDefault()
+        toggleRecord()
+        return
+      }
+
+      // 1–9 — switch scene
       const idx = parseInt(e.key) - 1
       if (!isNaN(idx) && idx >= 0 && idx < project.scenes.length) {
         selectScene(project.scenes[idx].id)
@@ -126,6 +157,17 @@ export default function App() {
     }
     return () => { if (liveTimerRef.current) clearInterval(liveTimerRef.current) }
   }, [streamStatus])
+
+  // Auto-increment sub goal counter when Twitch fires subscribe / gift_sub events
+  useEffect(() => {
+    alerts.onSubRef.current = (type, amount) => {
+      const increment = type === 'gift_sub' ? (amount ?? 1) : 1
+      const newCurrent = subCurrentRef.current + increment
+      setSubCurrent(newCurrent)
+      updateSubGoal(newCurrent, subGoalRef.current)
+    }
+    return () => { alerts.onSubRef.current = null }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Handlers ──────────────────────────────────────────────────────────
 
@@ -169,9 +211,17 @@ export default function App() {
 
   const addScene = () => {
     const id = `scene-${Date.now()}`
-    const newScene: Scene = { id, name: `Scene ${project.scenes.length + 1}`, sources: [] }
+    // New scenes start with mic on so streamers never go live with no audio
+    const newScene: Scene = {
+      id,
+      name: `Scene ${project.scenes.length + 1}`,
+      sources: [
+        { id: `src-mic-${Date.now()}`, type: 'audio', name: 'Microphone', visible: true, x: 0, y: 0, width: 0, height: 0, volume: 1 },
+      ],
+    }
     setProject(p => ({ ...p, scenes: [...p.scenes, newScene], activeSceneId: id }))
   }
+
 
   const removeScene = (sceneId: string) => {
     if (project.scenes.length <= 1) return
@@ -202,6 +252,27 @@ export default function App() {
     const source = activeScene.sources.find(s => s.id === sourceId)
     if (source) updateSource(sourceId, { visible: !source.visible })
   }
+
+  // Toggle mic in the active scene. Adds a mic source if none exists yet.
+  const toggleMic = useCallback(() => {
+    const audioSrc = activeScene.sources.find(s => s.type === 'audio')
+    if (audioSrc) {
+      updateSource(audioSrc.id, { visible: !audioSrc.visible })
+    } else {
+      const newMic: Source = {
+        id: `src-mic-${Date.now()}`, type: 'audio', name: 'Microphone',
+        visible: true, x: 0, y: 0, width: 0, height: 0, volume: 1,
+      }
+      setProject(p => ({
+        ...p,
+        scenes: p.scenes.map(scene =>
+          scene.id === p.activeSceneId
+            ? { ...scene, sources: [newMic, ...scene.sources] }
+            : scene
+        ),
+      }))
+    }
+  }, [activeScene.sources, updateSource])
 
   const removeSource = useCallback((sourceId: string) => {
     setProject(p => ({
@@ -258,6 +329,22 @@ export default function App() {
     const newScene: Scene = { id, ...layout }
     setProject(p => ({ ...p, scenes: [...p.scenes, newScene], activeSceneId: id }))
   }
+
+  // Update the sub goal number in any scene containing a "Sub goal" text source
+  const updateSubGoal = useCallback((current: number, goal: number) => {
+    const text = `  ⭐ Sub Goal: ${current} / ${goal}  —  Help us reach the goal!  ⭐`
+    setProject(p => ({
+      ...p,
+      scenes: p.scenes.map(scene => ({
+        ...scene,
+        sources: scene.sources.map(src =>
+          src.name === 'Sub goal' && src.type === 'text'
+            ? { ...src, text }
+            : src
+        ),
+      })),
+    }))
+  }, [])
 
   const handleLoadTemplate = (template: OverlayTemplate) => {
     const id = `scene-${Date.now()}`
@@ -316,6 +403,13 @@ export default function App() {
       setStreamStatus('live')
       if (twitchToken && TWITCH_CLIENT_ID) {
         alerts.connect(twitchToken, TWITCH_CLIENT_ID).catch(console.error)
+        // Derive channel name from token — fetch /users and grab login name
+        fetch('https://api.twitch.tv/helix/users', {
+          headers: { Authorization: `Bearer ${twitchToken}`, 'Client-Id': TWITCH_CLIENT_ID },
+        })
+          .then(r => r.json())
+          .then(d => { const login = d.data?.[0]?.login; if (login) chat.connect(twitchToken, login) })
+          .catch(console.error)
       }
     } catch (e) {
       console.error('Stream start failed:', e)
@@ -325,6 +419,7 @@ export default function App() {
 
   const endStream = async () => {
     alerts.disconnect()
+    chat.disconnect()
     await streamer.stop()
     setStreamStatus('idle')
     setShowStreaming(false)
@@ -387,6 +482,15 @@ export default function App() {
           streamStatus={streamStatus}
           onOpenStreaming={() => setShowStreaming(true)}
           liveTime={formatTime(liveSeconds)}
+          micEnabled={micEnabled}
+          onToggleMic={toggleMic}
+          audioLevel={audio.level}
+          streamStats={streamer.streamStats}
+          subCurrent={subCurrent}
+          subGoal={subGoal}
+          onUpdateSubGoal={(c, g) => { setSubCurrent(c); setSubGoal(g); updateSubGoal(c, g) }}
+          onClip={() => streamer.clip(project.settings?.saveFolder).then(p => { if (p) console.log('Clip saved:', p) })}
+          isClipping={streamer.isClipping}
         />
         <div className="flex flex-1 overflow-hidden">
           <Sidebar
@@ -414,6 +518,7 @@ export default function App() {
               onOpenOverlays={() => setShowOverlays(true)}
             />
             {alerts.activeAlert && <AlertOverlay alert={alerts.activeAlert} />}
+            {streamStatus === 'live' && <ChatOverlay messages={chat.messages} />}
           </div>
           <SourcesPanel
             sources={activeScene.sources}
@@ -460,6 +565,12 @@ export default function App() {
           onSave={(newSettings, newFolder) =>
             setProject(p => ({ ...p, settings: { ...newSettings, saveFolder: newFolder } }))
           }
+          onRestoreScenes={() => {
+            const defaultNames = ['Starting Soon', 'Sub Goal', 'New Sub!', 'Raid!', 'End Screen']
+            const existing = new Set(project.scenes.map(s => s.name))
+            const toAdd = defaultProject.scenes.filter(s => defaultNames.includes(s.name) && !existing.has(s.name))
+            if (toAdd.length > 0) setProject(p => ({ ...p, scenes: [...p.scenes, ...toAdd] }))
+          }}
           onClose={() => setShowSettings(false)}
         />
       )}

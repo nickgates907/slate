@@ -23,6 +23,8 @@ export function useAlerts() {
   const timerRef     = useRef<ReturnType<typeof setTimeout> | null>(null)
   const activeRef    = useRef(false)
   const [activeAlert, setActiveAlert] = useState<ActiveAlert | null>(null)
+  // Called whenever a subscribe or gift_sub event arrives — used to auto-increment sub goal
+  const onSubRef = useRef<((type: AlertType, amount?: number) => void) | null>(null)
 
   const advance = useCallback(() => {
     const next = queueRef.current.shift()
@@ -35,6 +37,9 @@ export function useAlerts() {
 
   const enqueue = useCallback((event: AlertEvent) => {
     queueRef.current.push(event)
+    if (event.type === 'subscribe' || event.type === 'gift_sub') {
+      onSubRef.current?.(event.type, event.amount)
+    }
     if (!alertRef.current) advance()
   }, [advance])
 
@@ -129,5 +134,5 @@ export function useAlerts() {
     enqueue({ type, username: 'TestUser', amount: type === 'cheer' ? 100 : type === 'gift_sub' ? 5 : type === 'raid' ? 42 : undefined })
   }, [enqueue])
 
-  return { connect, disconnect, testAlert, alertRef, activeAlert }
+  return { connect, disconnect, testAlert, alertRef, activeAlert, onSubRef }
 }
