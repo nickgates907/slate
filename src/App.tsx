@@ -83,13 +83,15 @@ export default function App() {
     project.scenes.find(s => s.id === project.activeSceneId) ??
     project.scenes[0]
 
-  const micEnabled = activeScene.sources.some(s => s.type === 'audio' && s.visible)
+  // Global mic on/off — independent of scenes so audio never cuts out when switching scenes.
+  // Per-scene audio sources only control volume; this toggle controls capture entirely.
+  const [micOn, setMicOn] = useState(true)
   const micVolume = activeScene.sources.find(s => s.type === 'audio')?.volume ?? 1
 
   useEffect(() => {
-    if (micEnabled) audio.start()
+    if (micOn) audio.start()
     else audio.stop()
-  }, [micEnabled]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [micOn]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     audio.setGain(micVolume)
@@ -253,26 +255,8 @@ export default function App() {
     if (source) updateSource(sourceId, { visible: !source.visible })
   }
 
-  // Toggle mic in the active scene. Adds a mic source if none exists yet.
-  const toggleMic = useCallback(() => {
-    const audioSrc = activeScene.sources.find(s => s.type === 'audio')
-    if (audioSrc) {
-      updateSource(audioSrc.id, { visible: !audioSrc.visible })
-    } else {
-      const newMic: Source = {
-        id: `src-mic-${Date.now()}`, type: 'audio', name: 'Microphone',
-        visible: true, x: 0, y: 0, width: 0, height: 0, volume: 1,
-      }
-      setProject(p => ({
-        ...p,
-        scenes: p.scenes.map(scene =>
-          scene.id === p.activeSceneId
-            ? { ...scene, sources: [newMic, ...scene.sources] }
-            : scene
-        ),
-      }))
-    }
-  }, [activeScene.sources, updateSource])
+  // Global mic toggle — one button controls capture for the entire stream/recording
+  const toggleMic = useCallback(() => setMicOn(m => !m), [])
 
   const removeSource = useCallback((sourceId: string) => {
     setProject(p => ({
@@ -482,7 +466,7 @@ export default function App() {
           streamStatus={streamStatus}
           onOpenStreaming={() => setShowStreaming(true)}
           liveTime={formatTime(liveSeconds)}
-          micEnabled={micEnabled}
+          micEnabled={micOn}
           onToggleMic={toggleMic}
           audioLevel={audio.level}
           streamStats={streamer.streamStats}
