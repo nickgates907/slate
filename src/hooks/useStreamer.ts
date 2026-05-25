@@ -366,26 +366,32 @@ export function useStreamer() {
         workletNode.connect(audioCtx.destination)
       }
 
-      // RAF loop — capped to stream FPS to avoid wasting CPU on the monitor refresh rate
+      // Drift-corrected setTimeout loop — more stable than rAF because it's not
+      // tied to vsync and keeps firing even when the Tauri window loses focus.
       const frameDuration = 1000 / fps
-      let lastFrameTime = 0
-      const draw = (now: number) => {
-        if (now - lastFrameTime >= frameDuration) {
-          lastFrameTime = now
-          drawScene(ctx, sceneRef.current, outW, outH, scaleX, scaleY, imgCache, scrollOffsets, bgImgRef, bgImgSrcRef)
-          if (alertRef?.current) drawAlert(ctx, alertRef.current, outW, outH)
+      let expectedAt = performance.now()
+      const draw = () => {
+        if (!activeRef.current) return
+        const now = performance.now()
 
-          if (videoEncoder.state === 'configured') {
-            const isKeyFrame = frameCount++ % keyFrameInterval === 0
-            const frame = new VideoFrame(canvas, { timestamp: now * 1000 })
-            videoEncoder.encode(frame, { keyFrame: isKeyFrame })
-            frame.close()
-            statsFrames.current++
-          }
+        drawScene(ctx, sceneRef.current, outW, outH, scaleX, scaleY, imgCache, scrollOffsets, bgImgRef, bgImgSrcRef)
+        if (alertRef?.current) drawAlert(ctx, alertRef.current, outW, outH)
+
+        if (videoEncoder.state === 'configured') {
+          const isKeyFrame = frameCount++ % keyFrameInterval === 0
+          const frame = new VideoFrame(canvas, { timestamp: now * 1000 })
+          videoEncoder.encode(frame, { keyFrame: isKeyFrame })
+          frame.close()
+          statsFrames.current++
         }
-        rafRef.current = requestAnimationFrame(draw)
+
+        // Schedule next frame accounting for how long this one took
+        expectedAt += frameDuration
+        const drift = performance.now() - expectedAt
+        const delay = Math.max(0, frameDuration - drift)
+        rafRef.current = setTimeout(draw, delay) as unknown as number
       }
-      requestAnimationFrame(draw)
+      rafRef.current = setTimeout(draw, 0) as unknown as number
 
     } else {
       // ── VP8 fallback: MediaRecorder → ffmpeg re-encodes ──────────────────────
@@ -409,17 +415,19 @@ export function useStreamer() {
       recorderRef.current = recorder
 
       const frameDuration2 = 1000 / fps
-      let lastFrameTime2 = 0
-      const draw = (now: number) => {
-        if (now - lastFrameTime2 >= frameDuration2) {
-          lastFrameTime2 = now
-          drawScene(ctx, sceneRef.current, outW, outH, scaleX, scaleY, imgCache, scrollOffsets, bgImgRef, bgImgSrcRef)
-          if (alertRef?.current) drawAlert(ctx, alertRef.current, outW, outH)
-          statsFrames.current++
-        }
-        rafRef.current = requestAnimationFrame(draw)
+      let expectedAt2 = performance.now()
+      const draw = () => {
+        if (!activeRef.current) return
+        drawScene(ctx, sceneRef.current, outW, outH, scaleX, scaleY, imgCache, scrollOffsets, bgImgRef, bgImgSrcRef)
+        if (alertRef?.current) drawAlert(ctx, alertRef.current, outW, outH)
+        statsFrames.current++
+
+        expectedAt2 += frameDuration2
+        const drift2 = performance.now() - expectedAt2
+        const delay2 = Math.max(0, frameDuration2 - drift2)
+        rafRef.current = setTimeout(draw, delay2) as unknown as number
       }
-      requestAnimationFrame(draw)
+      rafRef.current = setTimeout(draw, 0) as unknown as number
     }
   }, [])
 
@@ -461,7 +469,7 @@ export function useStreamer() {
     setStreamStats({ fps: 0, kbps: 0 })
 
     if (rafRef.current !== null) {
-      cancelAnimationFrame(rafRef.current)
+      clearTimeout(rafRef.current)
       rafRef.current = null
     }
     sceneRef.current = null
