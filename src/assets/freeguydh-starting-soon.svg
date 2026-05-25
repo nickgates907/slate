@@ -309,10 +309,34 @@
   font-size="13" letter-spacing="5"
   fill="white" opacity=".35">GATHERING ENERGY</text>
 
+<!-- Powered by Slate badge (below energy bar) -->
+<g transform="translate(960, 878)" text-anchor="middle">
+  <!-- Slate logo mark — simplified shield/S icon -->
+  <g transform="translate(-62, -9)">
+    <!-- Shield outline -->
+    <path d="M0 0 L10 0 L10 14 Q5 18 0 14 Z" fill="none" stroke="url(#lineGrad)" stroke-width="1.2" opacity=".7"/>
+    <!-- S letterform inside shield -->
+    <text x="5" y="11" text-anchor="middle"
+      font-family="'Segoe UI',Arial,sans-serif"
+      font-size="8" font-weight="800"
+      fill="url(#lineGrad)" opacity=".8">S</text>
+  </g>
+  <!-- "powered by" label -->
+  <text x="-42" y="4"
+    font-family="'Segoe UI',Arial,sans-serif"
+    font-size="11" letter-spacing="2" font-weight="400"
+    fill="white" opacity=".30">powered by</text>
+  <!-- SLATE wordmark -->
+  <text x="-42" y="18"
+    font-family="'Segoe UI',Arial,sans-serif"
+    font-size="16" letter-spacing="6" font-weight="700"
+    fill="url(#lineGrad)" opacity=".70">SLATE</text>
+</g>
+
 <!-- Follow CTA -->
 <text x="960" y="1040"
   text-anchor="middle"
   font-family="'Segoe UI',Arial,sans-serif"
   font-size="20" letter-spacing="5" font-weight="400"
-  fill="white" opacity=".28">FOLLOW TO NEVER MISS A STREAM  •  STREAMS WITH SLATE</text>
+  fill="white" opacity=".28">FOLLOW TO NEVER MISS A STREAM</text>
 </svg>
