@@ -319,12 +319,15 @@
     font-family="'Segoe UI',Arial,sans-serif"
     font-size="13" letter-spacing="3" font-weight="400"
     fill="white" opacity="0.45">powered by</text>
-  <!-- SLATE wordmark -->
-  <text x="-78" y="19"
+  <!-- SLATE wordmark — bright white, larger, drop-shadow for depth -->
+  <filter id="slateShadow" x="-20%" y="-20%" width="140%" height="140%">
+    <feDropShadow dx="0" dy="1" stdDeviation="3" flood-color="#000" flood-opacity="0.6"/>
+  </filter>
+  <text x="-80" y="21"
     text-anchor="start"
     font-family="'Segoe UI',Arial,sans-serif"
-    font-size="28" letter-spacing="8" font-weight="700"
-    fill="url(#lineGrad)" opacity="0.85">SLATE</text>
+    font-size="34" letter-spacing="10" font-weight="800"
+    fill="white" opacity="0.95" filter="url(#slateShadow)">SLATE</text>
 </g>
 
 <!-- Follow CTA -->
