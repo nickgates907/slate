@@ -36,42 +36,68 @@ export const streamRegistry = {
   },
 }
 
-// ── Screen capture registry ──────────────────────────────────────────────────
-// Caches screen/display capture streams by sourceId so they persist across
-// scene switches. When the user stops sharing (track 'ended') the cache
-// entry is automatically removed. Call screenRegistry.set() when capture
-// starts, screenRegistry.release() when the source is permanently removed,
-// and screenRegistry.get() on mount to reuse an existing stream.
-const screenCache = new Map<string, MediaStream>()
+// ── Global screen capture registry ──────────────────────────────────────────
+// ONE stream shared across every scene. Select screen once → all screen
+// sources on all scenes reuse the same capture automatically.
+// Audio is registered under the fixed key '__screen__' so it stays in the
+// stream mix regardless of which scene is currently active.
+//
+// VideoTile only needs to register/unregister VIDEO (per sourceId for the
+// canvas renderer). Audio is owned here and never touched by VideoTile.
+
+import { audioRegistry } from './audioRegistry'
+
+let _globalStream: MediaStream | null = null
 
 export const screenRegistry = {
-  /** Store a newly captured stream. */
-  set(sourceId: string, stream: MediaStream): void {
-    // Watch for the user clicking "Stop sharing" in the browser bar
+  /** Called when the user picks a new display to share. */
+  set(_sourceId: string, stream: MediaStream): void {
+    // Stop any previous capture
+    if (_globalStream) {
+      _globalStream.getTracks().forEach(t => t.stop())
+      audioRegistry.unregister('__screen__')
+    }
+    _globalStream = stream
+
+    // Register audio once, globally — survives scene switches
+    if (stream.getAudioTracks().length > 0) {
+      audioRegistry.register('__screen__', stream)
+    }
+
+    // Auto-cleanup when user clicks "Stop sharing" in the browser bar
     stream.getVideoTracks()[0]?.addEventListener('ended', () => {
-      screenCache.delete(sourceId)
+      if (_globalStream === stream) {
+        _globalStream = null
+        audioRegistry.unregister('__screen__')
+      }
     })
-    screenCache.set(sourceId, stream)
   },
 
-  /** Returns the cached stream if still active, or null. */
-  get(sourceId: string): MediaStream | null {
-    const stream = screenCache.get(sourceId)
-    if (!stream) return null
-    // If all video tracks have ended, treat as gone
-    if (stream.getVideoTracks().every(t => t.readyState === 'ended')) {
-      screenCache.delete(sourceId)
+  /**
+   * Returns the live global stream if one exists, regardless of sourceId.
+   * Any scene's screen source can call this to instantly get the active capture.
+   */
+  get(_sourceId: string): MediaStream | null {
+    if (!_globalStream) return null
+    if (_globalStream.getVideoTracks().every(t => t.readyState === 'ended')) {
+      _globalStream = null
+      audioRegistry.unregister('__screen__')
       return null
     }
-    return stream
+    return _globalStream
   },
 
-  /** Permanently remove and stop a cached stream (source deleted from scene). */
-  release(sourceId: string): void {
-    const stream = screenCache.get(sourceId)
-    if (stream) {
-      stream.getTracks().forEach(t => t.stop())
-      screenCache.delete(sourceId)
+  /** True if a live screen capture exists (use to show/hide "Select screen" UI). */
+  isActive(): boolean {
+    return !!screenRegistry.get('__check__')
+  },
+
+  /** Called when a screen source is permanently deleted from a scene. */
+  release(_sourceId: string): void {
+    if (_globalStream) {
+      _globalStream.getTracks().forEach(t => t.stop())
+      _globalStream = null
+      audioRegistry.unregister('__screen__')
     }
   },
 }

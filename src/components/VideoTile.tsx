@@ -3,7 +3,6 @@ import { SelfieSegmentation, Results } from '@mediapipe/selfie_segmentation'
 import { Source } from '../store'
 import { videoRegistry } from '../lib/videoRegistry'
 import { streamRegistry, screenRegistry } from '../lib/streamRegistry'
-import { audioRegistry } from '../lib/audioRegistry'
 
 type StreamState = 'loading' | 'active' | 'idle' | 'error'
 
@@ -108,8 +107,9 @@ export default function VideoTile({ source }: VideoTileProps) {
     }
   }, [source.id, source.type, source.bgRemoval, streamState])
 
-  // Screen capture: attach existing stream from registry on mount (survives scene switches),
-  // and clean up only on unmount WITHOUT stopping the tracks so it stays alive.
+  // Screen capture: one GLOBAL stream shared across all scenes.
+  // VideoTile only manages video registration (per sourceId for the canvas renderer).
+  // Audio is owned by screenRegistry under '__screen__' and never touched here.
   useEffect(() => {
     if (source.type !== 'screen') return
 
@@ -120,15 +120,13 @@ export default function VideoTile({ source }: VideoTileProps) {
         videoRef.current.srcObject = existing
         videoRef.current.play().catch(() => {})
       }
-      if (existing.getAudioTracks().length > 0) audioRegistry.register(source.id, existing)
+      // Register video only — audio is managed globally by screenRegistry
       videoRegistry.register(source.id, videoRef.current!)
       setStreamState('active')
     }
 
     return () => {
-      // DO NOT stop tracks — stream lives in screenRegistry across scene switches.
-      // Only unregister from video/audio registries so the next mount re-registers fresh.
-      audioRegistry.unregister(source.id)
+      // Only unregister video — never touch audio (it lives in screenRegistry)
       videoRegistry.unregister(source.id)
       streamRef.current = null
     }
@@ -139,20 +137,20 @@ export default function VideoTile({ source }: VideoTileProps) {
     try {
       const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true })
       streamRef.current = stream
+      // screenRegistry.set() handles audio registration under '__screen__'
       screenRegistry.set(source.id, stream)
-      if (stream.getAudioTracks().length > 0) audioRegistry.register(source.id, stream)
       if (videoRef.current) {
         videoRef.current.srcObject = stream
         videoRef.current.play().catch(() => {})
         videoRegistry.register(source.id, videoRef.current)
       }
       setStreamState('active')
-      // When user stops sharing via browser "Stop sharing" bar
+      // When user clicks "Stop sharing" in the browser bar
       stream.getVideoTracks()[0]?.addEventListener('ended', () => {
         videoRegistry.unregister(source.id)
-        audioRegistry.unregister(source.id)
         setStreamState('idle')
         streamRef.current = null
+        // Note: screenRegistry cleans up audio automatically via its own 'ended' listener
       })
     } catch {
       setStreamState('idle')
