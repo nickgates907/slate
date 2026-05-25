@@ -3,7 +3,7 @@ import { appDataDir, join } from '@tauri-apps/api/path'
 
 export interface Source {
   id: string
-  type: 'camera' | 'screen' | 'avatar' | 'image' | 'audio' | 'text'
+  type: 'camera' | 'screen' | 'avatar' | 'image' | 'audio' | 'text' | 'music'
   name: string
   visible: boolean
   x: number
@@ -18,6 +18,8 @@ export interface Source {
   color?: string     // hex, default '#ffffff'
   imageSrc?: string  // image source: data URL of the loaded image
   volume?: number    // 0–1, applies to audio sources (default 1)
+  audioFileSrc?: string  // data URL of an audio file (music sources)
+  loop?: boolean     // loop music (default true)
   bgRemoval?: boolean  // strip background from camera/avatar via ML segmentation
 }
 

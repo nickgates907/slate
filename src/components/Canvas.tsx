@@ -4,6 +4,7 @@ import { readBinaryFile } from '@tauri-apps/api/fs'
 import { Scene, Source, SceneBackground, defaultBackground } from '../store'
 import VideoTile from './VideoTile'
 import TextTile from './TextTile'
+import MusicTile from './MusicTile'
 import Tooltip from './Tooltip'
 
 interface CanvasProps {
@@ -16,6 +17,7 @@ interface CanvasProps {
   onExportLayout: () => void
   onImportLayout: () => void
   onOpenOverlays: () => void
+  isActiveScene: boolean  // true = this scene is currently shown in preview
 }
 
 type ResizeHandle = 'nw' | 'ne' | 'sw' | 'se'
@@ -29,7 +31,7 @@ const RESIZE_HANDLES: Array<{ h: ResizeHandle; pos: string; cursor: string }> = 
 
 export default function Canvas({
   scene, isRecording, recordingTime, onUpdateSource, onUpdateBackground, previewRef,
-  onExportLayout, onImportLayout, onOpenOverlays,
+  onExportLayout, onImportLayout, onOpenOverlays, isActiveScene,
 }: CanvasProps) {
   // ── Scene transition: fade out → swap → fade in when scene.id changes ──
   const [displayScene, setDisplayScene] = useState(scene)
@@ -169,7 +171,8 @@ export default function Canvas({
     onUpdateSource(sourceId, { imageSrc: dataUrl })
   }
 
-  const visibleSources = displayScene.sources.filter(s => s.visible && s.type !== 'audio')
+  const visibleSources = displayScene.sources.filter(s => s.visible && s.type !== 'audio' && s.type !== 'music')
+  const musicSources   = displayScene.sources.filter(s => s.type === 'music')
 
   return (
     <div className="flex-1 flex flex-col min-w-0">
@@ -291,6 +294,18 @@ export default function Canvas({
               No sources — add one from the panel →
             </div>
           )}
+
+          {/* Music sources — invisible audio players, play when this scene is active */}
+          {musicSources.map(src => (
+            <MusicTile
+              key={src.id}
+              sourceId={src.id}
+              audioFileSrc={src.audioFileSrc}
+              volume={src.volume ?? 1}
+              loop={src.loop ?? true}
+              playing={isActiveScene && src.visible}
+            />
+          ))}
         </div>
       </div>
 

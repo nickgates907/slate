@@ -1,3 +1,5 @@
+import { open } from '@tauri-apps/api/dialog'
+import { readBinaryFile } from '@tauri-apps/api/fs'
 import { Source } from '../store'
 import { CameraDevice } from '../hooks/useCameraDevices'
 import Tooltip from './Tooltip'
@@ -29,6 +31,8 @@ const typeIcon = (type: Source['type']) => {
       return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
     case 'text':
       return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
+    case 'music':
+      return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
   }
 }
 
@@ -68,6 +72,7 @@ const ADD_SOURCES = [
   { type: 'image'  as const,  label: 'Add image',  tip: 'Add a logo, overlay image, or graphic' },
   { type: 'audio'  as const,  label: 'Add mic',    tip: 'Add your microphone so viewers can hear you' },
   { type: 'text'   as const,  label: 'Add text',   tip: 'Add text to your scene — name, social handles, alerts' },
+  { type: 'music'  as const,  label: 'Add music',  tip: 'Play background or intro music — loops and plays through the stream' },
 ]
 
 export default function SourcesPanel({
@@ -154,6 +159,37 @@ export default function SourcesPanel({
                 <span className="text-xs text-gray-400 w-6 text-right tabular-nums">
                   {Math.round((source.volume ?? 1) * 100)}
                 </span>
+              </div>
+            )}
+
+            {/* Music source controls */}
+            {source.type === 'music' && (
+              <div className="px-3 pb-2.5 flex flex-col gap-1.5">
+                <button
+                  onClick={async () => {
+                    const path = await open({ title: 'Choose audio', filters: [{ name: 'Audio', extensions: ['mp3','wav','ogg','flac','m4a','aac'] }], multiple: false }).catch(() => null)
+                    if (!path || Array.isArray(path)) return
+                    const bytes = await readBinaryFile(path as string).catch(() => null)
+                    if (!bytes) return
+                    const ext = (path as string).split('.').pop()?.toLowerCase() ?? 'mp3'
+                    const mime = ext === 'wav' ? 'audio/wav' : ext === 'ogg' ? 'audio/ogg' : 'audio/mpeg'
+                    const blob = new Blob([bytes.buffer as ArrayBuffer], { type: mime })
+                    const dataUrl = await new Promise<string>(res => { const r = new FileReader(); r.onload = () => res(r.result as string); r.readAsDataURL(blob) })
+                    onUpdateSource(source.id, { audioFileSrc: dataUrl, name: (path as string).split(/[\\/]/).pop() ?? 'Music' })
+                  }}
+                  className="text-xs px-2 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-left truncate"
+                >
+                  {source.audioFileSrc ? `♪ ${source.name}` : '♪ Choose audio file…'}
+                </button>
+                <div className="flex items-center gap-2">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400 flex-shrink-0"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                  <input type="range" min={0} max={1} step={0.01} value={source.volume ?? 1} onChange={e => onChangeVolume(source.id, Number(e.target.value))} className="flex-1 h-1 accent-brand-red" />
+                  <span className="text-xs text-gray-400 w-6 text-right tabular-nums">{Math.round((source.volume ?? 1) * 100)}</span>
+                </div>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={source.loop ?? true} onChange={e => onUpdateSource(source.id, { loop: e.target.checked })} className="accent-brand-red" />
+                  <span className="text-xs text-gray-500 dark:text-gray-400">Loop</span>
+                </label>
               </div>
             )}
 

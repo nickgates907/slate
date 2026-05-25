@@ -412,7 +412,7 @@ export default function App() {
   const addSource = async (type: Source['type']) => {
     const names: Record<Source['type'], string> = {
       camera: 'Webcam', screen: 'Screen capture', avatar: 'Avatar cam',
-      image: 'Image overlay', audio: 'Microphone', text: 'Text overlay',
+      image: 'Image overlay', audio: 'Microphone', text: 'Text overlay', music: 'Background music',
     }
 
     let deviceId: string | undefined
@@ -432,10 +432,12 @@ export default function App() {
       name: names[type],
       visible: true,
       x: 40, y: 40,
-      width: type === 'avatar' ? 120 : type === 'audio' ? 0 : type === 'text' ? 400 : 240,
-      height: type === 'avatar' ? 120 : type === 'audio' ? 0 : type === 'text' ? 40 : 135,
+      width: type === 'avatar' ? 120 : type === 'audio' || type === 'music' ? 0 : type === 'text' ? 400 : 240,
+      height: type === 'avatar' ? 120 : type === 'audio' || type === 'music' ? 0 : type === 'text' ? 40 : 135,
       deviceId,
       text: type === 'text' ? 'Your text here...' : undefined,
+      loop: type === 'music' ? true : undefined,
+      volume: type === 'music' ? 0.7 : undefined,
       scrolling: type === 'text' ? false : undefined,
       anchor: type === 'text' ? 'free' : undefined,
     }
@@ -500,6 +502,7 @@ export default function App() {
               onExportLayout={handleExportLayout}
               onImportLayout={handleImportLayout}
               onOpenOverlays={() => setShowOverlays(true)}
+              isActiveScene={true}
             />
             {alerts.activeAlert && <AlertOverlay alert={alerts.activeAlert} />}
             {streamStatus === 'live' && <ChatOverlay messages={chat.messages} />}
