@@ -313,7 +313,7 @@
 <filter id="slateShadow" x="-20%" y="-30%" width="160%" height="180%">
   <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#000" flood-opacity="0.7"/>
 </filter>
-<g transform="translate(960, 876)">
+<g transform="translate(960, 920)">
   <!-- pill background -->
   <rect x="-108" y="-30" width="216" height="60" rx="12" fill="black" opacity="0.30"/>
   <!-- Slate app icon — 44px, vertically centered -->

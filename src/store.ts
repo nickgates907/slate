@@ -20,6 +20,7 @@ export interface Source {
   volume?: number    // 0–1, applies to audio sources (default 1)
   audioFileSrc?: string  // data URL of an audio file (music sources)
   loop?: boolean     // loop music (default true)
+  monitor?: boolean  // play music through local speakers too (default true)
   bgRemoval?: boolean  // strip background from camera/avatar via ML segmentation
 }
 

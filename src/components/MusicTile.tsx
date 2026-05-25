@@ -6,25 +6,32 @@ interface MusicTileProps {
   audioFileSrc?: string
   volume?: number
   loop?: boolean
-  playing: boolean  // true when scene is active (always, not just when recording)
+  monitor?: boolean  // true = also play through speakers (default true)
+  playing: boolean
 }
 
 /**
  * Invisible audio player for background music sources.
- * Routes audio through the Web Audio API so it's captured in the stream/recording mix.
- * Plays locally through speakers AND goes to audioRegistry for buildAudioStream().
+ *
+ * Routing:
+ *   src → gain (volume) ─┬─→ dest (MediaStreamDestination) → audioRegistry → stream
+ *                        └─→ monitorGain (0 or 1) → ctx.destination (speakers)
+ *
+ * When monitor=false the monitorGain is set to 0 so you only hear it on stream,
+ * not through your own speakers. Stream capture is always active.
  */
-export default function MusicTile({ sourceId, audioFileSrc, volume = 1, loop = true, playing }: MusicTileProps) {
-  const audioRef   = useRef<HTMLAudioElement | null>(null)
-  const ctxRef     = useRef<AudioContext | null>(null)
-  const sourceNode = useRef<MediaElementAudioSourceNode | null>(null)
-  const gainNode   = useRef<GainNode | null>(null)
+export default function MusicTile({
+  sourceId, audioFileSrc, volume = 1, loop = true, monitor = true, playing,
+}: MusicTileProps) {
+  const audioRef       = useRef<HTMLAudioElement | null>(null)
+  const ctxRef         = useRef<AudioContext | null>(null)
+  const gainNode       = useRef<GainNode | null>(null)
+  const monitorGain    = useRef<GainNode | null>(null)
 
-  // Set up Web Audio routing once when audioFileSrc is available
+  // Set up Web Audio routing when src changes
   useEffect(() => {
     if (!audioFileSrc) return
 
-    // Tear down previous context if src changed
     const prev = audioRef.current
     if (prev) { prev.pause(); prev.src = '' }
     ctxRef.current?.close().catch(() => {})
@@ -39,18 +46,24 @@ export default function MusicTile({ sourceId, audioFileSrc, volume = 1, loop = t
     ctxRef.current = ctx
 
     const src = ctx.createMediaElementSource(audio)
-    sourceNode.current = src
 
+    // Volume control
     const gain = ctx.createGain()
     gain.gain.value = volume
     gainNode.current = gain
 
+    // Speaker gate — 1 = monitor on, 0 = stream only
+    const mGain = ctx.createGain()
+    mGain.gain.value = monitor ? 1 : 0
+    monitorGain.current = mGain
+
+    // Stream capture destination
     const dest = ctx.createMediaStreamDestination()
 
-    // local playback + stream capture
     src.connect(gain)
-    gain.connect(ctx.destination) // speakers
-    gain.connect(dest)            // stream capture
+    gain.connect(dest)          // always goes to stream
+    gain.connect(mGain)         // gated speaker path
+    mGain.connect(ctx.destination)
 
     audioRegistry.register(sourceId, dest.stream)
 
@@ -62,7 +75,7 @@ export default function MusicTile({ sourceId, audioFileSrc, volume = 1, loop = t
     }
   }, [audioFileSrc, sourceId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Play / pause when scene switches
+  // Play / pause
   useEffect(() => {
     const audio = audioRef.current
     if (!audio || !audioFileSrc) return
@@ -76,16 +89,27 @@ export default function MusicTile({ sourceId, audioFileSrc, volume = 1, loop = t
     }
   }, [playing, audioFileSrc])
 
-  // Volume changes
+  // Volume
   useEffect(() => {
     if (gainNode.current) gainNode.current.gain.value = volume
-    if (audioRef.current) audioRef.current.volume = 1 // gain node handles volume
   }, [volume])
 
-  // Loop changes
+  // Monitor toggle — smoothly ramp to avoid clicks
+  useEffect(() => {
+    const mg = monitorGain.current
+    if (!mg) return
+    const ctx = ctxRef.current
+    if (ctx) {
+      mg.gain.setTargetAtTime(monitor ? 1 : 0, ctx.currentTime, 0.015)
+    } else {
+      mg.gain.value = monitor ? 1 : 0
+    }
+  }, [monitor])
+
+  // Loop
   useEffect(() => {
     if (audioRef.current) audioRef.current.loop = loop
   }, [loop])
 
-  return null // no visual element
+  return null
 }

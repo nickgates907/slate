@@ -305,6 +305,7 @@ export default function Canvas({
               audioFileSrc={src.audioFileSrc}
               volume={src.volume ?? 1}
               loop={src.loop ?? true}
+              monitor={src.monitor ?? true}
               playing={isActiveScene && src.visible}
             />
           ))}

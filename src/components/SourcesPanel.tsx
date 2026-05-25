@@ -186,10 +186,16 @@ export default function SourcesPanel({
                   <input type="range" min={0} max={1} step={0.01} value={source.volume ?? 1} onChange={e => onChangeVolume(source.id, Number(e.target.value))} className="flex-1 h-1 accent-brand-red" />
                   <span className="text-xs text-gray-400 w-6 text-right tabular-nums">{Math.round((source.volume ?? 1) * 100)}</span>
                 </div>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={source.loop ?? true} onChange={e => onUpdateSource(source.id, { loop: e.target.checked })} className="accent-brand-red" />
-                  <span className="text-xs text-gray-500 dark:text-gray-400">Loop</span>
-                </label>
+                <div className="flex items-center gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" checked={source.loop ?? true} onChange={e => onUpdateSource(source.id, { loop: e.target.checked })} className="accent-brand-red" />
+                    <span className="text-xs text-gray-500 dark:text-gray-400">Loop</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer" title="Hear music through your own speakers. Uncheck to send to stream only.">
+                    <input type="checkbox" checked={source.monitor ?? true} onChange={e => onUpdateSource(source.id, { monitor: e.target.checked })} className="accent-brand-red" />
+                    <span className="text-xs text-gray-500 dark:text-gray-400">Monitor</span>
+                  </label>
+                </div>
               </div>
             )}
 
