@@ -18,6 +18,7 @@ import ChatOverlay from './components/ChatOverlay'
 import { useAudioCapture } from './hooks/useAudioCapture'
 import { useCameraDevices } from './hooks/useCameraDevices'
 import { exportLayout, importLayout } from './lib/layoutShare'
+import { screenRegistry } from './lib/streamRegistry'
 import { OverlayTemplate } from './lib/overlayTemplates'
 import { TWITCH_CLIENT_ID } from './config/platforms'
 import { audioRegistry } from './lib/audioRegistry'
@@ -259,6 +260,8 @@ export default function App() {
   const toggleMic = useCallback(() => setMicOn(m => !m), [])
 
   const removeSource = useCallback((sourceId: string) => {
+    // Release any persistent screen capture stream for this source
+    screenRegistry.release(sourceId)
     setProject(p => ({
       ...p,
       scenes: p.scenes.map(scene =>
@@ -383,6 +386,12 @@ export default function App() {
         project.settings?.resolution ?? '1080p',
         buildAudioStream(),
         alerts.alertRef,
+        () => {
+          // Stream dropped unexpectedly (ffmpeg crash / network error)
+          alerts.disconnect()
+          chat.disconnect()
+          setStreamStatus('idle')
+        },
       )
       setStreamStatus('live')
       if (twitchToken && TWITCH_CLIENT_ID) {
@@ -404,7 +413,11 @@ export default function App() {
   const endStream = async () => {
     alerts.disconnect()
     chat.disconnect()
-    await streamer.stop()
+    // Hard 6-second timeout so endStream can never hang the UI
+    await Promise.race([
+      streamer.stop(),
+      new Promise<void>(r => setTimeout(r, 6000)),
+    ])
     setStreamStatus('idle')
     setShowStreaming(false)
   }

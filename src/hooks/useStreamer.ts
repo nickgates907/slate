@@ -172,6 +172,7 @@ export function useStreamer() {
     resolution: '720p' | '1080p' | '1440p',
     audioStream?: MediaStream,
     alertRef?: MutRef<ActiveAlert | null>,
+    onUnexpectedDisconnect?: () => void,
   ): Promise<void> => {
     sceneRef.current = scene
     activeRef.current = true
@@ -210,6 +211,20 @@ export function useStreamer() {
       setTimeout(() => reject(new Error('Stream IPC connection timed out')), 3000)
     })
     wsRef.current = ws
+
+    // Detect unexpected stream drops (ffmpeg crashed, network error, etc.)
+    ws.onerror = () => {
+      if (activeRef.current) {
+        activeRef.current = false
+        onUnexpectedDisconnect?.()
+      }
+    }
+    ws.onclose = () => {
+      if (activeRef.current) {
+        activeRef.current = false
+        onUnexpectedDisconnect?.()
+      }
+    }
 
     // Send a raw binary chunk directly over the WebSocket — no base64 overhead
     const sendChunk = (data: Uint8Array) => {
@@ -453,6 +468,8 @@ export function useStreamer() {
 
     // Close the binary IPC WebSocket — tells Rust's WS thread to exit
     if (wsRef.current) {
+      wsRef.current.onclose = null  // prevent onclose firing our disconnect callback
+      wsRef.current.onerror = null
       wsRef.current.close()
       wsRef.current = null
     }
@@ -470,32 +487,41 @@ export function useStreamer() {
     const recorder = recorderRef.current
     recorderRef.current = null
     if (recorder && recorder.state !== 'inactive') {
-      await new Promise<void>(resolve => { recorder.onstop = () => resolve(); recorder.stop() })
+      await Promise.race<void>([
+        new Promise<void>(resolve => { recorder.onstop = () => resolve(); recorder.stop() }),
+        new Promise<void>(resolve => setTimeout(resolve, 2000)),
+      ])
     }
 
-    // WebCodecs cleanup — disconnect worklet to stop new audio frames, then flush encoders
+    // WebCodecs cleanup — disconnect worklet first to stop new audio frames, then flush
     if (workletNodeRef.current) {
       workletNodeRef.current.disconnect()
       workletNodeRef.current = null
     }
+    // flush() can hang if the encoder is in a bad state — cap at 2 seconds each
+    const flushTimeout = <T>(p: Promise<T>) => Promise.race<T | void>([p, new Promise<void>(r => setTimeout(r, 2000))])
     if (videoEncoderRef.current?.state === 'configured') {
-      await videoEncoderRef.current.flush()
+      await flushTimeout(videoEncoderRef.current.flush()).catch(() => {})
       videoEncoderRef.current.close()
       videoEncoderRef.current = null
     }
     if (audioEncoderRef.current?.state === 'configured') {
-      await audioEncoderRef.current.flush()
+      await flushTimeout(audioEncoderRef.current.flush()).catch(() => {})
       audioEncoderRef.current.close()
       audioEncoderRef.current = null
     }
     if (audioCtxRef.current) {
-      await audioCtxRef.current.close()
+      await audioCtxRef.current.close().catch(() => {})
       audioCtxRef.current = null
     }
     muxerRef.current?.finalize()
     muxerRef.current = null
 
-    await invoke('stop_stream').catch(console.error)
+    // Tell Rust to stop ffmpeg — cap at 3 seconds so we never hang on a dead process
+    await Promise.race([
+      invoke('stop_stream').catch(console.error),
+      new Promise<void>(r => setTimeout(r, 3000)),
+    ])
   }, [])
 
   return { start, stop, updateScene, streamStats, clip, isClipping }

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { SelfieSegmentation, Results } from '@mediapipe/selfie_segmentation'
 import { Source } from '../store'
 import { videoRegistry } from '../lib/videoRegistry'
-import { streamRegistry } from '../lib/streamRegistry'
+import { streamRegistry, screenRegistry } from '../lib/streamRegistry'
 import { audioRegistry } from '../lib/audioRegistry'
 
 type StreamState = 'loading' | 'active' | 'idle' | 'error'
@@ -108,31 +108,46 @@ export default function VideoTile({ source }: VideoTileProps) {
     }
   }, [source.id, source.type, source.bgRemoval, streamState])
 
-  // Unregister screen audio when the VideoTile for a screen source unmounts
+  // Screen capture: attach existing stream from registry on mount (survives scene switches),
+  // and clean up only on unmount WITHOUT stopping the tracks so it stays alive.
   useEffect(() => {
     if (source.type !== 'screen') return
+
+    const existing = screenRegistry.get(source.id)
+    if (existing) {
+      streamRef.current = existing
+      if (videoRef.current) {
+        videoRef.current.srcObject = existing
+        videoRef.current.play().catch(() => {})
+      }
+      if (existing.getAudioTracks().length > 0) audioRegistry.register(source.id, existing)
+      videoRegistry.register(source.id, videoRef.current!)
+      setStreamState('active')
+    }
+
     return () => {
+      // DO NOT stop tracks — stream lives in screenRegistry across scene switches.
+      // Only unregister from video/audio registries so the next mount re-registers fresh.
       audioRegistry.unregister(source.id)
       videoRegistry.unregister(source.id)
-      streamRef.current?.getTracks().forEach(t => t.stop())
       streamRef.current = null
     }
-  }, [source.id, source.type])
+  }, [source.id, source.type])  // eslint-disable-line react-hooks/exhaustive-deps
 
   const startScreenCapture = async () => {
     setStreamState('loading')
     try {
       const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true })
       streamRef.current = stream
-      if (stream.getAudioTracks().length > 0) {
-        audioRegistry.register(source.id, stream)
-      }
+      screenRegistry.set(source.id, stream)
+      if (stream.getAudioTracks().length > 0) audioRegistry.register(source.id, stream)
       if (videoRef.current) {
         videoRef.current.srcObject = stream
         videoRef.current.play().catch(() => {})
         videoRegistry.register(source.id, videoRef.current)
       }
       setStreamState('active')
+      // When user stops sharing via browser "Stop sharing" bar
       stream.getVideoTracks()[0]?.addEventListener('ended', () => {
         videoRegistry.unregister(source.id)
         audioRegistry.unregister(source.id)

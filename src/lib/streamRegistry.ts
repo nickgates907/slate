@@ -35,3 +35,43 @@ export const streamRegistry = {
     }
   },
 }
+
+// ── Screen capture registry ──────────────────────────────────────────────────
+// Caches screen/display capture streams by sourceId so they persist across
+// scene switches. When the user stops sharing (track 'ended') the cache
+// entry is automatically removed. Call screenRegistry.set() when capture
+// starts, screenRegistry.release() when the source is permanently removed,
+// and screenRegistry.get() on mount to reuse an existing stream.
+const screenCache = new Map<string, MediaStream>()
+
+export const screenRegistry = {
+  /** Store a newly captured stream. */
+  set(sourceId: string, stream: MediaStream): void {
+    // Watch for the user clicking "Stop sharing" in the browser bar
+    stream.getVideoTracks()[0]?.addEventListener('ended', () => {
+      screenCache.delete(sourceId)
+    })
+    screenCache.set(sourceId, stream)
+  },
+
+  /** Returns the cached stream if still active, or null. */
+  get(sourceId: string): MediaStream | null {
+    const stream = screenCache.get(sourceId)
+    if (!stream) return null
+    // If all video tracks have ended, treat as gone
+    if (stream.getVideoTracks().every(t => t.readyState === 'ended')) {
+      screenCache.delete(sourceId)
+      return null
+    }
+    return stream
+  },
+
+  /** Permanently remove and stop a cached stream (source deleted from scene). */
+  release(sourceId: string): void {
+    const stream = screenCache.get(sourceId)
+    if (stream) {
+      stream.getTracks().forEach(t => t.stop())
+      screenCache.delete(sourceId)
+    }
+  },
+}
