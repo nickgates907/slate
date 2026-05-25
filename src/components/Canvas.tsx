@@ -156,12 +156,14 @@ export default function Canvas({
   const pickImage = async (sourceId: string) => {
     const path = await open({
       title: 'Choose image',
-      filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp'] }],
+      filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'] }],
       multiple: false,
     })
     if (!path || Array.isArray(path)) return
-    const bytes = await readBinaryFile(path as string)
-    const blob = new Blob([bytes.buffer as ArrayBuffer])
+    const filePath = path as string
+    const isSvg = filePath.toLowerCase().endsWith('.svg')
+    const bytes = await readBinaryFile(filePath)
+    const blob = new Blob([bytes.buffer as ArrayBuffer], { type: isSvg ? 'image/svg+xml' : undefined })
     const dataUrl = await new Promise<string>((resolve, reject) => {
       const reader = new FileReader()
       reader.onload = () => resolve(reader.result as string)
@@ -367,12 +369,14 @@ function BgPicker({ bg, onChange, onClose }: { bg: SceneBackground; onChange: (b
   const pickImage = async () => {
     const path = await open({
       title: 'Choose background image',
-      filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp'] }],
+      filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'] }],
       multiple: false,
     })
     if (!path || Array.isArray(path)) return
-    const bytes = await readBinaryFile(path as string)
-    const blob = new Blob([bytes.buffer as ArrayBuffer])
+    const filePath = path as string
+    const isSvg = filePath.toLowerCase().endsWith('.svg')
+    const bytes = await readBinaryFile(filePath)
+    const blob = new Blob([bytes.buffer as ArrayBuffer], { type: isSvg ? 'image/svg+xml' : undefined })
     const dataUrl = await new Promise<string>((resolve, reject) => {
       const reader = new FileReader()
       reader.onload = () => resolve(reader.result as string)
