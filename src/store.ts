@@ -169,6 +169,7 @@ export const defaultProject: SlateProject = {
 }
 
 let _projectPath: string | null = null
+let _termsPath: string | null = null
 
 async function getProjectPath(): Promise<string> {
   if (_projectPath) return _projectPath
@@ -176,6 +177,29 @@ async function getProjectPath(): Promise<string> {
   await createDir(dir, { recursive: true })
   _projectPath = await join(dir, 'project.json')
   return _projectPath
+}
+
+async function getTermsPath(): Promise<string> {
+  if (_termsPath) return _termsPath
+  const dir = await appDataDir()
+  await createDir(dir, { recursive: true })
+  _termsPath = await join(dir, 'terms.json')
+  return _termsPath
+}
+
+export async function loadTermsAccepted(): Promise<boolean> {
+  try {
+    const path = await getTermsPath()
+    const text = await readTextFile(path)
+    return JSON.parse(text).accepted === true
+  } catch {
+    return false
+  }
+}
+
+export async function saveTermsAccepted(): Promise<void> {
+  const path = await getTermsPath()
+  await writeTextFile(path, JSON.stringify({ accepted: true, date: new Date().toISOString() }))
 }
 
 export async function saveProject(project: SlateProject): Promise<void> {

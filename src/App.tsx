@@ -5,7 +5,7 @@ import Canvas from './components/Canvas'
 import SourcesPanel from './components/SourcesPanel'
 import PlaybackModal from './components/PlaybackModal'
 import OverlaysModal from './components/OverlaysModal'
-import { Scene, Source, SceneBackground, Loadout, SlateProject, loadProject, saveProject, defaultProject, defaultSettings } from './store'
+import { Scene, Source, SceneBackground, Loadout, SlateProject, loadProject, saveProject, defaultProject, defaultSettings, loadTermsAccepted, saveTermsAccepted } from './store'
 import { TooltipContext } from './contexts/TooltipContext'
 import SettingsModal from './components/SettingsModal'
 import StreamingModal from './components/StreamingModal'
@@ -24,6 +24,7 @@ import { TWITCH_CLIENT_ID } from './config/platforms'
 import { audioRegistry } from './lib/audioRegistry'
 import { ActiveAlert } from './hooks/useAlerts'
 import { reportCrash } from './lib/crashReporter'
+import TermsModal from './components/TermsModal'
 
 function formatTime(seconds: number): string {
   const h = Math.floor(seconds / 3600).toString().padStart(2, '0')
@@ -44,6 +45,7 @@ export default function App() {
   const [showStreaming, setShowStreaming] = useState(false)
   const [streamStatus, setStreamStatus] = useState<'idle' | 'connecting' | 'live'>('idle')
   const [liveSeconds, setLiveSeconds] = useState(0)
+  const [termsAccepted, setTermsAccepted] = useState<boolean | null>(null)
   const [dark, setDark] = useState(true)
   const [subCurrent, setSubCurrent] = useState(0)
   const [subGoal, setSubGoal] = useState(50)
@@ -84,6 +86,11 @@ export default function App() {
       window.removeEventListener('error', onError)
       window.removeEventListener('unhandledrejection', onUnhandled)
     }
+  }, [])
+
+  // Check terms acceptance on mount
+  useEffect(() => {
+    loadTermsAccepted().then(setTermsAccepted)
   }, [])
 
   // Load project from AppData on mount
@@ -486,7 +493,10 @@ export default function App() {
   return (
     <TooltipContext.Provider value={project.settings?.showTooltips ?? true}>
     <>
-      {splash && <SplashScreen onDone={() => setSplash(false)} />}
+      {termsAccepted === false && (
+        <TermsModal onAccept={() => { void saveTermsAccepted(); setTermsAccepted(true) }} />
+      )}
+      {splash && termsAccepted !== false && <SplashScreen onDone={() => setSplash(false)} />}
       <div className="h-screen flex flex-col bg-gray-50 dark:bg-gray-950 overflow-hidden">
         <Titlebar
           dark={dark}
