@@ -402,6 +402,21 @@ export default function App() {
     setProject(p => ({ ...p, loadouts: (p.loadouts ?? []).filter(l => l.id !== id) }))
   }, [])
 
+  const importLoadoutCode = useCallback((name: string, scenes: Scene[]) => {
+    const loadout: Loadout = {
+      id: `loadout-${Date.now()}`,
+      name,
+      scenes,
+      createdAt: new Date().toISOString(),
+    }
+    setProject(p => ({
+      ...p,
+      scenes,
+      activeSceneId: scenes[0]?.id ?? p.activeSceneId,
+      loadouts: [...(p.loadouts ?? []), loadout],
+    }))
+  }, [])
+
   const goLive = async (rtmpUrls: string[], twitchToken?: string) => {
     if (!previewRef.current || rtmpUrls.length === 0) return
     setStreamStatus('connecting')
@@ -535,6 +550,7 @@ export default function App() {
             onSaveLoadout={saveLoadout}
             onLoadLoadout={loadLoadout}
             onDeleteLoadout={deleteLoadout}
+            onImportCode={importLoadoutCode}
           />
           <div className="relative flex-1 min-w-0 flex flex-col">
             <Canvas

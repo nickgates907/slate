@@ -8,6 +8,41 @@ interface SlateLayout {
   sources: Source[]
 }
 
+interface SlateLoadoutCode {
+  version: 2
+  name: string
+  scenes: Scene[]
+  exportedAt: string
+}
+
+export function encodeLoadout(name: string, scenes: Scene[]): string {
+  const payload: SlateLoadoutCode = {
+    version: 2,
+    name,
+    scenes: scenes.map(scene => ({
+      ...scene,
+      sources: scene.sources.map(s => ({
+        ...s,
+        deviceId: undefined,     // machine-specific, won't match on another PC
+        audioFileSrc: undefined, // audio files as base64 are too large for a paste code
+      })),
+    })),
+    exportedAt: new Date().toISOString(),
+  }
+  return 'SLATE2-' + btoa(unescape(encodeURIComponent(JSON.stringify(payload))))
+}
+
+export function decodeLoadout(code: string): { name: string; scenes: Scene[] } | null {
+  try {
+    const b64 = code.trim().replace(/^SLATE2-/, '')
+    const payload: SlateLoadoutCode = JSON.parse(decodeURIComponent(escape(atob(b64))))
+    if (payload.version !== 2 || !payload.name || !Array.isArray(payload.scenes)) return null
+    return { name: payload.name, scenes: payload.scenes }
+  } catch {
+    return null
+  }
+}
+
 export async function exportLayout(scene: Scene): Promise<void> {
   const layout: SlateLayout = {
     version: 1,
