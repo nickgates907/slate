@@ -79,7 +79,7 @@ export default function TermsModal({ onAccept }: Props) {
 
           <Section title="9. Contact">
             Questions about these Terms? Email{' '}
-            <span style={{ color: '#FF4D4D' }}>nickgates907@gmail.com</span>
+            <span style={{ color: '#FF4D4D' }}>slatestreaming00@gmail.com</span>
             {' '}or visit{' '}
             <span style={{ color: '#FF4D4D' }}>slatestreaming.com/terms</span>.
           </Section>
