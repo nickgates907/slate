@@ -372,7 +372,7 @@ async fn connect_twitch(client_id: String) -> Result<ConnectedAccount, String> {
     let redirect_uri = format!("http://localhost:{}", PORT);
 
     let auth_url = format!(
-        "https://id.twitch.tv/oauth2/authorize?client_id={}&redirect_uri={}&response_type=token&scope=channel%3Aread%3Astream_key+user%3Aread%3Aemail",
+        "https://id.twitch.tv/oauth2/authorize?client_id={}&redirect_uri={}&response_type=token&scope=channel%3Aread%3Astream_key+user%3Aread%3Aemail+channel%3Amanage%3Abroadcast",
         client_id, redirect_uri
     );
 

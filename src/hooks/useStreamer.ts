@@ -7,6 +7,7 @@ import { videoRegistry } from '../lib/videoRegistry'
 import { Scene } from '../store'
 import { ActiveAlert } from './useAlerts'
 import { drawAlert } from '../lib/drawAlert'
+import { reportCrash } from '../lib/crashReporter'
 
 const RES = {
   '720p':  { w: 1280, h: 720 },
@@ -162,6 +163,8 @@ export function useStreamer() {
   const statsFrames = useRef(0)
   const statsBytes  = useRef(0)
   const statsIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const streamStartRef = useRef<number | null>(null)
+  const wsDisconnectHandledRef = useRef(false)
 
   const start = useCallback(async (
     scene: Scene,
@@ -176,6 +179,8 @@ export function useStreamer() {
   ): Promise<void> => {
     sceneRef.current = scene
     activeRef.current = true
+    streamStartRef.current = Date.now()
+    wsDisconnectHandledRef.current = false
 
     const previewW = previewEl.offsetWidth || 640
     const previewH = previewEl.offsetHeight || 360
@@ -214,14 +219,30 @@ export function useStreamer() {
 
     // Detect unexpected stream drops (ffmpeg crashed, network error, etc.)
     ws.onerror = () => {
-      if (activeRef.current) {
+      if (activeRef.current && !wsDisconnectHandledRef.current) {
+        wsDisconnectHandledRef.current = true
         activeRef.current = false
+        const duration = streamStartRef.current
+          ? Math.round((Date.now() - streamStartRef.current) / 1000)
+          : undefined
+        void reportCrash({ type: 'stream_disconnect', message: 'WebSocket IPC error — stream connection dropped', stream_duration_s: duration })
         onUnexpectedDisconnect?.()
       }
     }
-    ws.onclose = () => {
-      if (activeRef.current) {
+    ws.onclose = (e: CloseEvent) => {
+      if (activeRef.current && !wsDisconnectHandledRef.current) {
+        wsDisconnectHandledRef.current = true
         activeRef.current = false
+        const duration = streamStartRef.current
+          ? Math.round((Date.now() - streamStartRef.current) / 1000)
+          : undefined
+        void reportCrash({
+          type: 'stream_disconnect',
+          message: `Stream dropped: WebSocket closed with code ${e.code}${e.reason ? ` — ${e.reason}` : ''}`,
+          ws_close_code: e.code,
+          ws_close_reason: e.reason || undefined,
+          stream_duration_s: duration,
+        })
         onUnexpectedDisconnect?.()
       }
     }
@@ -464,6 +485,7 @@ export function useStreamer() {
 
   const stop = useCallback(async () => {
     activeRef.current = false
+    streamStartRef.current = null
 
     if (statsIntervalRef.current) { clearInterval(statsIntervalRef.current); statsIntervalRef.current = null }
     setStreamStats({ fps: 0, kbps: 0 })

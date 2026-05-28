@@ -53,6 +53,7 @@ export default function StreamingModal({ onGoLive, onEndStream, status, liveTime
   const [streamTitle, setStreamTitle] = useState('')
   const [gameInput, setGameInput] = useState('')
   const [metaSaving, setMetaSaving] = useState(false)
+  const [metaWarning, setMetaWarning] = useState<string | null>(null)
 
   const isLive = status === 'live'
   const isConnecting = status === 'connecting'
@@ -86,6 +87,7 @@ export default function StreamingModal({ onGoLive, onEndStream, status, liveTime
 
   const handleGoLive = async () => {
     setMetaSaving(true)
+    setMetaWarning(null)
     try {
       // ── Twitch: set title + game via Helix API ──────────────────────────────
       if (twitch.account && TWITCH_CLIENT_ID && (streamTitle.trim() || gameInput.trim())) {
@@ -98,12 +100,13 @@ export default function StreamingModal({ onGoLive, onEndStream, status, liveTime
             )
             const gData = await gResp.json()
             gameId = gData.data?.[0]?.id
+            if (!gameId) setMetaWarning(`Game "${gameInput.trim()}" not found on Twitch — title was saved but category wasn't set.`)
           }
           const body: Record<string, string> = {}
           if (streamTitle.trim()) body.title = streamTitle.trim()
           if (gameId) body.game_id = gameId
           if (Object.keys(body).length > 0) {
-            await fetch(
+            const patchResp = await fetch(
               `https://api.twitch.tv/helix/channels?broadcaster_id=${twitch.account.broadcasterId}`,
               {
                 method: 'PATCH',
@@ -111,8 +114,15 @@ export default function StreamingModal({ onGoLive, onEndStream, status, liveTime
                 body: JSON.stringify(body),
               }
             )
+            if (!patchResp.ok) {
+              const errData = await patchResp.json().catch(() => ({}))
+              setMetaWarning(`Twitch title/game not updated (${patchResp.status}). Try reconnecting your account.${errData?.message ? ' ' + errData.message : ''}`)
+            }
           }
-        } catch (e) { console.warn('Twitch metadata update failed (non-fatal):', e) }
+        } catch (e) {
+          setMetaWarning('Could not reach Twitch to update title/game. Going live anyway.')
+          console.warn('Twitch metadata update failed:', e)
+        }
       }
 
       // ── YouTube: update the next upcoming live broadcast title ──────────────
@@ -285,7 +295,13 @@ export default function StreamingModal({ onGoLive, onEndStream, status, liveTime
         </div>
 
         {/* Footer */}
-        <div className="px-5 pb-5 pt-1">
+        <div className="px-5 pb-5 pt-1 space-y-2">
+          {/* Metadata warning — shown briefly if title/game failed to update */}
+          {metaWarning && !isLive && !isConnecting && (
+            <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 px-3.5 py-2.5 text-[11px] text-amber-400 leading-relaxed">
+              ⚠ {metaWarning}
+            </div>
+          )}
           {isLive ? (
             <button
               onClick={onEndStream}

@@ -23,6 +23,7 @@ import { OverlayTemplate } from './lib/overlayTemplates'
 import { TWITCH_CLIENT_ID } from './config/platforms'
 import { audioRegistry } from './lib/audioRegistry'
 import { ActiveAlert } from './hooks/useAlerts'
+import { reportCrash } from './lib/crashReporter'
 
 function formatTime(seconds: number): string {
   const h = Math.floor(seconds / 3600).toString().padStart(2, '0')
@@ -43,7 +44,7 @@ export default function App() {
   const [showStreaming, setShowStreaming] = useState(false)
   const [streamStatus, setStreamStatus] = useState<'idle' | 'connecting' | 'live'>('idle')
   const [liveSeconds, setLiveSeconds] = useState(0)
-  const [dark, setDark] = useState(false)
+  const [dark, setDark] = useState(true)
   const [subCurrent, setSubCurrent] = useState(0)
   const [subGoal, setSubGoal] = useState(50)
   // Refs so the onSubRef callback always sees the latest values without stale closures
@@ -68,6 +69,22 @@ export default function App() {
   useEffect(() => {
     document.documentElement.classList.toggle('dark', dark)
   }, [dark])
+
+  // Global JS error reporting — catches uncaught exceptions and unhandled promise rejections
+  useEffect(() => {
+    const onError = (e: ErrorEvent) => {
+      void reportCrash({ type: 'js_error', message: `${e.message} (${e.filename}:${e.lineno})` })
+    }
+    const onUnhandled = (e: PromiseRejectionEvent) => {
+      void reportCrash({ type: 'unhandled_rejection', message: String(e.reason) })
+    }
+    window.addEventListener('error', onError)
+    window.addEventListener('unhandledrejection', onUnhandled)
+    return () => {
+      window.removeEventListener('error', onError)
+      window.removeEventListener('unhandledrejection', onUnhandled)
+    }
+  }, [])
 
   // Load project from AppData on mount
   useEffect(() => {
