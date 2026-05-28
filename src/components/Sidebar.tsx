@@ -67,6 +67,7 @@ export default function Sidebar({
   }
 
   return (
+    <>
     <div className="w-52 flex flex-col bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex-shrink-0">
 
       <div className="px-3 pt-3 pb-1 text-xs font-bold text-gray-400 dark:text-gray-600 tracking-widest uppercase">
@@ -209,16 +210,31 @@ export default function Sidebar({
               </button>
             )}
 
-            <button
-              onClick={() => { setImportInput(''); setImportError(null); setShowImport(true) }}
-              className="w-full py-1.5 text-xs font-semibold text-gray-500 dark:text-gray-500 border border-dashed border-gray-300 dark:border-gray-700 rounded-lg hover:border-brand-red hover:text-brand-red transition-colors flex items-center justify-center gap-1.5"
-            >
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
-                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
-              </svg>
-              Import code
-            </button>
+            <div className="flex gap-1.5">
+              <Tooltip text="Share your current scenes as a code others can import" position="right">
+                <button
+                  onClick={() => { setCopied(false); setShareCode(encodeLoadout('My Setup', scenes)) }}
+                  className="flex-1 py-1.5 text-xs font-semibold text-gray-500 dark:text-gray-500 border border-dashed border-gray-300 dark:border-gray-700 rounded-lg hover:border-brand-red hover:text-brand-red transition-colors flex items-center justify-center gap-1.5"
+                >
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                  </svg>
+                  Share
+                </button>
+              </Tooltip>
+              <Tooltip text="Import a loadout code from another PC" position="right">
+                <button
+                  onClick={() => { setImportInput(''); setImportError(null); setShowImport(true) }}
+                  className="flex-1 py-1.5 text-xs font-semibold text-gray-500 dark:text-gray-500 border border-dashed border-gray-300 dark:border-gray-700 rounded-lg hover:border-brand-red hover:text-brand-red transition-colors flex items-center justify-center gap-1.5"
+                >
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                  </svg>
+                  Import
+                </button>
+              </Tooltip>
+            </div>
           </div>
         )}
       </div>
@@ -306,5 +322,6 @@ export default function Sidebar({
         </div>
       </div>
     )}
+    </>
   )
 }
