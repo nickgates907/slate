@@ -34,25 +34,25 @@ export default function Canvas({
   onExportLayout, onImportLayout, onOpenOverlays, isActiveScene,
 }: CanvasProps) {
   // ── Scene transition: fade out → swap → fade in when scene.id changes ──
-  const [displayScene, setDisplayScene] = useState(scene)
+  // renderedScene only changes on scene.id switch — source/bg updates use the live `scene` prop
+  // directly to avoid re-rendering Canvas on every drag pixel.
+  const [renderedScene, setRenderedScene] = useState(scene)
   const [fadeOpacity, setFadeOpacity] = useState(1)
   const prevSceneIdRef = useRef(scene.id)
 
   useEffect(() => {
-    if (scene.id === prevSceneIdRef.current) {
-      // Same scene — update sources/bg live without any fade
-      setDisplayScene(scene)
-      return
-    }
-    // New scene — crossfade
+    if (scene.id === prevSceneIdRef.current) return  // same scene — no state change needed
     prevSceneIdRef.current = scene.id
     setFadeOpacity(0)
     const t = setTimeout(() => {
-      setDisplayScene(scene)
+      setRenderedScene(scene)
       setFadeOpacity(1)
     }, 150)
     return () => clearTimeout(t)
-  }, [scene])
+  }, [scene.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Live content: use the incoming scene prop directly when not mid-transition
+  const displayScene = scene.id === renderedScene.id ? scene : renderedScene
 
   const bg = displayScene.background ?? defaultBackground
   const [showBgPicker, setShowBgPicker] = useState(false)
@@ -78,6 +78,10 @@ export default function Canvas({
     return () => obs.disconnect()
   }, [])
 
+  // Per-source DOM refs — used for direct style mutation during drag/resize so React
+  // never re-renders mid-gesture. State is committed to the store only on mouseup.
+  const sourceRefs = useRef<Map<string, HTMLDivElement>>(new Map())
+
   const dragging = useRef<{
     id: string; startX: number; startY: number; origX: number; origY: number
   } | null>(null)
@@ -100,12 +104,20 @@ export default function Canvas({
       if (!dragging.current) return
       const dx = ev.clientX - dragging.current.startX
       const dy = ev.clientY - dragging.current.startY
-      onUpdateSource(dragging.current.id, {
-        x: Math.max(0, dragging.current.origX + dx),
-        y: Math.max(0, dragging.current.origY + dy),
-      })
+      const el = sourceRefs.current.get(dragging.current.id)
+      if (el) {
+        el.style.left = `${Math.max(0, dragging.current.origX + dx)}px`
+        el.style.top  = `${Math.max(0, dragging.current.origY + dy)}px`
+      }
     }
     const onUp = () => {
+      if (dragging.current) {
+        const el = sourceRefs.current.get(dragging.current.id)
+        if (el) onUpdateSource(dragging.current.id, {
+          x: parseFloat(el.style.left)  || dragging.current.origX,
+          y: parseFloat(el.style.top)   || dragging.current.origY,
+        })
+      }
       dragging.current = null
       window.removeEventListener('mousemove', onMove)
       window.removeEventListener('mouseup', onUp)
@@ -139,12 +151,26 @@ export default function Canvas({
       else if (h === 'ne') { newY = origY + dy; newW = Math.max(MIN, origW + dx); newH = Math.max(MIN, origH - dy) }
       else if (h === 'nw') { newX = origX + dx; newY = origY + dy; newW = Math.max(MIN, origW - dx); newH = Math.max(MIN, origH - dy) }
 
-      // Lock avatar to square
       if (isSquare) { const s = Math.max(newW, newH); newW = s; newH = s }
 
-      onUpdateSource(id, { x: newX, y: newY, width: newW, height: newH })
+      const el = sourceRefs.current.get(id)
+      if (el) {
+        el.style.left   = `${newX}px`
+        el.style.top    = `${newY}px`
+        el.style.width  = `${newW}px`
+        el.style.height = `${newH}px`
+      }
     }
     const onUp = () => {
+      if (resizing.current) {
+        const el = sourceRefs.current.get(resizing.current.id)
+        if (el) onUpdateSource(resizing.current.id, {
+          x: parseFloat(el.style.left),
+          y: parseFloat(el.style.top),
+          width:  parseFloat(el.style.width),
+          height: parseFloat(el.style.height),
+        })
+      }
       resizing.current = null
       window.removeEventListener('mousemove', onMove)
       window.removeEventListener('mouseup', onUp)
@@ -238,6 +264,7 @@ export default function Canvas({
               return (
                 <div
                   key={source.id}
+                  ref={el => { if (el) sourceRefs.current.set(source.id, el); else sourceRefs.current.delete(source.id) }}
                   className="absolute group cursor-move select-none"
                   style={{ left: source.x, top: source.y, width: source.width, height: source.height }}
                   onMouseDown={(e) => handleMouseDown(e, source)}

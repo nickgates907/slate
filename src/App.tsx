@@ -98,9 +98,14 @@ export default function App() {
     loadProject().then(setProject).catch(() => setProject(defaultProject))
   }, [])
 
-  // Auto-save to AppData whenever project changes
+  // Auto-save to AppData — debounced so rapid changes (drag, resize) don't thrash disk
+  const saveDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   useEffect(() => {
-    if (project) saveProject(project).catch(console.error)
+    if (!project) return
+    if (saveDebounceRef.current) clearTimeout(saveDebounceRef.current)
+    saveDebounceRef.current = setTimeout(() => {
+      saveProject(project).catch(console.error)
+    }, 500)
   }, [project])
 
   // Derived values — null-safe so hooks below can reference them

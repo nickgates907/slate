@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, memo } from 'react'
 import { SelfieSegmentation, Results } from '@mediapipe/selfie_segmentation'
 import { Source } from '../store'
 import { videoRegistry } from '../lib/videoRegistry'
@@ -10,7 +10,7 @@ interface VideoTileProps {
   source: Source
 }
 
-export default function VideoTile({ source }: VideoTileProps) {
+function VideoTile({ source }: VideoTileProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const segRef = useRef<SelfieSegmentation | null>(null)
@@ -87,7 +87,8 @@ export default function VideoTile({ source }: VideoTileProps) {
           if (video.readyState >= 2 && segRef.current) {
             await segRef.current.send({ image: video }).catch(() => {})
           }
-          rafRef.current = requestAnimationFrame(sendFrames)
+          // Cap at 20fps — rAF at 60fps wastes CPU for a preview effect
+          rafRef.current = setTimeout(sendFrames, 50) as unknown as number
         }
         sendFrames()
       }).catch(() => {
@@ -101,7 +102,7 @@ export default function VideoTile({ source }: VideoTileProps) {
 
     return () => {
       videoRegistry.unregister(source.id)
-      if (rafRef.current !== null) { cancelAnimationFrame(rafRef.current); rafRef.current = null }
+      if (rafRef.current !== null) { clearTimeout(rafRef.current); rafRef.current = null }
       segRef.current?.close()
       segRef.current = null
     }
@@ -222,3 +223,13 @@ export default function VideoTile({ source }: VideoTileProps) {
     </div>
   )
 }
+
+// Only re-render when the props that affect video setup actually change (not x/y/width/height)
+export default memo(VideoTile, (prev, next) =>
+  prev.source.id        === next.source.id &&
+  prev.source.type      === next.source.type &&
+  prev.source.deviceId  === next.source.deviceId &&
+  prev.source.bgRemoval === next.source.bgRemoval &&
+  prev.source.visible   === next.source.visible &&
+  prev.source.name      === next.source.name
+)
