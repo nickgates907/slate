@@ -21,7 +21,7 @@ export async function reportCrash(report: CrashReport): Promise<void> {
         'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
         'Prefer': 'return=minimal',
       },
-      body: JSON.stringify({ ...report, app_version: '0.2.0' }),
+      body: JSON.stringify({ ...report, app_version: '0.3.0' }),
     })
   } catch {
     // fail silently — crash reporting must never crash the app
