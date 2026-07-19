@@ -33,6 +33,8 @@ const typeIcon = (type: Source['type']) => {
       return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
     case 'music':
       return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+    case 'browser':
+      return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
   }
 }
 
@@ -73,6 +75,7 @@ const ADD_SOURCES = [
   { type: 'audio'  as const,  label: 'Add mic',    tip: 'Add your microphone so viewers can hear you' },
   { type: 'text'   as const,  label: 'Add text',   tip: 'Add text to your scene — name, social handles, alerts' },
   { type: 'music'  as const,  label: 'Add music',  tip: 'Play background or intro music — loops and plays through the stream' },
+  { type: 'browser' as const, label: 'Add browser source', tip: 'Load a local HTML file — animated overlays, visualizers, custom scenes' },
 ]
 
 export default function SourcesPanel({
@@ -231,6 +234,37 @@ export default function SourcesPanel({
                     <option key={d.deviceId} value={d.deviceId}>{d.label}</option>
                   ))}
                 </select>
+              </div>
+            )}
+
+            {/* Browser source — file picker */}
+            {source.type === 'browser' && (
+              <div className="px-3 pb-2.5 flex flex-col gap-1.5">
+                <button
+                  onClick={async () => {
+                    const path = await open({ title: 'Choose HTML file', filters: [{ name: 'HTML', extensions: ['html', 'htm'] }], multiple: false }).catch(() => null)
+                    if (!path || Array.isArray(path)) return
+                    onUpdateSource(source.id, { htmlPath: path as string })
+                  }}
+                  className="text-xs px-2 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-left truncate"
+                >
+                  {source.htmlPath
+                    ? `⬡ ${(source.htmlPath as string).split(/[\\/]/).pop()}`
+                    : '⬡ Choose HTML file…'}
+                </button>
+                {source.htmlPath && (
+                  <button
+                    onClick={() => {
+                      // Force iframe reload by briefly clearing the path then restoring
+                      const p = source.htmlPath
+                      onUpdateSource(source.id, { htmlPath: undefined })
+                      setTimeout(() => onUpdateSource(source.id, { htmlPath: p }), 50)
+                    }}
+                    className="text-xs text-gray-400 hover:text-brand-red transition-colors text-left"
+                  >
+                    ↺ Reload
+                  </button>
+                )}
               </div>
             )}
 

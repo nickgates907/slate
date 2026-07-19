@@ -1,9 +1,10 @@
 import { useRef, useCallback, useState } from 'react'
 import { invoke } from '@tauri-apps/api/tauri'
-import { writeBinaryFile } from '@tauri-apps/api/fs'
-import { appDir } from '@tauri-apps/api/path'
+import { writeBinaryFile, createDir } from '@tauri-apps/api/fs'
+import { join, documentDir } from '@tauri-apps/api/path'
 import { Muxer, StreamTarget } from 'webm-muxer'
 import { videoRegistry } from '../lib/videoRegistry'
+import { browserFrameRegistry } from '../lib/browserFrameRegistry'
 import { Scene } from '../store'
 import { ActiveAlert } from './useAlerts'
 import { drawAlert } from '../lib/drawAlert'
@@ -109,6 +110,12 @@ function drawScene(
         ctx.fillText(source.text, tx + 8 * scaleX, ty + scaledFont * 1.1)
       }
       ctx.restore()
+      continue
+    }
+
+    if (source.type === 'browser') {
+      const bitmap = browserFrameRegistry.get(source.id)
+      if (bitmap) ctx.drawImage(bitmap, dx, dy, dw, dh)
       continue
     }
 
@@ -470,9 +477,11 @@ export function useStreamer() {
       const arrayBuf = await blob.arrayBuffer()
       const uint8 = new Uint8Array(arrayBuf)
 
-      const folder = saveFolder || `${await appDir()}Slate Recordings`
+      // Same default location as full recordings: Documents\Slate Recordings
+      const folder = saveFolder || await join(await documentDir(), 'Slate Recordings')
+      await createDir(folder, { recursive: true })
       const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
-      const filePath = `${folder}\\Clip_${stamp}.webm`
+      const filePath = await join(folder, `Clip_${stamp}.webm`)
       await writeBinaryFile(filePath, uint8)
       return filePath
     } catch (e) {

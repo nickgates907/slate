@@ -1,6 +1,8 @@
 import React, { useRef, useState, useEffect } from 'react'
 import { open } from '@tauri-apps/api/dialog'
 import { readBinaryFile } from '@tauri-apps/api/fs'
+import { convertFileSrc } from '@tauri-apps/api/tauri'
+import { browserFrameRegistry } from '../lib/browserFrameRegistry'
 import { Scene, Source, SceneBackground, defaultBackground } from '../store'
 import VideoTile from './VideoTile'
 import TextTile from './TextTile'
@@ -18,6 +20,7 @@ interface CanvasProps {
   onImportLayout: () => void
   onOpenOverlays: () => void
   isActiveScene: boolean  // true = this scene is currently shown in preview
+  qualityLabel: string    // e.g. "1920 × 1080 · 30fps" — from settings
 }
 
 type ResizeHandle = 'nw' | 'ne' | 'sw' | 'se'
@@ -31,7 +34,7 @@ const RESIZE_HANDLES: Array<{ h: ResizeHandle; pos: string; cursor: string }> = 
 
 export default function Canvas({
   scene, isRecording, recordingTime, onUpdateSource, onUpdateBackground, previewRef,
-  onExportLayout, onImportLayout, onOpenOverlays, isActiveScene,
+  onExportLayout, onImportLayout, onOpenOverlays, isActiveScene, qualityLabel,
 }: CanvasProps) {
   // ── Scene transition: fade out → swap → fade in when scene.id changes ──
   // renderedScene only changes on scene.id switch — source/bg updates use the live `scene` prop
@@ -81,6 +84,19 @@ export default function Canvas({
   // Per-source DOM refs — used for direct style mutation during drag/resize so React
   // never re-renders mid-gesture. State is committed to the store only on mouseup.
   const sourceRefs = useRef<Map<string, HTMLDivElement>>(new Map())
+
+  // Browser source iframe refs — used to send slate-init and receive frames
+  const iframeRefs = useRef<Map<string, HTMLIFrameElement>>(new Map())
+
+  useEffect(() => {
+    const handler = (e: MessageEvent) => {
+      if (e.data?.type === 'slate-browser-frame' && e.data.id && e.data.bitmap) {
+        browserFrameRegistry.set(e.data.id, e.data.bitmap)
+      }
+    }
+    window.addEventListener('message', handler)
+    return () => window.removeEventListener('message', handler)
+  }, [])
 
   const dragging = useRef<{
     id: string; startX: number; startY: number; origX: number; origY: number
@@ -199,6 +215,16 @@ export default function Canvas({
     onUpdateSource(sourceId, { imageSrc: dataUrl })
   }
 
+  const pickHtml = async (sourceId: string) => {
+    const path = await open({
+      title: 'Choose HTML file',
+      filters: [{ name: 'HTML', extensions: ['html', 'htm'] }],
+      multiple: false,
+    })
+    if (!path || Array.isArray(path)) return
+    onUpdateSource(sourceId, { htmlPath: path as string })
+  }
+
   const visibleSources = displayScene.sources.filter(s => s.visible && s.type !== 'audio' && s.type !== 'music')
   const musicSources   = displayScene.sources.filter(s => s.type === 'music')
 
@@ -303,6 +329,47 @@ export default function Canvas({
                           </div>
                         )
                     )}
+
+                    {source.type === 'browser' && (
+                      source.htmlPath
+                        ? (
+                          <iframe
+                            key={source.htmlPath}
+                            src={convertFileSrc(source.htmlPath)}
+                            ref={el => {
+                              if (el) iframeRefs.current.set(source.id, el)
+                              else iframeRefs.current.delete(source.id)
+                            }}
+                            onLoad={() => {
+                              iframeRefs.current.get(source.id)?.contentWindow?.postMessage(
+                                { type: 'slate-init', sourceId: source.id }, '*'
+                              )
+                            }}
+                            style={{
+                              width: '100%',
+                              height: '100%',
+                              border: 'none',
+                              display: 'block',
+                              pointerEvents: 'none',
+                            }}
+                            sandbox="allow-scripts allow-same-origin"
+                          />
+                        )
+                        : (
+                          <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-white/5 text-white/40">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                              <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                            </svg>
+                            <button
+                              onMouseDown={e => e.stopPropagation()}
+                              onClick={() => pickHtml(source.id)}
+                              className="px-3 py-1.5 bg-brand-red text-white text-xs font-semibold rounded-lg hover:bg-red-500 transition-colors"
+                            >
+                              Choose HTML file
+                            </button>
+                          </div>
+                        )
+                    )}
                   </div>
 
                   {/* Resize handles — 4 corners */}
@@ -384,7 +451,7 @@ export default function Canvas({
           </button>
         </Tooltip>
         <div className="flex-1" />
-        <span className="text-xs text-gray-400 dark:text-gray-600">1920 × 1080 · 30fps</span>
+        <span className="text-xs text-gray-400 dark:text-gray-600">{qualityLabel}</span>
       </div>
 
     </div>

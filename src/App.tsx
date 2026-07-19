@@ -24,6 +24,7 @@ import { TWITCH_CLIENT_ID } from './config/platforms'
 import { audioRegistry } from './lib/audioRegistry'
 import { ActiveAlert } from './hooks/useAlerts'
 import { reportCrash } from './lib/crashReporter'
+import { browserFrameRegistry } from './lib/browserFrameRegistry'
 import TermsModal from './components/TermsModal'
 
 function formatTime(seconds: number): string {
@@ -47,6 +48,8 @@ export default function App() {
   const [liveSeconds, setLiveSeconds] = useState(0)
   const [termsAccepted, setTermsAccepted] = useState<boolean | null>(null)
   const [dark, setDark] = useState(true)
+  const [toast, setToast] = useState<string | null>(null)
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [subCurrent, setSubCurrent] = useState(0)
   const [subGoal, setSubGoal] = useState(50)
   // Refs so the onSubRef callback always sees the latest values without stale closures
@@ -168,7 +171,9 @@ export default function App() {
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [project.scenes]) // eslint-disable-line react-hooks/exhaustive-deps
+    // streamStatus + isRecording must be deps: the handler closes over them, and
+    // toggleRecord/endStream read them — stale values break Ctrl+Shift+R/E
+  }, [project.scenes, streamStatus, isRecording]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (isRecording) {
@@ -203,6 +208,12 @@ export default function App() {
 
   // ── Handlers ──────────────────────────────────────────────────────────
 
+  const showToast = useCallback((message: string) => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+    setToast(message)
+    toastTimerRef.current = setTimeout(() => setToast(null), 3500)
+  }, [])
+
   // Mixes mic stream + any screen-capture audio streams into one MediaStream.
   // Returns undefined if no audio is available at all.
   const buildAudioStream = (): MediaStream | undefined => {
@@ -235,6 +246,8 @@ export default function App() {
         project.settings?.resolution ?? '1080p',
         buildAudioStream(),
         alerts.alertRef,
+        project.settings?.fps ?? 30,
+        project.settings?.bitrate ?? 6,
       )
     }
   }
@@ -291,6 +304,8 @@ export default function App() {
   const removeSource = useCallback((sourceId: string) => {
     // Release any persistent screen capture stream for this source
     screenRegistry.release(sourceId)
+    // Free any buffered browser-source frame (ImageBitmap holds GPU memory)
+    browserFrameRegistry.delete(sourceId)
     setProject(p => ({
       ...p,
       scenes: p.scenes.map(scene =>
@@ -425,7 +440,7 @@ export default function App() {
         activeScene,
         previewRef.current,
         rtmpUrls,
-        project.settings?.bitrate ?? 8,
+        project.settings?.bitrate ?? 6,
         project.settings?.fps ?? 30,
         project.settings?.resolution ?? '1080p',
         buildAudioStream(),
@@ -470,6 +485,7 @@ export default function App() {
     const names: Record<Source['type'], string> = {
       camera: 'Webcam', screen: 'Screen capture', avatar: 'Avatar cam',
       image: 'Image overlay', audio: 'Microphone', text: 'Text overlay', music: 'Background music',
+      browser: 'Browser source',
     }
 
     let deviceId: string | undefined
@@ -489,8 +505,8 @@ export default function App() {
       name: names[type],
       visible: true,
       x: 40, y: 40,
-      width: type === 'avatar' ? 120 : type === 'audio' || type === 'music' ? 0 : type === 'text' ? 400 : 240,
-      height: type === 'avatar' ? 120 : type === 'audio' || type === 'music' ? 0 : type === 'text' ? 40 : 135,
+      width: type === 'avatar' ? 120 : type === 'audio' || type === 'music' ? 0 : type === 'text' ? 400 : type === 'browser' ? 640 : 240,
+      height: type === 'avatar' ? 120 : type === 'audio' || type === 'music' ? 0 : type === 'text' ? 40 : type === 'browser' ? 360 : 135,
       deviceId,
       text: type === 'text' ? 'Your text here...' : undefined,
       loop: type === 'music' ? true : undefined,
@@ -535,7 +551,9 @@ export default function App() {
           subCurrent={subCurrent}
           subGoal={subGoal}
           onUpdateSubGoal={(c, g) => { setSubCurrent(c); setSubGoal(g); updateSubGoal(c, g) }}
-          onClip={() => streamer.clip(project.settings?.saveFolder).then(p => { if (p) console.log('Clip saved:', p) })}
+          onClip={() => streamer.clip(project.settings?.saveFolder).then(p => {
+            showToast(p ? `Clip saved — ${p.split(/[\\/]/).pop()}` : 'Clip not ready yet — try again in a few seconds')
+          })}
           isClipping={streamer.isClipping}
         />
         <div className="flex flex-1 overflow-hidden">
@@ -564,6 +582,11 @@ export default function App() {
               onImportLayout={handleImportLayout}
               onOpenOverlays={() => setShowOverlays(true)}
               isActiveScene={true}
+              qualityLabel={(() => {
+                const res = project.settings?.resolution ?? '1080p'
+                const dims = { '720p': '1280 × 720', '1080p': '1920 × 1080', '1440p': '2560 × 1440' }[res]
+                return `${dims} · ${project.settings?.fps ?? 30}fps`
+              })()}
             />
             {alerts.activeAlert && <AlertOverlay alert={alerts.activeAlert} />}
             {streamStatus === 'live' && <ChatOverlay messages={chat.messages} />}
@@ -582,6 +605,16 @@ export default function App() {
           />
         </div>
       </div>
+
+      {/* Toast — brief confirmation messages (clip saved, etc.) */}
+      {toast && (
+        <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-[60] flex items-center gap-2 bg-gray-900 border border-gray-700 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-2xl pointer-events-none">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+          {toast}
+        </div>
+      )}
 
       {recordingResult && (
         <PlaybackModal

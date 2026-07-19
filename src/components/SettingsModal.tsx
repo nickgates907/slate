@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import { open } from '@tauri-apps/api/dialog'
+import { open as openUrl } from '@tauri-apps/api/shell'
 import { RecordingSettings } from '../store'
+
+const SUPPORT_URL = 'https://www.paypal.com/donate/?hosted_button_id=ANA7ESGZ5VYDW'
 
 interface SettingsModalProps {
   settings: RecordingSettings
@@ -79,9 +82,10 @@ export default function SettingsModal({ settings, saveFolder, onSave, onRestoreS
             <label className="text-xs text-gray-400 font-semibold tracking-widest uppercase mb-2 block">Video Quality</label>
             <div className="flex gap-2">
               {([
-                { value: 4, label: 'Good', sub: '4 Mbps' },
-                { value: 8, label: 'Great', sub: '8 Mbps' },
-                { value: 16, label: 'Ultra', sub: '16 Mbps' },
+                { value: 4,  label: 'Good',   sub: '4 Mbps' },
+                { value: 6,  label: 'Twitch',  sub: '6 Mbps' },
+                { value: 8,  label: 'Great',   sub: '8 Mbps' },
+                { value: 16, label: 'Ultra',   sub: '16 Mbps' },
               ] as const).map(({ value, label, sub }) => (
                 <button
                   key={value}
@@ -95,6 +99,7 @@ export default function SettingsModal({ settings, saveFolder, onSave, onRestoreS
                 </button>
               ))}
             </div>
+            <p className="text-xs text-gray-600 mt-1.5">Twitch max: 6 Mbps · YouTube: up to 9 Mbps. Higher than 6 Mbps may cause warnings on Twitch.</p>
           </div>
 
           {/* Save folder */}
@@ -137,6 +142,16 @@ export default function SettingsModal({ settings, saveFolder, onSave, onRestoreS
               <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/>
             </svg>
             Restore default scenes
+          </button>
+          <button
+            onClick={() => openUrl(SUPPORT_URL)}
+            className="px-3 py-2 bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5"
+            title="Voluntary — helps fund further development of Slate. No features are ever locked behind this."
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
+            Support development
           </button>
           <div className="flex-1" />
           <button onClick={onClose} className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-semibold rounded-lg transition-colors">

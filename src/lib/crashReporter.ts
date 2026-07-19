@@ -1,5 +1,12 @@
+import { getVersion } from '@tauri-apps/api/app'
+
 const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL as string) ?? ''
 const SUPABASE_ANON_KEY = (import.meta.env.VITE_SUPABASE_ANON_KEY as string) ?? ''
+
+// Resolved once at startup — reads the real app version from tauri.conf.json
+// so crash reports can never drift from the installed version.
+let _version = 'unknown'
+getVersion().then(v => { _version = v }).catch(() => {})
 
 export interface CrashReport {
   type: 'stream_disconnect' | 'js_error' | 'unhandled_rejection'
@@ -21,7 +28,7 @@ export async function reportCrash(report: CrashReport): Promise<void> {
         'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
         'Prefer': 'return=minimal',
       },
-      body: JSON.stringify({ ...report, app_version: '0.3.0' }),
+      body: JSON.stringify({ ...report, app_version: _version }),
     })
   } catch {
     // fail silently — crash reporting must never crash the app

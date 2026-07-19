@@ -25,6 +25,7 @@ export function encodeLoadout(name: string, scenes: Scene[]): string {
         ...s,
         deviceId: undefined,     // machine-specific, won't match on another PC
         audioFileSrc: undefined, // audio files as base64 are too large for a paste code
+        htmlPath: undefined,     // machine-specific file path
       })),
     })),
     exportedAt: new Date().toISOString(),
@@ -48,7 +49,7 @@ export async function exportLayout(scene: Scene): Promise<void> {
     version: 1,
     name: scene.name,
     // Strip device IDs — they're machine-specific and won't match on another PC
-    sources: scene.sources.map(s => ({ ...s, deviceId: undefined })),
+    sources: scene.sources.map(s => ({ ...s, deviceId: undefined, htmlPath: undefined })),
   }
 
   const path = await save({

@@ -2,6 +2,7 @@ import { useRef, useCallback } from 'react'
 import { writeBinaryFile, createDir } from '@tauri-apps/api/fs'
 import { join, documentDir } from '@tauri-apps/api/path'
 import { videoRegistry } from '../lib/videoRegistry'
+import { browserFrameRegistry } from '../lib/browserFrameRegistry'
 import { drawAlert } from '../lib/drawAlert'
 import { ActiveAlert } from './useAlerts'
 import { Scene } from '../store'
@@ -38,6 +39,8 @@ export function useRecorder() {
     resolution: '720p' | '1080p' | '1440p',
     audioStream?: MediaStream,
     alertRefArg?: MutRef<ActiveAlert | null>,
+    fps: 30 | 60 = 30,
+    bitrateMbps: number = 8,
   ) => {
     alertRef.current = alertRefArg ?? null
     sceneRef.current = scene
@@ -134,6 +137,12 @@ export function useRecorder() {
             continue
           }
 
+          if (source.type === 'browser') {
+            const bitmap = browserFrameRegistry.get(source.id)
+            if (bitmap) ctx.drawImage(bitmap, dx, dy, dw, dh)
+            continue
+          }
+
           // Video sources (camera, screen, avatar)
           const el = videoRegistry.get(source.id)
           if (!el) continue
@@ -157,7 +166,7 @@ export function useRecorder() {
     }
     draw()
 
-    const canvasStream = canvas.captureStream(30)
+    const canvasStream = canvas.captureStream(fps)
     if (audioStream) {
       audioStream.getAudioTracks().forEach(t => canvasStream.addTrack(t))
     }
@@ -171,7 +180,7 @@ export function useRecorder() {
 
     const recorder = new MediaRecorder(canvasStream, {
       mimeType,
-      videoBitsPerSecond: 8_000_000,
+      videoBitsPerSecond: bitrateMbps * 1_000_000,
       audioBitsPerSecond: 128_000,
     })
     chunksRef.current = []

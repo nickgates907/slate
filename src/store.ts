@@ -3,7 +3,7 @@ import { appDataDir, join } from '@tauri-apps/api/path'
 
 export interface Source {
   id: string
-  type: 'camera' | 'screen' | 'avatar' | 'image' | 'audio' | 'text' | 'music'
+  type: 'camera' | 'screen' | 'avatar' | 'image' | 'audio' | 'text' | 'music' | 'browser'
   name: string
   visible: boolean
   x: number
@@ -22,6 +22,7 @@ export interface Source {
   loop?: boolean     // loop music (default true)
   monitor?: boolean  // play music through local speakers too (default true)
   bgRemoval?: boolean  // strip background from camera/avatar via ML segmentation
+  htmlPath?: string   // absolute path to an HTML file (browser sources)
 }
 
 export interface SceneBackground {
@@ -42,7 +43,7 @@ export interface Scene {
 export interface RecordingSettings {
   resolution: '720p' | '1080p' | '1440p'
   fps: 30 | 60
-  bitrate: 4 | 8 | 16  // Mbps
+  bitrate: 4 | 6 | 8 | 16  // Mbps
   saveFolder: string   // empty string = default Documents/Slate Recordings
   showTooltips: boolean
 }
@@ -50,7 +51,7 @@ export interface RecordingSettings {
 export const defaultSettings: RecordingSettings = {
   resolution: '1080p',
   fps: 30,
-  bitrate: 8,
+  bitrate: 6,
   saveFolder: '',
   showTooltips: true,
 }

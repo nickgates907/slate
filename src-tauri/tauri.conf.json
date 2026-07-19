@@ -7,7 +7,7 @@
   },
   "package": {
     "productName": "Slate",
-    "version": "0.3.0"
+    "version": "0.3.3"
   },
   "tauri": {
     "allowlist": {
@@ -18,7 +18,14 @@
       },
       "path": { "all": true },
       "dialog": { "all": true },
-      "window": { "all": true }
+      "window": { "all": true },
+      "shell": {
+        "open": true
+      },
+      "protocol": {
+        "asset": true,
+        "assetScope": ["$APPDATA/**", "$DOCUMENT/**", "$DOWNLOAD/**", "$DESKTOP/**", "$HOME/**"]
+      }
     },
     "bundle": {
       "active": true,

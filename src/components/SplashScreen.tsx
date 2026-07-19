@@ -1,7 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { getVersion } from '@tauri-apps/api/app'
 
 export default function SplashScreen({ onDone }: { onDone: () => void }) {
   const [fading, setFading] = useState(false)
+  const [version, setVersion] = useState('')
+
+  useEffect(() => { getVersion().then(setVersion).catch(() => {}) }, [])
 
   const handleLaunch = () => {
     setFading(true)
@@ -29,7 +33,7 @@ export default function SplashScreen({ onDone }: { onDone: () => void }) {
       </div>
 
       <p className="absolute bottom-8 text-white/25 text-xs tracking-widest animate-pulse">CLICK ANYWHERE TO LAUNCH</p>
-      <p className="absolute bottom-4 left-4 text-white/20 text-[10px] font-mono tracking-wider">v0.2.0</p>
+      {version && <p className="absolute bottom-4 left-4 text-white/20 text-[10px] font-mono tracking-wider">v{version}</p>}
     </div>
   )
 }
