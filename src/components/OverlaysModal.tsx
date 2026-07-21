@@ -47,7 +47,7 @@ export default function OverlaysModal({ onLoad, onAddAsset, onClose }: OverlaysM
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm" onClick={onClose}>
       <div
         className="bg-gray-900 rounded-2xl shadow-2xl overflow-hidden w-[520px] max-h-[80vh] flex flex-col"
         onClick={e => e.stopPropagation()}
@@ -147,10 +147,10 @@ function TemplateRow({ template, onLoad, affiliate }: { template: OverlayTemplat
   return (
     <button
       onClick={onLoad}
-      className={`flex items-center gap-3 w-full text-left px-4 py-3 rounded-xl transition-colors group ${
+      className={`flex items-center gap-3 w-full text-left px-4 py-3 rounded-xl transition-all duration-200 hover:-translate-y-0.5 group ${
         affiliate
           ? 'bg-[#9147ff]/10 hover:bg-[#9147ff]/20 border border-[#9147ff]/20'
-          : 'bg-gray-800 hover:bg-gray-700'
+          : 'bg-gray-800 hover:bg-gray-700 border border-white/5'
       }`}
     >
       <span className="text-2xl">{template.icon}</span>
@@ -172,7 +172,7 @@ function PanelCard({ asset, downloaded, onDownload, onAdd }: {
   onAdd: () => void
 }) {
   return (
-    <div className="flex flex-col rounded-xl bg-gray-800 overflow-hidden border border-[#9147ff]/20">
+    <div className="flex flex-col rounded-xl bg-gray-800 overflow-hidden border border-[#9147ff]/20 transition-all duration-200 hover:-translate-y-0.5">
       <div className="w-full h-14 bg-gray-950 flex items-center justify-center overflow-hidden">
         <img src={asset.src} alt={asset.name} className="w-full h-full object-cover" />
       </div>
@@ -214,7 +214,7 @@ function AssetCard({ asset, onAdd }: { asset: BuiltInAsset; onAdd: (src: Omit<So
         height: asset.defaultH,
         imageSrc: asset.src,
       })}
-      className="flex flex-col items-center gap-2 p-3 rounded-xl bg-gray-800 hover:bg-gray-700 transition-colors group"
+      className="flex flex-col items-center gap-2 p-3 rounded-xl bg-gray-800 hover:bg-gray-700 border border-white/5 transition-all duration-200 hover:-translate-y-0.5 group"
     >
       <div className="w-full h-16 rounded-lg overflow-hidden bg-gray-950 flex items-center justify-center">
         <img src={asset.src} alt={asset.name} className="max-w-full max-h-full object-contain" />

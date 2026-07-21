@@ -96,9 +96,9 @@ export default function Sidebar({
         {scenes.map((scene, idx) => (
           <div
             key={scene.id}
-            className={`group flex items-center border-l-2 transition-colors ${
+            className={`group flex items-center border-l-[3px] transition-colors ${
               scene.id === activeSceneId
-                ? 'bg-red-50 dark:bg-red-950 border-brand-red'
+                ? 'bg-accent-subtle border-brand-red'
                 : 'border-transparent hover:bg-gray-50 dark:hover:bg-gray-800'
             }`}
           >

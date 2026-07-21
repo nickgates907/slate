@@ -270,8 +270,8 @@ export default function SourcesPanel({
 
             {/* Screen capture tip: exclusive fullscreen games capture poorly — recommend Borderless Windowed */}
             {source.type === 'screen' && (
-              <div className="mx-3 mb-2 px-2 py-1.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-                <p className="text-xs text-amber-700 dark:text-amber-300 leading-snug">
+              <div className="mx-3 mb-2 pl-2.5 pr-2 py-1.5 bg-gold-accent/5 border-l-[3px] border-gold-accent rounded-md">
+                <p className="text-xs text-amber-700 dark:text-amber-200/80 leading-snug">
                   <span className="font-semibold">Tip:</span> For games, use <span className="font-semibold">Borderless Windowed</span> mode for best capture quality.
                 </p>
               </div>
