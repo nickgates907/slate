@@ -75,7 +75,7 @@ export default function Titlebar({ dark, onToggleDark, onOpenSettings, isRecordi
             </button>
           </Tooltip>
           {showGoalEditor && (
-            <div className="absolute top-full left-0 mt-1.5 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl p-3 z-50 flex flex-col gap-2 w-44">
+            <div className="absolute top-full left-0 mt-1.5 modal-shell p-3 z-50 flex flex-col gap-2 w-44">
               <p className="text-xs text-gray-400 font-semibold uppercase tracking-widest">Sub Goal</p>
               <div className="flex items-center gap-2">
                 <label className="text-xs text-gray-500 w-14 shrink-0">Current</label>
@@ -109,7 +109,7 @@ export default function Titlebar({ dark, onToggleDark, onOpenSettings, isRecordi
       <Tooltip text="Switch between light and dark theme" position="bottom">
       <button
         onClick={onToggleDark}
-        className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+        className="btn-secondary flex items-center gap-2 text-xs px-3 py-1.5"
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
@@ -123,7 +123,7 @@ export default function Titlebar({ dark, onToggleDark, onOpenSettings, isRecordi
 
       {/* Settings */}
       <Tooltip text="Change video quality, frame rate, and where recordings are saved" position="bottom">
-      <button onClick={onOpenSettings} className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+      <button onClick={onOpenSettings} className="btn-secondary flex items-center gap-1.5 text-xs px-3 py-1.5">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
         </svg>
@@ -137,7 +137,7 @@ export default function Titlebar({ dark, onToggleDark, onOpenSettings, isRecordi
           <button
             onClick={onClip}
             disabled={isClipping}
-            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-wait"
+            className="btn-secondary flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 disabled:opacity-50 disabled:cursor-wait"
           >
             {isClipping ? (
               <span className="w-3 h-3 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
@@ -162,7 +162,7 @@ export default function Titlebar({ dark, onToggleDark, onOpenSettings, isRecordi
             ? 'bg-purple-600 text-white hover:bg-purple-500'
             : streamStatus === 'connecting'
             ? 'bg-purple-400 text-white cursor-wait'
-            : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
+            : 'btn-secondary'
         }`}
       >
         {streamStatus === 'live' ? (
@@ -231,10 +231,10 @@ export default function Titlebar({ dark, onToggleDark, onOpenSettings, isRecordi
       <button
         onClick={onToggleRecord}
         disabled={streamStatus !== 'idle'}
-        className={`flex items-center gap-2 text-sm font-semibold px-4 py-1.5 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+        className={`flex items-center gap-2 text-sm px-4 py-1.5 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
           isRecording
-            ? 'bg-gray-800 text-white hover:bg-gray-700'
-            : 'bg-brand-red text-white hover:bg-red-500'
+            ? 'bg-gray-800 text-white hover:bg-gray-700 font-semibold'
+            : 'btn-primary'
         }`}
       >
         <div className={`flex-shrink-0 self-center ${isRecording ? 'w-3 h-3 bg-white rounded-sm' : 'w-2 h-2 bg-white rounded-full'}`} />

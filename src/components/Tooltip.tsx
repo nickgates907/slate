@@ -35,7 +35,7 @@ export default function Tooltip({ text, children, position = 'top', className = 
         role="tooltip"
         className={`absolute ${bubble[position]} z-[200] pointer-events-none opacity-0 group-hover/tip:opacity-100 transition-opacity duration-100 group-hover/tip:delay-500`}
       >
-        <div className="bg-gray-800 text-white text-xs rounded-lg px-2.5 py-1.5 max-w-[190px] text-center leading-snug shadow-xl whitespace-normal">
+        <div className="bg-gray-800 border border-white/10 text-white text-xs rounded-lg px-2.5 py-1.5 max-w-[190px] text-center leading-snug shadow-lg whitespace-normal">
           {text}
         </div>
         <div className={`absolute w-0 h-0 border-4 ${arrow[position]}`} />

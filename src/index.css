@@ -14,6 +14,24 @@
   100% { transform: translateY(-48px); opacity: 0; }
 }
 
+@layer components {
+  .card-panel {
+    @apply bg-gray-800/50 border border-white/5 rounded-xl;
+  }
+  .modal-shell {
+    @apply bg-gray-900 rounded-2xl shadow-2xl border border-white/5;
+  }
+  .modal-backdrop {
+    @apply fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm;
+  }
+  .btn-primary {
+    @apply bg-brand-red hover:bg-red-500 text-white rounded-lg font-semibold transition-colors;
+  }
+  .btn-secondary {
+    @apply bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors;
+  }
+}
+
 @layer base {
   * {
     box-sizing: border-box;

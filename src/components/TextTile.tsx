@@ -62,7 +62,7 @@ export default function TextTile({ source, onUpdate }: TextTileProps) {
         <button
           onMouseDown={e => e.stopPropagation()}
           onClick={() => setEditing(true)}
-          className="absolute right-1.5 opacity-0 group-hover/text:opacity-100 transition-opacity bg-brand-red text-white text-xs rounded px-1.5 py-0.5"
+          className="absolute right-1.5 opacity-0 group-hover/text:opacity-100 transition-opacity bg-brand-red text-white text-xs rounded-lg px-1.5 py-0.5"
         >
           Edit
         </button>

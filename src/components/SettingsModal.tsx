@@ -1,9 +1,6 @@
 import { useState } from 'react'
 import { open } from '@tauri-apps/api/dialog'
-import { open as openUrl } from '@tauri-apps/api/shell'
 import { RecordingSettings } from '../store'
-
-const SUPPORT_URL = 'https://www.paypal.com/donate/?hosted_button_id=ANA7ESGZ5VYDW'
 
 interface SettingsModalProps {
   settings: RecordingSettings
@@ -141,15 +138,6 @@ export default function SettingsModal({ settings, saveFolder, onSave, onRestoreS
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/>
-            </svg>
-          </button>
-          <button
-            onClick={() => openUrl(SUPPORT_URL)}
-            className="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-brand-red rounded-lg transition-colors"
-            title="Support development — voluntary, helps fund Slate. No features are ever locked behind this."
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
             </svg>
           </button>
           <div className="flex-1" />

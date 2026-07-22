@@ -2,12 +2,15 @@ import React, { useRef, useState, useEffect } from 'react'
 import { open } from '@tauri-apps/api/dialog'
 import { readBinaryFile } from '@tauri-apps/api/fs'
 import { convertFileSrc } from '@tauri-apps/api/tauri'
+import { open as openUrl } from '@tauri-apps/api/shell'
 import { browserFrameRegistry } from '../lib/browserFrameRegistry'
 import { Scene, Source, SceneBackground, defaultBackground } from '../store'
 import VideoTile from './VideoTile'
 import TextTile from './TextTile'
 import MusicTile from './MusicTile'
 import Tooltip from './Tooltip'
+
+const SUPPORT_URL = 'https://www.paypal.com/donate/?hosted_button_id=ANA7ESGZ5VYDW'
 
 interface CanvasProps {
   scene: Scene
@@ -420,14 +423,14 @@ export default function Canvas({
         <Tooltip text="Change the scene background color or image" position="top">
           <button
             onClick={() => setShowBgPicker(p => !p)}
-            className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            className="btn-secondary flex items-center gap-1.5 text-xs px-3 py-1.5"
           >
             <span className="w-3 h-3 rounded-sm border border-gray-300 flex-shrink-0" style={{ backgroundColor: bg.type === 'color' ? bg.color : undefined, backgroundImage: bg.type === 'image' && bg.imageSrc ? `url(${bg.imageSrc})` : undefined, backgroundSize: 'cover' }} />
             Background
           </button>
         </Tooltip>
         <Tooltip text="Save your scene layout to share with others or keep as a backup" position="top">
-          <button onClick={onExportLayout} className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+          <button onClick={onExportLayout} className="btn-secondary flex items-center gap-1.5 text-xs px-3 py-1.5">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/>
             </svg>
@@ -435,7 +438,7 @@ export default function Canvas({
           </button>
         </Tooltip>
         <Tooltip text="Load a previously saved scene layout" position="top">
-          <button onClick={onImportLayout} className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+          <button onClick={onImportLayout} className="btn-secondary flex items-center gap-1.5 text-xs px-3 py-1.5">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
             </svg>
@@ -443,11 +446,22 @@ export default function Canvas({
           </button>
         </Tooltip>
         <Tooltip text="Browse pre-made overlay templates — alerts, panels, and more" position="top">
-          <button onClick={onOpenOverlays} className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+          <button onClick={onOpenOverlays} className="btn-secondary flex items-center gap-1.5 text-xs px-3 py-1.5">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
             </svg>
             Overlays
+          </button>
+        </Tooltip>
+        <Tooltip text="Support development — voluntary, helps fund Slate. No features are ever locked behind this." position="top">
+          <button
+            onClick={() => openUrl(SUPPORT_URL)}
+            className="btn-secondary flex items-center gap-1.5 text-xs px-3 py-1.5 hover:text-brand-red"
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
+            Support
           </button>
         </Tooltip>
         <div className="flex-1" />
@@ -483,7 +497,7 @@ function BgPicker({ bg, onChange, onClose }: { bg: SceneBackground; onChange: (b
   }
 
   return (
-    <div className="absolute bottom-12 left-3 z-20 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl p-4 w-56">
+    <div className="absolute bottom-12 left-3 z-20 bg-white dark:bg-gray-900 border border-gray-200 dark:border-white/5 rounded-xl shadow-xl p-4 w-56">
       <div className="flex items-center justify-between mb-3">
         <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Background</span>
         <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import type { CSSProperties } from 'react'
 import { invoke } from '@tauri-apps/api/tauri'
 import { TWITCH_CLIENT_ID, YOUTUBE_CLIENT_ID, generatePkce } from '../config/platforms'
 
@@ -305,18 +306,14 @@ export default function StreamingModal({ onGoLive, onEndStream, status, liveTime
           {isLive ? (
             <button
               onClick={onEndStream}
-              className="w-full py-3 rounded-xl font-bold text-sm text-white transition-colors"
-              style={{ background: 'rgba(255,255,255,0.08)' }}
-              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.13)')}
-              onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.08)')}
+              className="w-full py-3 rounded-xl font-bold text-sm text-white bg-white/[0.08] hover:bg-white/[0.13] transition-colors"
             >
               End Stream
             </button>
           ) : isConnecting ? (
             <button
               onClick={onEndStream}
-              className="w-full py-3 rounded-xl font-semibold text-sm text-gray-500"
-              style={{ background: 'rgba(255,255,255,0.05)' }}
+              className="w-full py-3 rounded-xl font-semibold text-sm text-gray-500 bg-white/[0.05]"
             >
               Cancel
             </button>
@@ -324,8 +321,8 @@ export default function StreamingModal({ onGoLive, onEndStream, status, liveTime
             <button
               onClick={handleGoLive}
               disabled={!canGoLive || metaSaving}
-              className="w-full py-3 rounded-xl font-bold text-sm text-white transition-all disabled:opacity-25 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              style={canGoLive ? { background: 'linear-gradient(135deg, #FF4D4D 0%, #e03030 100%)', boxShadow: '0 4px 20px rgba(255,77,77,0.35)' } : { background: 'rgba(255,255,255,0.06)' }}
+              className={`w-full py-3 rounded-xl font-bold text-sm text-white transition-all disabled:opacity-25 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${!canGoLive ? 'bg-white/[0.06]' : ''}`}
+              style={canGoLive ? { background: 'linear-gradient(135deg, #FF4D4D 0%, #e03030 100%)', boxShadow: '0 4px 20px rgba(255,77,77,0.35)' } : undefined}
             >
               {metaSaving ? (
                 <>
@@ -431,10 +428,8 @@ function PlatformRow({ platform, state, onConnect, onDisconnect, disabled }: Pla
     <button
       onClick={onConnect}
       disabled={disabled}
-      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all group disabled:opacity-30 disabled:cursor-not-allowed"
-      style={{ background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.07)' }}
-      onMouseEnter={e => { if (!disabled) { e.currentTarget.style.background = meta.dimColor; e.currentTarget.style.borderColor = meta.borderColor } }}
-      onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)' }}
+      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-white/[0.07] bg-white/[0.03] transition-all group disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[var(--hover-bg)] hover:border-[var(--hover-border)]"
+      style={{ '--hover-bg': meta.dimColor, '--hover-border': meta.borderColor } as CSSProperties}
     >
       <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: meta.color }}>
         <span className="text-white">{meta.icon}</span>

@@ -24,8 +24,7 @@ export default function ChatOverlay({ messages }: ChatOverlayProps) {
         {messages.slice(-12).map(msg => (
           <div
             key={msg.id}
-            className="flex gap-1.5 px-2 py-1 rounded-lg text-xs leading-snug"
-            style={{ background: 'rgba(10,10,20,0.72)', backdropFilter: 'blur(4px)' }}
+            className="flex gap-1.5 px-2 py-1 rounded-lg text-xs leading-snug bg-[#0a0a14]/[0.72] backdrop-blur-sm"
           >
             <span className="font-bold flex-shrink-0" style={{ color: msg.color }}>
               {msg.username}:
