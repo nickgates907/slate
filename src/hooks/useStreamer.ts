@@ -172,6 +172,7 @@ export function useStreamer() {
   const statsIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const streamStartRef = useRef<number | null>(null)
   const wsDisconnectHandledRef = useRef(false)
+  const frameErrorReportedRef = useRef(false)
 
   const start = useCallback(async (
     scene: Scene,
@@ -188,6 +189,7 @@ export function useStreamer() {
     activeRef.current = true
     streamStartRef.current = Date.now()
     wsDisconnectHandledRef.current = false
+    frameErrorReportedRef.current = false
 
     const previewW = previewEl.offsetWidth || 640
     const previewH = previewEl.offsetHeight || 360
@@ -402,15 +404,26 @@ export function useStreamer() {
         if (!activeRef.current) return
         const now = performance.now()
 
-        drawScene(ctx, sceneRef.current, outW, outH, scaleX, scaleY, imgCache, scrollOffsets, bgImgRef, bgImgSrcRef)
-        if (alertRef?.current) drawAlert(ctx, alertRef.current, outW, outH)
+        // A single bad frame (e.g. a screen-capture source flickering/resizing)
+        // must never kill this loop — without the catch, an exception here skips
+        // the setTimeout reschedule below and the entire stream dies silently.
+        try {
+          drawScene(ctx, sceneRef.current, outW, outH, scaleX, scaleY, imgCache, scrollOffsets, bgImgRef, bgImgSrcRef)
+          if (alertRef?.current) drawAlert(ctx, alertRef.current, outW, outH)
 
-        if (videoEncoder.state === 'configured') {
-          const isKeyFrame = frameCount++ % keyFrameInterval === 0
-          const frame = new VideoFrame(canvas, { timestamp: now * 1000 })
-          videoEncoder.encode(frame, { keyFrame: isKeyFrame })
-          frame.close()
-          statsFrames.current++
+          if (videoEncoder.state === 'configured') {
+            const isKeyFrame = frameCount++ % keyFrameInterval === 0
+            const frame = new VideoFrame(canvas, { timestamp: now * 1000 })
+            videoEncoder.encode(frame, { keyFrame: isKeyFrame })
+            frame.close()
+            statsFrames.current++
+          }
+        } catch (e) {
+          console.error('Frame skipped due to error:', e)
+          if (!frameErrorReportedRef.current) {
+            frameErrorReportedRef.current = true
+            void reportCrash({ type: 'js_error', message: `Frame draw/encode error: ${e instanceof Error ? e.message : String(e)}` })
+          }
         }
 
         // Schedule next frame accounting for how long this one took
@@ -446,9 +459,17 @@ export function useStreamer() {
       let expectedAt2 = performance.now()
       const draw = () => {
         if (!activeRef.current) return
-        drawScene(ctx, sceneRef.current, outW, outH, scaleX, scaleY, imgCache, scrollOffsets, bgImgRef, bgImgSrcRef)
-        if (alertRef?.current) drawAlert(ctx, alertRef.current, outW, outH)
-        statsFrames.current++
+        try {
+          drawScene(ctx, sceneRef.current, outW, outH, scaleX, scaleY, imgCache, scrollOffsets, bgImgRef, bgImgSrcRef)
+          if (alertRef?.current) drawAlert(ctx, alertRef.current, outW, outH)
+          statsFrames.current++
+        } catch (e) {
+          console.error('Frame skipped due to error:', e)
+          if (!frameErrorReportedRef.current) {
+            frameErrorReportedRef.current = true
+            void reportCrash({ type: 'js_error', message: `Frame draw error (VP8 path): ${e instanceof Error ? e.message : String(e)}` })
+          }
+        }
 
         expectedAt2 += frameDuration2
         const drift2 = performance.now() - expectedAt2

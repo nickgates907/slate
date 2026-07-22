@@ -61,6 +61,10 @@ export function useRecorder() {
     const scrollOffsets = new Map<string, number>()
 
     const draw = () => {
+      // A single bad frame (e.g. a screen-capture source flickering/resizing) must
+      // never kill this loop — the requestAnimationFrame reschedule is in `finally`
+      // so recording keeps going even if one frame throws.
+      try {
       const s = sceneRef.current
       const bg = s?.background
       if (bg?.type === 'image' && bg.imageSrc) {
@@ -162,7 +166,11 @@ export function useRecorder() {
       }
 
       if (alertRef.current?.current) drawAlert(ctx, alertRef.current.current, outW, outH)
-      rafRef.current = requestAnimationFrame(draw)
+      } catch (e) {
+        console.error('Recording frame skipped due to error:', e)
+      } finally {
+        rafRef.current = requestAnimationFrame(draw)
+      }
     }
     draw()
 
