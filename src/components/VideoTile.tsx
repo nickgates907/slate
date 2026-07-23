@@ -137,7 +137,12 @@ function VideoTile({ source }: VideoTileProps) {
   const startScreenCapture = async () => {
     setStreamState('loading')
     try {
-      const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true })
+      // displaySurface: 'monitor' hints the OS picker to default to "Entire Screen" --
+      // the only option Windows/Chromium actually offers system audio for.
+      const stream = await navigator.mediaDevices.getDisplayMedia({
+        video: { displaySurface: 'monitor' } as MediaTrackConstraints,
+        audio: true,
+      })
       streamRef.current = stream
       // screenRegistry.set() handles audio registration under '__screen__'
       screenRegistry.set(source.id, stream)
