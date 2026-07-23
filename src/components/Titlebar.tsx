@@ -76,17 +76,17 @@ export default function Titlebar({ dark, onToggleDark, onOpenSettings, isRecordi
           </Tooltip>
           {showGoalEditor && (
             <div className="absolute top-full left-0 mt-1.5 modal-shell p-3 z-50 flex flex-col gap-2 w-44">
-              <p className="text-xs text-gray-400 font-semibold uppercase tracking-widest">Sub Goal</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-widest">Sub Goal</p>
               <div className="flex items-center gap-2">
                 <label className="text-xs text-gray-500 w-14 shrink-0">Current</label>
                 <div className="flex items-center gap-1">
-                  <button onClick={() => onUpdateSubGoal(Math.max(0, subCurrent - 1), subGoal)} className="w-6 h-6 rounded bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold flex items-center justify-center">−</button>
+                  <button onClick={() => onUpdateSubGoal(Math.max(0, subCurrent - 1), subGoal)} className="w-6 h-6 rounded bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-white text-xs font-bold flex items-center justify-center">−</button>
                   <input
                     type="number" min={0} value={subCurrent}
                     onChange={e => onUpdateSubGoal(Math.max(0, parseInt(e.target.value) || 0), subGoal)}
-                    className="w-10 text-center text-xs font-bold text-white bg-gray-800 border border-gray-600 rounded px-1 py-0.5"
+                    className="w-10 text-center text-xs font-bold text-gray-800 dark:text-white bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded px-1 py-0.5"
                   />
-                  <button onClick={() => onUpdateSubGoal(subCurrent + 1, subGoal)} className="w-6 h-6 rounded bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold flex items-center justify-center">+</button>
+                  <button onClick={() => onUpdateSubGoal(subCurrent + 1, subGoal)} className="w-6 h-6 rounded bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-white text-xs font-bold flex items-center justify-center">+</button>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -94,10 +94,10 @@ export default function Titlebar({ dark, onToggleDark, onOpenSettings, isRecordi
                 <input
                   type="number" min={1} value={subGoal}
                   onChange={e => onUpdateSubGoal(subCurrent, Math.max(1, parseInt(e.target.value) || 1))}
-                  className="w-16 text-center text-xs font-bold text-white bg-gray-800 border border-gray-600 rounded px-1 py-0.5"
+                  className="w-16 text-center text-xs font-bold text-gray-800 dark:text-white bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded px-1 py-0.5"
                 />
               </div>
-              <button onClick={() => setShowGoalEditor(false)} className="text-xs text-gray-500 hover:text-white text-center mt-0.5 transition-colors">Done</button>
+              <button onClick={() => setShowGoalEditor(false)} className="text-xs text-gray-500 hover:text-gray-900 dark:hover:text-white text-center mt-0.5 transition-colors">Done</button>
             </div>
           )}
         </div>

@@ -47,28 +47,28 @@ export default function OverlaysModal({ onLoad, onAddAsset, onClose }: OverlaysM
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm" onClick={onClose}>
+    <div className="modal-backdrop" onClick={onClose}>
       <div
-        className="bg-gray-900 rounded-2xl shadow-2xl overflow-hidden w-[520px] max-h-[80vh] flex flex-col"
+        className="modal-shell overflow-hidden w-[520px] max-h-[80vh] flex flex-col"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center gap-3 px-5 py-3 border-b border-gray-800 shrink-0">
-          <span className="text-white font-semibold text-sm">Overlays</span>
+        <div className="flex items-center gap-3 px-5 py-3 border-b border-gray-200 dark:border-gray-800 shrink-0">
+          <span className="text-gray-900 dark:text-white font-semibold text-sm">Overlays</span>
           <div className="flex-1" />
-          <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors text-lg leading-none">×</button>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors text-lg leading-none">×</button>
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-gray-800 shrink-0">
+        <div className="flex border-b border-gray-200 dark:border-gray-800 shrink-0">
           {(['templates', 'assets'] as Tab[]).map(t => (
             <button
               key={t}
               onClick={() => setTab(t)}
               className={`flex-1 py-2.5 text-xs font-semibold transition-colors ${
                 tab === t
-                  ? 'text-white border-b-2 border-brand-red'
-                  : 'text-gray-500 hover:text-gray-300'
+                  ? 'text-gray-900 dark:text-white border-b-2 border-brand-red'
+                  : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
               }`}
             >
               {t === 'templates' ? 'Scene Templates' : 'Built-in Assets'}
@@ -95,7 +95,7 @@ export default function OverlaysModal({ onLoad, onAddAsset, onClose }: OverlaysM
                 <TemplateRow key={t.id} template={t} onLoad={() => { onLoad(t); onClose() }} affiliate />
               ))}
 
-              <p className="text-gray-600 text-xs px-1 pt-2">Loads as a new scene. Your existing scenes are not changed.</p>
+              <p className="text-gray-400 dark:text-gray-600 text-xs px-1 pt-2">Loads as a new scene. Your existing scenes are not changed.</p>
             </div>
           ) : (
             <div className="p-4 space-y-5">
@@ -134,7 +134,7 @@ export default function OverlaysModal({ onLoad, onAddAsset, onClose }: OverlaysM
                   </div>
                 )
               })}
-              <p className="text-gray-600 text-xs px-1">Adds directly to the current scene as an image source.</p>
+              <p className="text-gray-400 dark:text-gray-600 text-xs px-1">Adds directly to the current scene as an image source.</p>
             </div>
           )}
         </div>
@@ -150,13 +150,13 @@ function TemplateRow({ template, onLoad, affiliate }: { template: OverlayTemplat
       className={`flex items-center gap-3 w-full text-left px-4 py-3 rounded-xl transition-all duration-200 hover:-translate-y-0.5 group ${
         affiliate
           ? 'bg-[#9147ff]/10 hover:bg-[#9147ff]/20 border border-[#9147ff]/20'
-          : 'bg-gray-800 hover:bg-gray-700 border border-white/5'
+          : 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 border border-gray-200 dark:border-white/5'
       }`}
     >
       <span className="text-2xl">{template.icon}</span>
       <div className="flex-1 min-w-0">
-        <div className="text-white text-sm font-semibold">{template.label}</div>
-        <div className="text-gray-400 text-xs">{template.description}</div>
+        <div className="text-gray-900 dark:text-white text-sm font-semibold">{template.label}</div>
+        <div className="text-gray-500 dark:text-gray-400 text-xs">{template.description}</div>
       </div>
       <span className={`text-xs font-semibold opacity-0 group-hover:opacity-100 transition-opacity ${affiliate ? 'text-[#9147ff]' : 'text-brand-red'}`}>
         Load →
@@ -172,16 +172,16 @@ function PanelCard({ asset, downloaded, onDownload, onAdd }: {
   onAdd: () => void
 }) {
   return (
-    <div className="flex flex-col rounded-xl bg-gray-800 overflow-hidden border border-[#9147ff]/20 transition-all duration-200 hover:-translate-y-0.5">
-      <div className="w-full h-14 bg-gray-950 flex items-center justify-center overflow-hidden">
+    <div className="flex flex-col rounded-xl bg-gray-100 dark:bg-gray-800 overflow-hidden border border-[#9147ff]/20 transition-all duration-200 hover:-translate-y-0.5">
+      <div className="w-full h-14 bg-gray-200 dark:bg-gray-950 flex items-center justify-center overflow-hidden">
         <img src={asset.src} alt={asset.name} className="w-full h-full object-cover" />
       </div>
       <div className="flex items-center gap-1 px-2 py-1.5">
-        <span className="text-xs text-gray-300 flex-1 font-medium truncate">{asset.name}</span>
+        <span className="text-xs text-gray-700 dark:text-gray-300 flex-1 font-medium truncate">{asset.name}</span>
         <button
           onClick={onAdd}
           title="Add to scene"
-          className="text-[10px] text-gray-500 hover:text-white px-1.5 py-0.5 rounded transition-colors"
+          className="text-[10px] text-gray-500 hover:text-gray-900 dark:hover:text-white px-1.5 py-0.5 rounded transition-colors"
         >
           + Scene
         </button>
@@ -214,12 +214,12 @@ function AssetCard({ asset, onAdd }: { asset: BuiltInAsset; onAdd: (src: Omit<So
         height: asset.defaultH,
         imageSrc: asset.src,
       })}
-      className="flex flex-col items-center gap-2 p-3 rounded-xl bg-gray-800 hover:bg-gray-700 border border-white/5 transition-all duration-200 hover:-translate-y-0.5 group"
+      className="flex flex-col items-center gap-2 p-3 rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 border border-gray-200 dark:border-white/5 transition-all duration-200 hover:-translate-y-0.5 group"
     >
-      <div className="w-full h-16 rounded-lg overflow-hidden bg-gray-950 flex items-center justify-center">
+      <div className="w-full h-16 rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-950 flex items-center justify-center">
         <img src={asset.src} alt={asset.name} className="max-w-full max-h-full object-contain" />
       </div>
-      <span className="text-xs text-gray-400 group-hover:text-white transition-colors text-center leading-tight">
+      <span className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white transition-colors text-center leading-tight">
         {asset.name}
       </span>
     </button>

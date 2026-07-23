@@ -73,14 +73,14 @@ export default function PlaybackModal({ recording, saveFolder, onClose }: Playba
         style={{ width: '72vw', maxWidth: 900 }}>
 
         {/* Header */}
-        <div className="flex items-center gap-3 px-5 py-3 border-b border-gray-800">
+        <div className="flex items-center gap-3 px-5 py-3 border-b border-gray-200 dark:border-gray-800">
           <div className="w-2 h-2 rounded-full bg-brand-red" />
-          <span className="text-white font-semibold text-sm">Recording</span>
+          <span className="text-gray-900 dark:text-white font-semibold text-sm">Recording</span>
           <span className="text-gray-500 text-xs">
             {formatDuration(recording.durationSecs)} · {formatSize(recording.blob.size)}
           </span>
           <div className="flex-1" />
-          <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors text-lg leading-none">×</button>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors text-lg leading-none">×</button>
         </div>
 
         {/* Video */}
@@ -97,8 +97,8 @@ export default function PlaybackModal({ recording, saveFolder, onClose }: Playba
           <div className="card-panel px-4 py-3 flex items-center gap-3">
             {saveState === 'saving' && (
               <>
-                <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin flex-shrink-0" />
-                <span className="text-gray-400 text-xs">Saving to Documents…</span>
+                <div className="w-4 h-4 border-2 border-gray-300 dark:border-white/20 border-t-gray-600 dark:border-t-white rounded-full animate-spin flex-shrink-0" />
+                <span className="text-gray-500 dark:text-gray-400 text-xs">Saving to Documents…</span>
               </>
             )}
             {saveState === 'saved' && (
@@ -137,8 +137,8 @@ export default function PlaybackModal({ recording, saveFolder, onClose }: Playba
             )}
             {mp4State === 'converting' && (
               <>
-                <div className="w-4 h-4 border-2 border-white/20 border-t-brand-red rounded-full animate-spin flex-shrink-0" />
-                <span className="text-gray-400 text-xs">Converting to MP4…</span>
+                <div className="w-4 h-4 border-2 border-gray-300 dark:border-white/20 border-t-brand-red rounded-full animate-spin flex-shrink-0" />
+                <span className="text-gray-500 dark:text-gray-400 text-xs">Converting to MP4…</span>
               </>
             )}
             {mp4State === 'done' && (
@@ -163,10 +163,10 @@ export default function PlaybackModal({ recording, saveFolder, onClose }: Playba
         </div>
 
         {/* Footer */}
-        <div className="px-5 pb-5 flex items-center justify-end border-t border-gray-800 pt-4">
+        <div className="px-5 pb-5 flex items-center justify-end border-t border-gray-200 dark:border-gray-800 pt-4">
           <button
             onClick={onClose}
-            className="bg-gray-800 hover:bg-gray-700 border border-white/5 text-white rounded-lg px-4 py-1.5 text-xs font-semibold transition-colors"
+            className="btn-secondary px-4 py-1.5 text-xs font-semibold"
           >
             Close
           </button>

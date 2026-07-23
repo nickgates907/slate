@@ -270,25 +270,25 @@ export default function Sidebar({
 
     {/* ── Share modal ─────────────────────────────────────────────────────── */}
     {showShareModal && (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70" onClick={() => setShowShareModal(false)}>
-        <div className="bg-gray-900 rounded-2xl shadow-2xl w-[460px] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
-          <div className="flex items-center px-5 py-4 border-b border-gray-800">
+      <div className="modal-backdrop" onClick={() => setShowShareModal(false)}>
+        <div className="modal-shell w-[460px] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+          <div className="flex items-center px-5 py-4 border-b border-gray-200 dark:border-gray-800">
             <div>
-              <p className="text-white font-semibold text-sm">Share Loadout</p>
+              <p className="text-gray-900 dark:text-white font-semibold text-sm">Share Loadout</p>
               <p className="text-gray-500 text-xs mt-0.5">Share this code — paste it into Slate on any PC</p>
             </div>
-            <button onClick={() => setShowShareModal(false)} className="ml-auto text-gray-500 hover:text-white text-lg leading-none">×</button>
+            <button onClick={() => setShowShareModal(false)} className="ml-auto text-gray-500 hover:text-gray-900 dark:hover:text-white text-lg leading-none">×</button>
           </div>
           <div className="p-5 flex flex-col gap-4">
             {shareLoading && (
               <div className="h-20 flex items-center justify-center gap-2 text-gray-500 text-sm">
-                <span className="w-4 h-4 border-2 border-gray-600 border-t-brand-red rounded-full animate-spin" />
+                <span className="w-4 h-4 border-2 border-gray-300 dark:border-gray-600 border-t-brand-red rounded-full animate-spin" />
                 Generating code…
               </div>
             )}
 
             {!shareLoading && shareError && (
-              <div className="rounded-xl bg-red-500/10 border border-red-500/25 px-3.5 py-3 text-xs text-red-400 leading-relaxed">
+              <div className="rounded-xl bg-red-500/10 border border-red-500/25 px-3.5 py-3 text-xs text-red-500 dark:text-red-400 leading-relaxed">
                 {shareError}
               </div>
             )}
@@ -298,16 +298,16 @@ export default function Sidebar({
               return (
                 <div
                   onClick={() => navigator.clipboard.writeText(shareCode)}
-                  className="w-full bg-gray-950 border border-gray-800 hover:border-gray-700 rounded-xl py-4 text-center font-mono font-bold tracking-wide text-lg cursor-pointer transition-colors select-all"
+                  className="w-full bg-gray-100 dark:bg-gray-950 border border-gray-300 dark:border-gray-800 hover:border-gray-400 dark:hover:border-gray-700 rounded-xl py-4 text-center font-mono font-bold tracking-wide text-lg cursor-pointer transition-colors select-all"
                 >
-                  <span className="text-white">SLATE2-</span><span className="text-brand-red">{short}</span>
+                  <span className="text-gray-900 dark:text-white">SLATE2-</span><span className="text-brand-red">{short}</span>
                 </div>
               )
             })()}
 
-            <div className="rounded-xl bg-gray-800/60 px-3.5 py-2.5 text-xs text-gray-500 leading-relaxed">
+            <div className="rounded-xl bg-gray-100 dark:bg-gray-800/60 px-3.5 py-2.5 text-xs text-gray-500 leading-relaxed">
               Includes all scenes, overlays, text, and images.{' '}
-              <span className="text-gray-400">Music files and camera/screen sources need to be re-added on the other PC.</span>
+              <span className="text-gray-600 dark:text-gray-400">Music files and camera/screen sources need to be re-added on the other PC.</span>
             </div>
             <button
               onClick={handleCopy}
@@ -324,19 +324,19 @@ export default function Sidebar({
 
     {/* ── Import modal ────────────────────────────────────────────────────── */}
     {showImport && (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70" onClick={() => setShowImport(false)}>
-        <div className="bg-gray-900 rounded-2xl shadow-2xl w-[460px] flex flex-col overflow-hidden border border-white/5" onClick={e => e.stopPropagation()}>
-          <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-800">
+      <div className="modal-backdrop" onClick={() => setShowImport(false)}>
+        <div className="modal-shell w-[460px] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+          <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-200 dark:border-gray-800">
             <div className="w-9 h-9 rounded-xl bg-brand-red/15 flex items-center justify-center flex-shrink-0">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF4D4D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
               </svg>
             </div>
             <div>
-              <p className="text-white font-semibold text-sm">Import Loadout</p>
+              <p className="text-gray-900 dark:text-white font-semibold text-sm">Import Loadout</p>
               <p className="text-gray-500 text-xs mt-0.5">Paste a SLATE2-… code to restore someone&apos;s setup</p>
             </div>
-            <button onClick={() => setShowImport(false)} className="ml-auto text-gray-500 hover:text-white text-lg leading-none">×</button>
+            <button onClick={() => setShowImport(false)} className="ml-auto text-gray-500 hover:text-gray-900 dark:hover:text-white text-lg leading-none">×</button>
           </div>
           <div className="p-5 flex flex-col gap-4">
             <div className="relative">
@@ -345,20 +345,20 @@ export default function Sidebar({
                 value={importInput}
                 onChange={e => { setImportInput(e.target.value); setImportError(null) }}
                 placeholder="Paste your SLATE2-… code here"
-                className="w-full h-28 text-xs font-mono bg-gray-800/60 text-gray-300 rounded-xl p-3 pr-16 resize-none outline-none border border-gray-700 placeholder-gray-600 focus:border-brand-red transition-colors"
+                className="w-full h-28 text-xs font-mono bg-gray-50 dark:bg-gray-800/60 text-gray-700 dark:text-gray-300 rounded-xl p-3 pr-16 resize-none outline-none border border-gray-300 dark:border-gray-700 placeholder-gray-400 dark:placeholder-gray-600 focus:border-brand-red transition-colors"
               />
               <button
                 onClick={async () => {
                   const text = await navigator.clipboard.readText().catch(() => '')
                   if (text) { setImportInput(text); setImportError(null) }
                 }}
-                className="absolute top-2.5 right-2.5 text-[11px] font-semibold text-gray-400 hover:text-white bg-gray-700/80 hover:bg-gray-700 rounded-md px-2 py-1 transition-colors"
+                className="absolute top-2.5 right-2.5 text-[11px] font-semibold text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white bg-gray-200/80 dark:bg-gray-700/80 hover:bg-gray-300 dark:hover:bg-gray-700 rounded-md px-2 py-1 transition-colors"
               >
                 Paste
               </button>
             </div>
             {importError && (
-              <p className="text-red-400 text-xs -mt-1.5">{importError}</p>
+              <p className="text-red-500 dark:text-red-400 text-xs -mt-1.5">{importError}</p>
             )}
             <button
               onClick={handleImport}
@@ -366,7 +366,7 @@ export default function Sidebar({
               className={`w-full py-2.5 rounded-xl font-semibold text-sm transition-colors ${
                 importInput.trim()
                   ? 'bg-brand-red hover:bg-red-500 text-white cursor-pointer'
-                  : 'bg-gray-800 text-gray-600 cursor-not-allowed'
+                  : 'bg-gray-200 dark:bg-gray-800 text-gray-400 dark:text-gray-600 cursor-not-allowed'
               }`}
             >
               Import &amp; Apply
