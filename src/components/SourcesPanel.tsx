@@ -338,9 +338,9 @@ export default function SourcesPanel({
           <Tooltip key={type} text={tip} position="left">
             <button
               onClick={() => onAddSource(type)}
-              className="flex items-center gap-2 w-full px-2 py-1.5 text-xs text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors text-left"
+              className="btn-secondary flex items-center gap-2 w-full px-2.5 py-1.5 text-xs text-left"
             >
-              <span className="text-gray-400">{typeIcon(type)}</span>
+              {typeIcon(type)}
               {label}
             </button>
           </Tooltip>

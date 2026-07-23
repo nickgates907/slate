@@ -149,7 +149,7 @@ export default function Sidebar({
       <div className="p-2">
         <button
           onClick={onAddScene}
-          className="w-full py-2 text-xs font-semibold text-gray-600 dark:text-gray-300 border border-dashed border-gray-400 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 hover:border-brand-red hover:text-brand-red transition-colors"
+          className="w-full py-2 text-xs font-semibold text-gray-600 dark:text-gray-300 border border-dashed border-gray-400 dark:border-white/25 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 hover:border-brand-red hover:text-brand-red transition-colors"
         >
           + New Scene
         </button>
@@ -222,7 +222,7 @@ export default function Sidebar({
             ) : (
               <button
                 onClick={() => setShowSaveInput(true)}
-                className="w-full py-1.5 text-xs font-semibold text-gray-500 dark:text-gray-500 border border-dashed border-gray-300 dark:border-gray-700 rounded-lg hover:border-brand-red hover:text-brand-red transition-colors"
+                className="w-full py-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 border border-dashed border-gray-300 dark:border-white/20 rounded-lg hover:border-brand-red hover:text-brand-red transition-colors"
               >
                 + Save current scenes
               </button>
@@ -232,7 +232,7 @@ export default function Sidebar({
               <Tooltip text="Share your current scenes as a code others can import" position="right">
                 <button
                   onClick={() => handleShare('My Setup', scenes)}
-                  className="flex-1 py-1.5 text-xs font-semibold text-gray-500 dark:text-gray-500 border border-dashed border-gray-300 dark:border-gray-700 rounded-lg hover:border-brand-red hover:text-brand-red transition-colors flex items-center justify-center gap-1.5"
+                  className="flex-1 py-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 border border-dashed border-gray-300 dark:border-white/20 rounded-lg hover:border-brand-red hover:text-brand-red transition-colors flex items-center justify-center gap-1.5"
                 >
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
@@ -244,7 +244,7 @@ export default function Sidebar({
               <Tooltip text="Import a loadout code from another PC" position="right">
                 <button
                   onClick={() => { setImportInput(''); setImportError(null); setShowImport(true) }}
-                  className="flex-1 py-1.5 text-xs font-semibold text-gray-500 dark:text-gray-500 border border-dashed border-gray-300 dark:border-gray-700 rounded-lg hover:border-brand-red hover:text-brand-red transition-colors flex items-center justify-center gap-1.5"
+                  className="flex-1 py-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 border border-dashed border-gray-300 dark:border-white/20 rounded-lg hover:border-brand-red hover:text-brand-red transition-colors flex items-center justify-center gap-1.5"
                 >
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
