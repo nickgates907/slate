@@ -138,10 +138,12 @@ function VideoTile({ source }: VideoTileProps) {
     setStreamState('loading')
     try {
       // displaySurface: 'monitor' hints the OS picker to default to "Entire Screen" --
-      // the only option Windows/Chromium actually offers system audio for.
+      // the only option Windows/Chromium actually offers system audio for. systemAudio:
+      // 'include' hints the "Also share system audio" toggle to default on, since it's
+      // a separate opt-in even when Entire Screen is already selected.
       const stream = await navigator.mediaDevices.getDisplayMedia({
         video: { displaySurface: 'monitor' } as MediaTrackConstraints,
-        audio: true,
+        audio: { systemAudio: 'include' } as MediaTrackConstraints,
       })
       streamRef.current = stream
       // screenRegistry.set() handles audio registration under '__screen__'
