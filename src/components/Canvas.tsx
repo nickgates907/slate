@@ -445,7 +445,7 @@ export default function Canvas({
             Import
           </button>
         </Tooltip>
-        <Tooltip text="Browse pre-made overlay templates — alerts, panels, and more" position="top">
+        <Tooltip text="Browse pre-made overlay templates, including alerts, panels, and more" position="top">
           <button onClick={onOpenOverlays} className="btn-secondary flex items-center gap-1.5 text-xs px-3 py-1.5">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
@@ -453,7 +453,7 @@ export default function Canvas({
             Overlays
           </button>
         </Tooltip>
-        <Tooltip text="Support development — voluntary, helps fund Slate. No features are ever locked behind this." position="top">
+        <Tooltip text="Support development. Voluntary, and helps fund Slate. No features are ever locked behind this." position="top">
           <button
             onClick={() => openUrl(SUPPORT_URL)}
             className="btn-secondary flex items-center gap-1.5 text-xs px-3 py-1.5 hover:text-brand-red"

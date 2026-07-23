@@ -65,7 +65,7 @@ export default function Titlebar({ dark, onToggleDark, onOpenSettings, isRecordi
       {/* Sub goal quick editor — shown while live */}
       {streamStatus === 'live' && (
         <div className="relative">
-          <Tooltip text="Update your sub goal counter live — it updates the scrolling banner on stream instantly" position="bottom">
+          <Tooltip text="Update your sub goal counter live. It updates the scrolling banner on stream instantly." position="bottom">
             <button
               onClick={() => setShowGoalEditor(g => !g)}
               className="flex items-center gap-1.5 px-3 py-1 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-700 transition-colors"
@@ -133,7 +133,7 @@ export default function Titlebar({ dark, onToggleDark, onOpenSettings, isRecordi
 
       {/* Clip button — save last 30s, only shown while live */}
       {streamStatus === 'live' && (
-        <Tooltip text="Save the last 30 seconds as a clip — saved to your recordings folder" position="bottom">
+        <Tooltip text="Save the last 30 seconds as a clip, saved to your recordings folder" position="bottom">
           <button
             onClick={onClip}
             disabled={isClipping}
@@ -187,7 +187,7 @@ export default function Titlebar({ dark, onToggleDark, onOpenSettings, isRecordi
       </Tooltip>
 
       {/* Mic toggle — always visible so you never go live silent */}
-      <Tooltip text={micEnabled ? 'Microphone is ON — click to mute' : 'Microphone is OFF — click to unmute'} position="bottom">
+      <Tooltip text={micEnabled ? 'Microphone is ON, click to mute' : 'Microphone is OFF, click to unmute'} position="bottom">
         <button
           onClick={onToggleMic}
           className={`relative flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors ${

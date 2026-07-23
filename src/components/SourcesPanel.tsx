@@ -70,12 +70,12 @@ function AudioMeter({ level }: { level: number }) {
 const ADD_SOURCES = [
   { type: 'camera' as const,  label: 'Add camera', tip: 'Add your webcam to the scene' },
   { type: 'screen' as const,  label: 'Add screen', tip: 'Capture your entire screen or a game window' },
-  { type: 'avatar' as const,  label: 'Add avatar', tip: 'Circular webcam — great for a face cam overlay' },
+  { type: 'avatar' as const,  label: 'Add avatar', tip: 'Circular webcam, great for a face cam overlay' },
   { type: 'image'  as const,  label: 'Add image',  tip: 'Add a logo, overlay image, or graphic' },
   { type: 'audio'  as const,  label: 'Add mic',    tip: 'Add your microphone so viewers can hear you' },
-  { type: 'text'   as const,  label: 'Add text',   tip: 'Add text to your scene — name, social handles, alerts' },
-  { type: 'music'  as const,  label: 'Add music',  tip: 'Play background or intro music — loops and plays through the stream' },
-  { type: 'browser' as const, label: 'Add browser source', tip: 'Load a local HTML file — animated overlays, visualizers, custom scenes' },
+  { type: 'text'   as const,  label: 'Add text',   tip: 'Add text to your scene: name, social handles, alerts' },
+  { type: 'music'  as const,  label: 'Add music',  tip: 'Play background or intro music that loops and plays through the stream' },
+  { type: 'browser' as const, label: 'Add browser source', tip: 'Load a local HTML file for animated overlays, visualizers, custom scenes' },
 ]
 
 export default function SourcesPanel({
@@ -96,7 +96,7 @@ export default function SourcesPanel({
 
               {/* Reorder arrows */}
               <div className="flex flex-col gap-px flex-shrink-0">
-                <Tooltip text="Move up — sources higher in the list appear on top" position="left">
+                <Tooltip text="Move up. Sources higher in the list appear on top." position="left">
                   <button
                     onClick={() => onReorderSource(source.id, 'up')}
                     disabled={sources.indexOf(source) === 0}
@@ -105,7 +105,7 @@ export default function SourcesPanel({
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
                   </button>
                 </Tooltip>
-                <Tooltip text="Move down — sources lower in the list appear behind" position="left">
+                <Tooltip text="Move down. Sources lower in the list appear behind." position="left">
                   <button
                     onClick={() => onReorderSource(source.id, 'down')}
                     disabled={sources.indexOf(source) === sources.length - 1}
@@ -205,7 +205,7 @@ export default function SourcesPanel({
             {/* BG removal */}
             {(source.type === 'camera' || source.type === 'avatar') && (
               <div className="px-3 pb-2">
-                <Tooltip text="Remove your webcam background using AI — no green screen needed" position="top">
+                <Tooltip text="Remove your webcam background using AI, no green screen needed" position="top">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
