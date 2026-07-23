@@ -20,6 +20,7 @@ function VideoTile({ source }: VideoTileProps) {
     source.type === 'screen' ? 'idle' : 'loading'
   )
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [noAudioWarning, setNoAudioWarning] = useState(false)
 
   // Camera / avatar: acquire from shared registry (instant on scene switch)
   useEffect(() => {
@@ -146,6 +147,12 @@ function VideoTile({ source }: VideoTileProps) {
         videoRegistry.register(source.id, videoRef.current)
       }
       setStreamState('active')
+      // Windows/Chromium only offers system audio when sharing the entire screen --
+      // picking a specific window silently omits it, so warn the user right away.
+      if (stream.getAudioTracks().length === 0) {
+        setNoAudioWarning(true)
+        setTimeout(() => setNoAudioWarning(false), 8000)
+      }
       // When user clicks "Stop sharing" in the browser bar
       stream.getVideoTracks()[0]?.addEventListener('ended', () => {
         videoRegistry.unregister(source.id)
@@ -211,6 +218,13 @@ function VideoTile({ source }: VideoTileProps) {
           {!isAvatar && (
             <span className="text-white/60 text-xs font-semibold tracking-wide">{source.name}</span>
           )}
+        </div>
+      )}
+
+      {/* Warning: screen share has no audio track (window capture, not entire screen) */}
+      {streamState === 'active' && noAudioWarning && (
+        <div className="absolute top-0 left-0 right-0 px-2 py-1.5 bg-amber-500/90 text-black text-xs font-semibold text-center pointer-events-none">
+          No audio captured. Choose "Entire Screen" instead of a window to include game sound.
         </div>
       )}
 
