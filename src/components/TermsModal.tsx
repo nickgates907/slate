@@ -1,3 +1,8 @@
+import { open as openUrl } from '@tauri-apps/api/shell'
+
+// TODO: swap back to slatestreaming.com/terms once the custom domain is connected
+const TERMS_URL = 'https://slatestreaming.lovable.app/terms'
+
 interface Props {
   onAccept: () => void
 }
@@ -87,10 +92,15 @@ export default function TermsModal({ onAccept }: Props) {
         {/* Legal footer */}
         <p className="text-white/25" style={{ fontSize: '0.75rem', marginTop: '1rem', textAlign: 'center', lineHeight: '1.5' }}>
           By continuing you agree to our{' '}
-          <span className="text-white/45" style={{ textDecoration: 'underline' }}>
+          <span
+            role="link"
+            tabIndex={0}
+            onClick={() => openUrl(TERMS_URL)}
+            className="text-white/45 cursor-pointer hover:text-white/70 transition-colors"
+            style={{ textDecoration: 'underline' }}
+          >
             Terms of Service
           </span>
-          {' '}at slatestreaming.com/terms
         </p>
 
       </div>
