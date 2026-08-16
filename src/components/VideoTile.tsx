@@ -1,18 +1,6 @@
 import { useEffect, useRef, useState, memo } from 'react'
-import * as MediapipeSelfieSegmentation from '@mediapipe/selfie_segmentation'
 import type { SelfieSegmentation, Results } from '@mediapipe/selfie_segmentation'
 import { Source } from '../store'
-
-// @mediapipe/selfie_segmentation has an inconsistent module shape depending on bundler
-// interop -- the named export sometimes resolves to the constructor directly and
-// sometimes to a wrapped object one level deeper, causing an intermittent
-// "SelfieSegmentation is not a constructor" crash. Resolve defensively at runtime
-// instead of assuming one shape.
-const SelfieSegmentationCtor = (
-  (MediapipeSelfieSegmentation as any).SelfieSegmentation ??
-  (MediapipeSelfieSegmentation as any).default?.SelfieSegmentation ??
-  (MediapipeSelfieSegmentation as any).default
-) as typeof SelfieSegmentation
 import { videoRegistry } from '../lib/videoRegistry'
 import { streamRegistry, screenRegistry } from '../lib/streamRegistry'
 
@@ -71,56 +59,78 @@ function VideoTile({ source }: VideoTileProps) {
     const canvas = canvasRef.current
     if (!video || !canvas) return
 
+    let cancelled = false
+
     if (source.bgRemoval) {
-      // BG removal: process frames through MediaPipe, register canvas.
-      // The constructor itself can throw synchronously (see SelfieSegmentationCtor
-      // comment above) -- fall back to raw video rather than let it crash the app.
-      try {
-        const seg = new SelfieSegmentationCtor({
-          locateFile: (file) => `/mediapipe/${file}`,
-        })
-        seg.setOptions({ modelSelection: 1 }) // landscape model — better quality
-        seg.onResults((results: Results) => {
-          const ctx = canvas.getContext('2d')
-          if (!ctx) return
-          canvas.width = results.image.width
-          canvas.height = results.image.height
+      // BG removal: lazy-load MediaPipe only when this toggle is actually on --
+      // it's a multi-hundred-KB library most sessions never touch, so it shouldn't
+      // weigh down every app startup. Process frames through it, register canvas.
+      import('@mediapipe/selfie_segmentation').then((MediapipeSelfieSegmentation) => {
+        if (cancelled) return
+        // The package's module shape is inconsistent depending on bundler interop --
+        // the named export sometimes resolves to the constructor directly and
+        // sometimes to a wrapped object one level deeper, causing an intermittent
+        // "SelfieSegmentation is not a constructor" crash. Resolve defensively at
+        // runtime instead of assuming one shape.
+        const SelfieSegmentationCtor = (
+          (MediapipeSelfieSegmentation as any).SelfieSegmentation ??
+          (MediapipeSelfieSegmentation as any).default?.SelfieSegmentation ??
+          (MediapipeSelfieSegmentation as any).default
+        ) as typeof SelfieSegmentation
 
-          // Mask: copy segmentation map then overlay the person pixels
-          ctx.clearRect(0, 0, canvas.width, canvas.height)
-          ctx.globalCompositeOperation = 'copy'
-          ctx.filter = 'blur(3px)'
-          ctx.drawImage(results.segmentationMask, 0, 0, canvas.width, canvas.height)
-          ctx.globalCompositeOperation = 'source-in'
-          ctx.filter = 'none'
-          ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height)
-        })
-        seg.initialize().then(() => {
-          segRef.current = seg
-          videoRegistry.register(source.id, canvas)
+        // The constructor itself can throw synchronously -- fall back to raw video
+        // rather than let it crash the app.
+        try {
+          const seg = new SelfieSegmentationCtor({
+            locateFile: (file) => `/mediapipe/${file}`,
+          })
+          seg.setOptions({ modelSelection: 1 }) // landscape model — better quality
+          seg.onResults((results: Results) => {
+            const ctx = canvas.getContext('2d')
+            if (!ctx) return
+            canvas.width = results.image.width
+            canvas.height = results.image.height
 
-          const sendFrames = async () => {
-            if (video.readyState >= 2 && segRef.current) {
-              await segRef.current.send({ image: video }).catch(() => {})
+            // Mask: copy segmentation map then overlay the person pixels
+            ctx.clearRect(0, 0, canvas.width, canvas.height)
+            ctx.globalCompositeOperation = 'copy'
+            ctx.filter = 'blur(3px)'
+            ctx.drawImage(results.segmentationMask, 0, 0, canvas.width, canvas.height)
+            ctx.globalCompositeOperation = 'source-in'
+            ctx.filter = 'none'
+            ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height)
+          })
+          seg.initialize().then(() => {
+            if (cancelled) { seg.close(); return }
+            segRef.current = seg
+            videoRegistry.register(source.id, canvas)
+
+            const sendFrames = async () => {
+              if (video.readyState >= 2 && segRef.current) {
+                await segRef.current.send({ image: video }).catch(() => {})
+              }
+              // Cap at 20fps — rAF at 60fps wastes CPU for a preview effect
+              rafRef.current = setTimeout(sendFrames, 50) as unknown as number
             }
-            // Cap at 20fps — rAF at 60fps wastes CPU for a preview effect
-            rafRef.current = setTimeout(sendFrames, 50) as unknown as number
-          }
-          sendFrames()
-        }).catch(() => {
-          // Fall back to raw video if MediaPipe fails to load
-          videoRegistry.register(source.id, video)
-        })
-      } catch (e) {
-        console.error('Background removal failed to initialize, falling back to raw video:', e)
-        videoRegistry.register(source.id, video)
-      }
+            sendFrames()
+          }).catch(() => {
+            // Fall back to raw video if MediaPipe fails to load
+            if (!cancelled) videoRegistry.register(source.id, video)
+          })
+        } catch (e) {
+          console.error('Background removal failed to initialize, falling back to raw video:', e)
+          if (!cancelled) videoRegistry.register(source.id, video)
+        }
+      }).catch(() => {
+        if (!cancelled) videoRegistry.register(source.id, video)
+      })
     } else {
       // Raw feed: register video directly
       videoRegistry.register(source.id, video)
     }
 
     return () => {
+      cancelled = true
       videoRegistry.unregister(source.id)
       if (rafRef.current !== null) { clearTimeout(rafRef.current); rafRef.current = null }
       segRef.current?.close()
@@ -228,7 +238,7 @@ function VideoTile({ source }: VideoTileProps) {
             <button
               onMouseDown={e => e.stopPropagation()}
               onClick={startScreenCapture}
-              className="px-3 py-1.5 bg-brand-red text-white text-xs font-semibold rounded-lg hover:bg-red-500 transition-colors"
+              className="btn-primary px-3 py-1.5 text-xs"
             >
               Select screen
             </button>

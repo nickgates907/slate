@@ -88,7 +88,7 @@ export default function Sidebar({
     <>
     <div className="w-52 flex flex-col bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex-shrink-0">
 
-      <div className="px-3 pt-3 pb-1 text-xs font-bold text-gray-400 dark:text-gray-600 tracking-widest uppercase">
+      <div className="section-label px-3 pt-3 pb-1">
         Scenes
       </div>
 
@@ -96,10 +96,10 @@ export default function Sidebar({
         {scenes.map((scene, idx) => (
           <div
             key={scene.id}
-            className={`group flex items-center border-l-[3px] transition-colors ${
+            className={`group flex items-center mx-1.5 rounded-lg transition-colors ${
               scene.id === activeSceneId
-                ? 'bg-accent-subtle border-brand-red'
-                : 'border-transparent hover:bg-gray-50 dark:hover:bg-gray-800'
+                ? 'bg-gray-100 dark:bg-gray-800'
+                : 'hover:bg-gray-50 dark:hover:bg-gray-800'
             }`}
           >
             {editingId === scene.id ? (
@@ -119,15 +119,17 @@ export default function Sidebar({
                 onDoubleClick={() => setEditingId(scene.id)}
                 className={`flex-1 flex items-center gap-2 px-3 py-2 text-sm text-left ${
                   scene.id === activeSceneId
-                    ? 'text-red-700 dark:text-red-400 font-semibold'
+                    ? 'text-gray-900 dark:text-white font-semibold'
                     : 'text-gray-600 dark:text-gray-400'
                 }`}
               >
                 <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                  scene.id === activeSceneId ? 'bg-brand-red' : 'bg-gray-300 dark:bg-gray-600'
+                  scene.id === activeSceneId ? 'bg-gray-900 dark:bg-white' : 'bg-gray-300 dark:bg-gray-600'
                 }`} />
                 <span className="truncate">{scene.name}</span>
-                <span className="ml-auto text-gray-300 dark:text-gray-700 text-xs flex-shrink-0">{idx + 1}</span>
+                <span className={`ml-auto text-xs flex-shrink-0 ${
+                  scene.id === activeSceneId ? 'text-brand-red font-semibold' : 'text-gray-300 dark:text-gray-700'
+                }`}>{idx + 1}</span>
               </button>
             )}
             {scenes.length > 1 && editingId !== scene.id && (
@@ -149,7 +151,7 @@ export default function Sidebar({
       <div className="p-2">
         <button
           onClick={onAddScene}
-          className="w-full py-2 text-xs font-semibold text-gray-600 dark:text-gray-300 border border-dashed border-gray-400 dark:border-white/25 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 hover:border-brand-red hover:text-brand-red transition-colors"
+          className="btn-solid w-full py-2 text-xs"
         >
           + New Scene
         </button>
@@ -159,7 +161,7 @@ export default function Sidebar({
       <div className="border-t border-gray-100 dark:border-gray-800">
         <button
           onClick={() => setShowLoadouts(v => !v)}
-          className="w-full flex items-center justify-between px-3 py-2 text-xs font-bold text-gray-400 dark:text-gray-600 tracking-widest uppercase hover:text-gray-600 dark:hover:text-gray-400 transition-colors"
+          className="section-label w-full flex items-center justify-between px-3 py-2 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
         >
           <span>Loadouts</span>
           <svg
@@ -215,41 +217,41 @@ export default function Sidebar({
                   placeholder={`Loadout ${loadouts.length + 1}`}
                   className="flex-1 text-xs px-2 py-1 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-white outline-none border border-gray-300 dark:border-gray-700 focus:border-brand-red"
                 />
-                <button onClick={handleSaveLoadout} className="text-xs px-2 py-1 rounded-lg bg-brand-red text-white font-semibold">
+                <button onClick={handleSaveLoadout} className="btn-primary text-xs px-2 py-1">
                   Save
                 </button>
               </div>
             ) : (
               <button
                 onClick={() => setShowSaveInput(true)}
-                className="w-full py-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 border border-dashed border-gray-300 dark:border-white/20 rounded-lg hover:border-brand-red hover:text-brand-red transition-colors"
+                className="btn-solid w-full py-1.5 text-xs"
               >
-                + Save current scenes
+                + Save Loadout
               </button>
             )}
 
-            <div className="flex gap-1.5">
+            <div className="flex flex-col gap-2">
               <Tooltip text="Share your current scenes as a code others can import" position="right">
                 <button
                   onClick={() => handleShare('My Setup', scenes)}
-                  className="flex-1 py-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 border border-dashed border-gray-300 dark:border-white/20 rounded-lg hover:border-brand-red hover:text-brand-red transition-colors flex items-center justify-center gap-1.5"
+                  className="btn-solid w-full py-2 text-xs border-gray-300 dark:border-gray-600 flex items-center justify-center gap-1.5"
                 >
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
                     <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
                   </svg>
-                  Share
+                  Share Code
                 </button>
               </Tooltip>
               <Tooltip text="Import a loadout code from another PC" position="right">
                 <button
                   onClick={() => { setImportInput(''); setImportError(null); setShowImport(true) }}
-                  className="flex-1 py-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 border border-dashed border-gray-300 dark:border-white/20 rounded-lg hover:border-brand-red hover:text-brand-red transition-colors flex items-center justify-center gap-1.5"
+                  className="btn-solid w-full py-2 text-xs border-gray-300 dark:border-gray-600 flex items-center justify-center gap-1.5"
                 >
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
                   </svg>
-                  Import
+                  Import Code
                 </button>
               </Tooltip>
             </div>
@@ -258,7 +260,7 @@ export default function Sidebar({
       </div>
 
       <div className="px-3 py-2 border-t border-gray-100 dark:border-gray-800">
-        <div className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-600">
+        <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="20 6 9 17 4 12"/>
           </svg>
@@ -312,8 +314,11 @@ export default function Sidebar({
             <button
               onClick={handleCopy}
               disabled={!shareCode}
-              className="w-full py-2.5 rounded-xl font-semibold text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-              style={{ background: copied ? '#22c55e' : '#FF4D4D', color: 'white' }}
+              className={`w-full py-2.5 rounded-xl text-sm disabled:opacity-40 disabled:cursor-not-allowed ${
+                copied
+                  ? 'bg-green-600 hover:bg-green-500 dark:bg-green-500 dark:hover:bg-green-400 text-white font-semibold transition-colors'
+                  : 'btn-primary'
+              }`}
             >
               {copied ? '✓ Copied!' : 'Copy Code'}
             </button>
@@ -328,7 +333,7 @@ export default function Sidebar({
         <div className="modal-shell w-[460px] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
           <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-200 dark:border-gray-800">
             <div className="w-9 h-9 rounded-xl bg-brand-red/15 flex items-center justify-center flex-shrink-0">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF4D4D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-brand-red">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
               </svg>
             </div>
@@ -363,10 +368,10 @@ export default function Sidebar({
             <button
               onClick={handleImport}
               disabled={!importInput.trim()}
-              className={`w-full py-2.5 rounded-xl font-semibold text-sm transition-colors ${
+              className={`w-full py-2.5 rounded-xl text-sm transition-colors ${
                 importInput.trim()
-                  ? 'bg-brand-red hover:bg-red-500 text-white cursor-pointer'
-                  : 'bg-gray-200 dark:bg-gray-800 text-gray-400 dark:text-gray-600 cursor-not-allowed'
+                  ? 'btn-primary cursor-pointer'
+                  : 'bg-gray-200 dark:bg-gray-800 text-gray-400 dark:text-gray-600 cursor-not-allowed font-semibold'
               }`}
             >
               Import &amp; Apply

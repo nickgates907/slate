@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { audioRegistry } from '../lib/audioRegistry'
+import { mediaSrcToUrl } from '../store'
 
 interface MusicTileProps {
   sourceId: string
@@ -37,7 +38,7 @@ export default function MusicTile({
     ctxRef.current?.close().catch(() => {})
     audioRegistry.unregister(sourceId)
 
-    const audio = new Audio(audioFileSrc)
+    const audio = new Audio(mediaSrcToUrl(audioFileSrc))
     audio.loop = loop
     audio.crossOrigin = 'anonymous'
     audioRef.current = audio

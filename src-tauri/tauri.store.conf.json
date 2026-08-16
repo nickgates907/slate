@@ -1,0 +1,10 @@
+{
+  "tauri": {
+    "bundle": {
+      "targets": ["nsis"]
+    },
+    "updater": {
+      "active": false
+    }
+  }
+}

@@ -31,13 +31,13 @@ export default function Titlebar({ dark, onToggleDark, onOpenSettings, isRecordi
 
       {/* Logo */}
       <div className="flex items-center gap-2">
-        <svg width="28" height="28" viewBox="0 0 72 72" fill="none">
-          <rect width="72" height="72" rx="18" fill="#FF4D4D"/>
+        <svg width="28" height="28" viewBox="0 0 72 72" fill="none" className="text-brand-red">
+          <rect width="72" height="72" rx="18" fill="currentColor"/>
           <circle cx="36" cy="36" r="17" stroke="white" strokeWidth="3" fill="none"/>
           <circle cx="36" cy="36" r="10" stroke="white" strokeWidth="2.5" fill="none"/>
           <circle cx="36" cy="36" r="4" fill="white"/>
           <circle cx="52" cy="20" r="5" fill="white"/>
-          <circle cx="52" cy="20" r="2.5" fill="#FF4D4D"/>
+          <circle cx="52" cy="20" r="2.5" fill="currentColor"/>
         </svg>
         <span className="text-lg font-bold text-gray-900 dark:text-white tracking-tight">Slate</span>
       </div>
@@ -76,7 +76,7 @@ export default function Titlebar({ dark, onToggleDark, onOpenSettings, isRecordi
           </Tooltip>
           {showGoalEditor && (
             <div className="absolute top-full left-0 mt-1.5 modal-shell p-3 z-50 flex flex-col gap-2 w-44">
-              <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-widest">Sub Goal</p>
+              <p className="section-label">Sub Goal</p>
               <div className="flex items-center gap-2">
                 <label className="text-xs text-gray-500 w-14 shrink-0">Current</label>
                 <div className="flex items-center gap-1">
@@ -162,7 +162,7 @@ export default function Titlebar({ dark, onToggleDark, onOpenSettings, isRecordi
             ? 'bg-purple-600 text-white hover:bg-purple-500'
             : streamStatus === 'connecting'
             ? 'bg-purple-400 text-white cursor-wait'
-            : 'btn-secondary'
+            : 'btn-primary'
         }`}
       >
         {streamStatus === 'live' ? (
@@ -192,8 +192,8 @@ export default function Titlebar({ dark, onToggleDark, onOpenSettings, isRecordi
           onClick={onToggleMic}
           className={`relative flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors ${
             micEnabled
-              ? 'bg-green-500/15 border-green-500/40 text-green-400 hover:bg-green-500/25'
-              : 'bg-red-500/15 border-red-500/40 text-red-400 hover:bg-red-500/25'
+              ? 'bg-green-500/10 border-green-500/30 text-green-600 hover:bg-green-500/20 dark:bg-green-500/15 dark:border-green-500/40 dark:text-green-400 dark:hover:bg-green-500/25'
+              : 'bg-red-500/10 border-red-500/30 text-red-600 hover:bg-red-500/20 dark:bg-red-500/15 dark:border-red-500/40 dark:text-red-400 dark:hover:bg-red-500/25'
           }`}
         >
           {micEnabled ? (
@@ -218,9 +218,9 @@ export default function Titlebar({ dark, onToggleDark, onOpenSettings, isRecordi
           {/* live level bar — tiny green bars when mic is on and picking up audio */}
           {micEnabled && (
             <span className="flex items-end gap-px h-3">
-              <span className="w-0.5 rounded-sm bg-green-400 transition-all duration-75" style={{ height: `${Math.max(20, audioLevel * 100)}%` }} />
-              <span className="w-0.5 rounded-sm bg-green-400 transition-all duration-75" style={{ height: `${Math.max(35, audioLevel * 140)}%` }} />
-              <span className="w-0.5 rounded-sm bg-green-400 transition-all duration-75" style={{ height: `${Math.max(55, audioLevel * 120)}%` }} />
+              <span className="w-0.5 rounded-sm bg-green-600 dark:bg-green-400 transition-all duration-75" style={{ height: `${Math.max(20, audioLevel * 100)}%` }} />
+              <span className="w-0.5 rounded-sm bg-green-600 dark:bg-green-400 transition-all duration-75" style={{ height: `${Math.max(35, audioLevel * 140)}%` }} />
+              <span className="w-0.5 rounded-sm bg-green-600 dark:bg-green-400 transition-all duration-75" style={{ height: `${Math.max(55, audioLevel * 120)}%` }} />
             </span>
           )}
         </button>
@@ -234,10 +234,10 @@ export default function Titlebar({ dark, onToggleDark, onOpenSettings, isRecordi
         className={`flex items-center gap-2 text-sm px-4 py-1.5 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
           isRecording
             ? 'bg-gray-800 text-white hover:bg-gray-700 font-semibold'
-            : 'btn-primary'
+            : 'btn-solid'
         }`}
       >
-        <div className={`flex-shrink-0 self-center ${isRecording ? 'w-3 h-3 bg-white rounded-sm' : 'w-2 h-2 bg-white rounded-full'}`} />
+        <div className={`flex-shrink-0 self-center ${isRecording ? 'w-3 h-3 bg-white rounded-sm' : 'w-2 h-2 bg-gray-900 dark:bg-white rounded-full'}`} />
         {isRecording ? recordingTime : 'Record'}
       </button>
       </Tooltip>

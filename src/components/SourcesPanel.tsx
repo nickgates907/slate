@@ -1,6 +1,6 @@
 import { open } from '@tauri-apps/api/dialog'
 import { readBinaryFile } from '@tauri-apps/api/fs'
-import { Source } from '../store'
+import { Source, saveMediaFile, deleteMediaFile } from '../store'
 import { CameraDevice } from '../hooks/useCameraDevices'
 import Tooltip from './Tooltip'
 
@@ -85,14 +85,14 @@ export default function SourcesPanel({
   return (
     <div className="w-52 flex flex-col bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-800 flex-shrink-0">
 
-      <div className="px-3 pt-3 pb-1 text-xs font-bold text-gray-400 dark:text-gray-600 tracking-widest uppercase border-b border-gray-100 dark:border-gray-800">
+      <div className="section-label px-3 pt-3 pb-1 border-b border-gray-100 dark:border-gray-800">
         Sources
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto p-2 flex flex-col gap-2">
         {sources.map((source) => (
-          <div key={source.id} className="border-b border-gray-50 dark:border-gray-800">
-            <div className="flex items-center gap-1.5 px-2 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+          <div key={source.id} className="card-panel overflow-hidden">
+            <div className="flex items-center gap-1.5 px-2 py-2.5 text-sm text-gray-700 dark:text-gray-300">
 
               {/* Reorder arrows */}
               <div className="flex flex-col gap-px flex-shrink-0">
@@ -175,10 +175,13 @@ export default function SourcesPanel({
                     const bytes = await readBinaryFile(path as string).catch(() => null)
                     if (!bytes) return
                     const ext = (path as string).split('.').pop()?.toLowerCase() ?? 'mp3'
-                    const mime = ext === 'wav' ? 'audio/wav' : ext === 'ogg' ? 'audio/ogg' : 'audio/mpeg'
-                    const blob = new Blob([bytes.buffer as ArrayBuffer], { type: mime })
-                    const dataUrl = await new Promise<string>(res => { const r = new FileReader(); r.onload = () => res(r.result as string); r.readAsDataURL(blob) })
-                    onUpdateSource(source.id, { audioFileSrc: dataUrl, name: (path as string).split(/[\\/]/).pop() ?? 'Music' })
+                    // Saved as its own file rather than embedded as base64 -- keeps project.json
+                    // small regardless of file size, so toggling Loop/Monitor etc. stays instant.
+                    const savedPath = await saveMediaFile(bytes, ext).catch(() => null)
+                    if (!savedPath) return
+                    const previous = source.audioFileSrc
+                    onUpdateSource(source.id, { audioFileSrc: savedPath, name: (path as string).split(/[\\/]/).pop() ?? 'Music' })
+                    if (previous) deleteMediaFile(previous)
                   }}
                   className="text-xs px-2 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-left truncate"
                 >
@@ -281,16 +284,12 @@ export default function SourcesPanel({
             {source.type === 'text' && (
               <div className="px-3 pb-2.5 flex flex-col gap-2">
                 <Tooltip text="Change the text size" position="top">
-                  <div className="flex items-center gap-1 w-full">
+                  <div className="pill-group w-full">
                     {([12, 16, 24, 36] as const).map(size => (
                       <button
                         key={size}
                         onClick={() => onUpdateSource(source.id, { fontSize: size })}
-                        className={`flex-1 py-0.5 rounded text-xs font-semibold transition-colors ${
-                          (source.fontSize ?? 16) === size
-                            ? 'bg-brand-red text-white'
-                            : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-                        }`}
+                        className={`pill flex-1 justify-center py-0.5 ${(source.fontSize ?? 16) === size ? 'pill-active' : ''}`}
                       >
                         {size === 12 ? 'XS' : size === 16 ? 'S' : size === 24 ? 'M' : 'L'}
                       </button>
@@ -338,7 +337,7 @@ export default function SourcesPanel({
           <Tooltip key={type} text={tip} position="left">
             <button
               onClick={() => onAddSource(type)}
-              className="btn-secondary flex items-center gap-2 w-full px-2.5 py-1.5 text-xs text-left"
+              className="btn-solid border-gray-300 dark:border-gray-600 flex items-center gap-2 w-full px-2.5 py-1.5 text-xs text-left"
             >
               {typeIcon(type)}
               {label}

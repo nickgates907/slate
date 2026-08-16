@@ -103,19 +103,19 @@ export default function PlaybackModal({ recording, saveFolder, onClose }: Playba
             )}
             {saveState === 'saved' && (
               <>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-green-500 dark:text-green-400">
                   <polyline points="20 6 9 17 4 12"/>
                 </svg>
-                <span className="text-green-400 text-xs font-medium">Saved (.webm)</span>
+                <span className="text-green-600 dark:text-green-400 text-xs font-medium">Saved (.webm)</span>
                 <span className="text-gray-500 text-xs truncate flex-1">{savedPath}</span>
               </>
             )}
             {saveState === 'error' && (
               <>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500 dark:text-red-400">
                   <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
                 </svg>
-                <span className="text-red-400 text-xs flex-1">{saveError}</span>
+                <span className="text-red-600 dark:text-red-400 text-xs flex-1">{saveError}</span>
                 <button onClick={retrySave} className="text-xs text-brand-red hover:text-red-400 font-semibold">Retry</button>
               </>
             )}
@@ -143,19 +143,19 @@ export default function PlaybackModal({ recording, saveFolder, onClose }: Playba
             )}
             {mp4State === 'done' && (
               <>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-green-500 dark:text-green-400">
                   <polyline points="20 6 9 17 4 12"/>
                 </svg>
-                <span className="text-green-400 text-xs font-medium">MP4 saved</span>
+                <span className="text-green-600 dark:text-green-400 text-xs font-medium">MP4 saved</span>
                 <span className="text-gray-500 text-xs truncate flex-1">{mp4Path}</span>
               </>
             )}
             {mp4State === 'error' && (
               <>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500 dark:text-red-400">
                   <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
                 </svg>
-                <span className="text-red-400 text-xs flex-1">{mp4Error}</span>
+                <span className="text-red-600 dark:text-red-400 text-xs flex-1">{mp4Error}</span>
                 <button onClick={exportMp4} className="text-xs text-brand-red hover:text-red-400 font-semibold">Retry</button>
               </>
             )}

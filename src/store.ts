@@ -1,5 +1,6 @@
-import { writeTextFile, readTextFile, createDir } from '@tauri-apps/api/fs'
+import { writeTextFile, readTextFile, writeBinaryFile, removeFile, createDir } from '@tauri-apps/api/fs'
 import { appDataDir, join } from '@tauri-apps/api/path'
+import { convertFileSrc } from '@tauri-apps/api/tauri'
 
 export interface Source {
   id: string
@@ -46,6 +47,7 @@ export interface RecordingSettings {
   bitrate: 4 | 6 | 8 | 16  // Mbps
   saveFolder: string   // empty string = default Documents/Slate Recordings
   showTooltips: boolean
+  preferredCameraId?: string  // app-wide camera choice, applied to every scene's camera/avatar sources
 }
 
 export const defaultSettings: RecordingSettings = {
@@ -171,6 +173,7 @@ export const defaultProject: SlateProject = {
 
 let _projectPath: string | null = null
 let _termsPath: string | null = null
+let _settingsPath: string | null = null
 
 async function getProjectPath(): Promise<string> {
   if (_projectPath) return _projectPath
@@ -178,6 +181,57 @@ async function getProjectPath(): Promise<string> {
   await createDir(dir, { recursive: true })
   _projectPath = await join(dir, 'project.json')
   return _projectPath
+}
+
+let _mediaDir: string | null = null
+
+async function getMediaDir(): Promise<string> {
+  if (_mediaDir) return _mediaDir
+  const dir = await appDataDir()
+  const mediaDir = await join(dir, 'media')
+  await createDir(mediaDir, { recursive: true })
+  _mediaDir = mediaDir
+  return _mediaDir
+}
+
+// Music files are large (often several MB) -- embedding them as base64 directly in
+// project.json meant every autosave (even a Loop/Monitor checkbox flip) had to
+// re-serialize and rewrite the whole blob through Tauri's IPC bridge, causing a real
+// UI stutter. Storing them as their own file keeps project.json tiny regardless of
+// how many/large music files are attached. Returns the raw file path -- callers
+// convert it to a playable URL via mediaSrcToUrl() at the point of use, since storing
+// the raw path (rather than a pre-converted asset:// URL) makes later cleanup trivial
+// and isn't tied to Tauri's URL format for the asset protocol.
+export async function saveMediaFile(bytes: Uint8Array, extension: string): Promise<string> {
+  const dir = await getMediaDir()
+  const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${extension}`
+  const path = await join(dir, filename)
+  await writeBinaryFile(path, bytes)
+  return path
+}
+
+// Best-effort cleanup when a source's media is replaced or removed. Silently no-ops
+// for anything that isn't a real file we wrote (e.g. legacy base64 data: URLs from
+// before this existed) -- an orphaned file is harmless, never let cleanup break the UI.
+export async function deleteMediaFile(path: string | undefined): Promise<void> {
+  if (!path || path.startsWith('data:')) return
+  await removeFile(path).catch(() => {})
+}
+
+// Source.audioFileSrc/imageSrc hold either a legacy base64 data: URL (old projects)
+// or a raw file path (saveMediaFile's return value) -- resolve either into something
+// an <audio>/<img> src can load directly.
+export function mediaSrcToUrl(src: string | undefined): string | undefined {
+  if (!src) return undefined
+  return src.startsWith('data:') ? src : convertFileSrc(src)
+}
+
+async function getSettingsPath(): Promise<string> {
+  if (_settingsPath) return _settingsPath
+  const dir = await appDataDir()
+  await createDir(dir, { recursive: true })
+  _settingsPath = await join(dir, 'settings.json')
+  return _settingsPath
 }
 
 async function getTermsPath(): Promise<string> {
@@ -208,6 +262,28 @@ export async function saveProject(project: SlateProject): Promise<void> {
   await writeTextFile(path, JSON.stringify(project))
 }
 
+// Settings live in their own small file, separate from project.json (which can hold
+// embedded base64 image/audio data for scenes and gets large). Recording settings are
+// changed far more often than scenes are restructured, and previously both were saved
+// through the same debounced full-project write — so flipping a resolution/fps pill
+// caused a resave of the entire scenes+sources blob, including any embedded media,
+// which showed up as a real UI stutter right after saving settings. This keeps that
+// save tiny and independent of scene/source size.
+export async function saveSettings(settings: RecordingSettings): Promise<void> {
+  const path = await getSettingsPath()
+  await writeTextFile(path, JSON.stringify(settings))
+}
+
+export async function loadSettings(): Promise<RecordingSettings | null> {
+  try {
+    const path = await getSettingsPath()
+    const text = await readTextFile(path)
+    return JSON.parse(text) as RecordingSettings
+  } catch {
+    return null
+  }
+}
+
 export async function loadProject(): Promise<SlateProject> {
   try {
     const path = await getProjectPath()
@@ -220,6 +296,10 @@ export async function loadProject(): Promise<SlateProject> {
     if (!activeExists) parsed.activeSceneId = parsed.scenes[0].id
     if (!parsed.settings) parsed.settings = defaultSettings
     if (!parsed.loadouts) parsed.loadouts = []
+    // Dedicated settings.json takes over once it exists — project.json's copy is
+    // only a fallback for projects saved before this split existed.
+    const dedicatedSettings = await loadSettings()
+    if (dedicatedSettings) parsed.settings = dedicatedSettings
     return { ...parsed, version: '1.3' }
   } catch {
     return defaultProject

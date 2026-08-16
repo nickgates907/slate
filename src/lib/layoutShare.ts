@@ -1,6 +1,5 @@
 import { save, open } from '@tauri-apps/api/dialog'
 import { writeTextFile, readTextFile } from '@tauri-apps/api/fs'
-import { createClient } from '@supabase/supabase-js'
 import { Scene, Source } from '../store'
 
 interface SlateLayout {
@@ -18,10 +17,16 @@ interface SlateLoadoutCode {
 
 // Public anon key — safe to embed client-side, access is scoped by RLS policies
 // on the loadout_codes table (anyone may insert or select by exact code, nothing else).
-const supabase = createClient(
-  'https://rzwandbnldnyoyzpevtr.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ6d2FuZGJubGRueW95enBldnRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxMjg1NTksImV4cCI6MjA5NDcwNDU1OX0.7TICPddKuB6z5_y9HZjk6tGBrIcg55czmcvVOWUHi-A',
-)
+// Talks to Supabase's REST endpoint directly via fetch (same pattern as crashReporter.ts)
+// rather than the @supabase/supabase-js SDK — that SDK's auth/realtime/storage clients
+// added ~170KB gzipped to the app's startup bundle for two simple REST calls.
+const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL as string) ?? ''
+const SUPABASE_ANON_KEY = (import.meta.env.VITE_SUPABASE_ANON_KEY as string) ?? ''
+const SUPABASE_HEADERS = {
+  'Content-Type': 'application/json',
+  'apikey': SUPABASE_ANON_KEY,
+  'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+}
 
 // Avoids visually ambiguous characters (0/O, 1/I/L)
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -57,22 +62,28 @@ export async function createShareCode(name: string, scenes: Scene[]): Promise<st
   const cleanScenes = stripLocalFields(scenes)
   for (let attempt = 0; attempt < 5; attempt++) {
     const code = randomCode()
-    const { error } = await supabase.from('loadout_codes').insert({ code, name, scenes: cleanScenes })
-    if (!error) return `SLATE2-${code}`
-    if (error.code !== '23505') throw new Error(error.message) // not a collision — a real failure
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/loadout_codes`, {
+      method: 'POST',
+      headers: { ...SUPABASE_HEADERS, 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ code, name, scenes: cleanScenes }),
+    })
+    if (res.ok) return `SLATE2-${code}`
+    const body = await res.json().catch(() => null)
+    if (body?.code !== '23505') throw new Error(body?.message || `Request failed (${res.status})`) // not a collision — a real failure
     // else: extremely unlikely code collision, retry with a fresh random code
   }
   throw new Error('Could not generate a unique share code — please try again.')
 }
 
 async function resolveShareCode(code: string): Promise<{ name: string; scenes: Scene[] } | null> {
-  const { data, error } = await supabase
-    .from('loadout_codes')
-    .select('name, scenes')
-    .eq('code', code.toUpperCase())
-    .maybeSingle()
-  if (error || !data) return null
-  return { name: data.name, scenes: data.scenes }
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/loadout_codes?code=eq.${encodeURIComponent(code.toUpperCase())}&select=name,scenes`,
+    { headers: SUPABASE_HEADERS },
+  )
+  if (!res.ok) return null
+  const rows = await res.json().catch(() => null)
+  if (!Array.isArray(rows) || rows.length === 0) return null
+  return { name: rows[0].name, scenes: rows[0].scenes }
 }
 
 // Gzip the JSON before base64 — kept only to decode older self-contained codes

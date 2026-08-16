@@ -40,15 +40,13 @@ export default function SettingsModal({ settings, saveFolder, onSave, onRestoreS
           {/* Resolution + Frame Rate */}
           <div className="card-panel p-3.5 flex flex-col gap-4">
             <div>
-              <label className="text-xs text-gray-500 dark:text-gray-400 font-semibold tracking-widest uppercase mb-2 block">Resolution</label>
-              <div className="flex gap-2">
+              <label className="section-label mb-2 block">Resolution</label>
+              <div className="pill-group w-full">
                 {(['720p', '1080p', '1440p'] as const).map(r => (
                   <button
                     key={r}
                     onClick={() => setS(prev => ({ ...prev, resolution: r }))}
-                    className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-colors ${
-                      s.resolution === r ? 'bg-brand-red text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-                    }`}
+                    className={`pill flex-1 justify-center py-2 ${s.resolution === r ? 'pill-active' : ''}`}
                   >
                     {r}
                   </button>
@@ -58,15 +56,13 @@ export default function SettingsModal({ settings, saveFolder, onSave, onRestoreS
             </div>
 
             <div>
-              <label className="text-xs text-gray-500 dark:text-gray-400 font-semibold tracking-widest uppercase mb-2 block">Frame Rate</label>
-              <div className="flex gap-2">
+              <label className="section-label mb-2 block">Frame Rate</label>
+              <div className="pill-group w-full">
                 {([30, 60] as const).map(f => (
                   <button
                     key={f}
                     onClick={() => setS(prev => ({ ...prev, fps: f }))}
-                    className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-colors ${
-                      s.fps === f ? 'bg-brand-red text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-                    }`}
+                    className={`pill flex-1 justify-center py-2 ${s.fps === f ? 'pill-active' : ''}`}
                   >
                     {f} fps
                   </button>
@@ -77,8 +73,8 @@ export default function SettingsModal({ settings, saveFolder, onSave, onRestoreS
 
           {/* Bitrate */}
           <div className="card-panel p-3.5">
-            <label className="text-xs text-gray-500 dark:text-gray-400 font-semibold tracking-widest uppercase mb-2 block">Video Quality</label>
-            <div className="flex gap-2">
+            <label className="section-label mb-2 block">Video Quality</label>
+            <div className="pill-group w-full">
               {([
                 { value: 4,  label: 'Good',   sub: '4 Mbps' },
                 { value: 6,  label: 'Twitch',  sub: '6 Mbps' },
@@ -88,12 +84,10 @@ export default function SettingsModal({ settings, saveFolder, onSave, onRestoreS
                 <button
                   key={value}
                   onClick={() => setS(prev => ({ ...prev, bitrate: value }))}
-                  className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-colors flex flex-col items-center gap-0.5 ${
-                    s.bitrate === value ? 'bg-brand-red text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-                  }`}
+                  className={`pill flex-1 py-2 flex flex-col items-center gap-0.5 ${s.bitrate === value ? 'pill-active' : ''}`}
                 >
                   <span>{label}</span>
-                  <span className={`text-xs font-normal ${s.bitrate === value ? 'text-white/70' : 'text-gray-400 dark:text-gray-600'}`}>{sub}</span>
+                  <span className={`text-xs font-normal ${s.bitrate === value ? 'text-white/70 dark:text-gray-900/60' : 'text-gray-400 dark:text-gray-600'}`}>{sub}</span>
                 </button>
               ))}
             </div>
@@ -102,7 +96,7 @@ export default function SettingsModal({ settings, saveFolder, onSave, onRestoreS
 
           {/* Save folder */}
           <div className="card-panel p-3.5">
-            <label className="text-xs text-gray-500 dark:text-gray-400 font-semibold tracking-widest uppercase mb-2 block">Save Recordings To</label>
+            <label className="section-label mb-2 block">Save Recordings To</label>
             <div className="flex items-center gap-2">
               <span className="flex-1 text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-900/60 rounded-lg px-3 py-2 truncate">{folder || 'Documents/Slate Recordings'}</span>
               <button
@@ -117,7 +111,7 @@ export default function SettingsModal({ settings, saveFolder, onSave, onRestoreS
           {/* Show tooltips */}
           <div className="card-panel p-3.5 flex items-center justify-between">
             <div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold tracking-widest uppercase">Show Tips</p>
+              <p className="section-label">Show Tips</p>
               <p className="text-xs text-gray-400 dark:text-gray-600 mt-0.5">Helpful hints on hover for new users</p>
             </div>
             <button
@@ -146,7 +140,7 @@ export default function SettingsModal({ settings, saveFolder, onSave, onRestoreS
           </button>
           <button
             onClick={() => { onSave(s, folder); onClose() }}
-            className="px-4 py-2 bg-brand-red hover:bg-red-500 text-white text-xs font-semibold rounded-lg transition-colors"
+            className="btn-primary px-4 py-2 text-xs"
           >
             Save
           </button>

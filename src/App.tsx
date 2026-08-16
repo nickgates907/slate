@@ -5,7 +5,7 @@ import Canvas from './components/Canvas'
 import SourcesPanel from './components/SourcesPanel'
 import PlaybackModal from './components/PlaybackModal'
 import OverlaysModal from './components/OverlaysModal'
-import { Scene, Source, SceneBackground, Loadout, SlateProject, loadProject, saveProject, defaultProject, defaultSettings, loadTermsAccepted, saveTermsAccepted } from './store'
+import { Scene, Source, SceneBackground, Loadout, SlateProject, loadProject, saveProject, saveSettings, deleteMediaFile, defaultProject, defaultSettings, loadTermsAccepted, saveTermsAccepted } from './store'
 import { TooltipContext } from './contexts/TooltipContext'
 import SettingsModal from './components/SettingsModal'
 import StreamingModal from './components/StreamingModal'
@@ -101,7 +101,11 @@ export default function App() {
     loadProject().then(setProject).catch(() => setProject(defaultProject))
   }, [])
 
-  // Auto-save to AppData — debounced so rapid changes (drag, resize) don't thrash disk
+  // Auto-save to AppData — debounced so rapid changes (drag, resize) don't thrash disk.
+  // Keyed on scenes/activeSceneId/loadouts only (not the whole project object) so that
+  // a settings-only change doesn't reschedule a full resave of scenes/sources, which
+  // can carry embedded base64 image/audio data and get large -- that used to make
+  // saving settings feel laggy since it triggered the same heavy write.
   const saveDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   useEffect(() => {
     if (!project) return
@@ -109,7 +113,13 @@ export default function App() {
     saveDebounceRef.current = setTimeout(() => {
       saveProject(project).catch(console.error)
     }, 500)
-  }, [project])
+  }, [project.scenes, project.activeSceneId, project.loadouts])
+
+  // Settings save independently — tiny file, no reason to tie it to scene/source size.
+  useEffect(() => {
+    if (!project) return
+    saveSettings(project.settings).catch(console.error)
+  }, [project.settings])
 
   // Derived values — null-safe so hooks below can reference them
   const activeScene =
@@ -306,6 +316,9 @@ export default function App() {
     screenRegistry.release(sourceId)
     // Free any buffered browser-source frame (ImageBitmap holds GPU memory)
     browserFrameRegistry.delete(sourceId)
+    // Clean up the on-disk music file (if any) so removed sources don't leave orphans
+    const removed = activeScene.sources.find(s => s.id === sourceId)
+    if (removed?.audioFileSrc) deleteMediaFile(removed.audioFileSrc)
     setProject(p => ({
       ...p,
       scenes: p.scenes.map(scene =>
@@ -314,7 +327,7 @@ export default function App() {
           : scene
       ),
     }))
-  }, [])
+  }, [activeScene])
 
   const reorderSource = useCallback((sourceId: string, direction: 'up' | 'down') => {
     setProject(p => ({
@@ -332,9 +345,22 @@ export default function App() {
     }))
   }, [])
 
-  const changeCameraDevice = useCallback((sourceId: string, deviceId: string) => {
-    updateSource(sourceId, { deviceId })
-  }, [updateSource])
+  // Camera choice is app-wide, not per-scene/per-source -- picking a camera anywhere
+  // updates every camera/avatar source across every scene and remembers it as the
+  // preferred camera for any new ones added later, so switching scenes never silently
+  // falls back to a different physical camera than the one you chose.
+  const changeCameraDevice = useCallback((_sourceId: string, deviceId: string) => {
+    setProject(p => ({
+      ...p,
+      settings: { ...p.settings, preferredCameraId: deviceId },
+      scenes: p.scenes.map(scene => ({
+        ...scene,
+        sources: scene.sources.map(src =>
+          src.type === 'camera' || src.type === 'avatar' ? { ...src, deviceId } : src
+        ),
+      })),
+    }))
+  }, [])
 
   const changeVolume = useCallback((sourceId: string, volume: number) => {
     updateSource(sourceId, { volume })
@@ -490,13 +516,16 @@ export default function App() {
 
     let deviceId: string | undefined
     if (type === 'camera' || type === 'avatar') {
-      try {
-        const tempStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false })
-        tempStream.getTracks().forEach(t => t.stop())
-        const devices = await navigator.mediaDevices.enumerateDevices()
-        const videoDevices = devices.filter(d => d.kind === 'videoinput')
-        if (videoDevices.length > 0) deviceId = videoDevices[0].deviceId
-      } catch { /* permission denied */ }
+      deviceId = project.settings?.preferredCameraId
+      if (!deviceId) {
+        try {
+          const tempStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+          tempStream.getTracks().forEach(t => t.stop())
+          const devices = await navigator.mediaDevices.enumerateDevices()
+          const videoDevices = devices.filter(d => d.kind === 'videoinput')
+          if (videoDevices.length > 0) deviceId = videoDevices[0].deviceId
+        } catch { /* permission denied */ }
+      }
     }
 
     const newSource: Source = {
