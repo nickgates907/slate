@@ -42,16 +42,48 @@ function randomCode(): string {
   return `${randomGroup(4)}-${randomGroup(4)}-${randomGroup(4)}`
 }
 
-function stripLocalFields(scenes: Scene[]) {
-  return scenes.map(scene => ({
+// Resizes and re-encodes an embedded image data: URL so it's small enough to fit in a
+// shared loadout code. Background/overlay images are often several MB straight out of
+// a screenshot tool, so downscaling to 1600px on the long edge (comfortably above 1080p,
+// the default recording resolution) and re-encoding as JPEG at 88% quality keeps the
+// image visually indistinguishable from the original in normal use, while still cutting
+// a multi-MB source image down to a few hundred KB.
+async function compressImageDataUrl(dataUrl: string, maxDim = 1600, quality = 0.88): Promise<string> {
+  const img = new Image()
+  const loaded = new Promise<void>((resolve, reject) => {
+    img.onload = () => resolve()
+    img.onerror = () => reject(new Error('Failed to decode image'))
+  })
+  img.src = dataUrl
+  await loaded
+
+  const scale = Math.min(1, maxDim / Math.max(img.width, img.height))
+  const width = Math.max(1, Math.round(img.width * scale))
+  const height = Math.max(1, Math.round(img.height * scale))
+
+  const canvas = document.createElement('canvas')
+  canvas.width = width
+  canvas.height = height
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return dataUrl // no canvas support -- fall back to the original rather than fail
+  ctx.drawImage(img, 0, 0, width, height)
+  return canvas.toDataURL('image/jpeg', quality)
+}
+
+async function stripLocalFields(scenes: Scene[]): Promise<Scene[]> {
+  return Promise.all(scenes.map(async scene => ({
     ...scene,
-    sources: scene.sources.map(s => ({
+    background: scene.background?.imageSrc
+      ? { ...scene.background, imageSrc: await compressImageDataUrl(scene.background.imageSrc).catch(() => scene.background!.imageSrc) }
+      : scene.background,
+    sources: await Promise.all(scene.sources.map(async s => ({
       ...s,
       deviceId: undefined,     // machine-specific, won't match on another PC
       audioFileSrc: undefined, // audio files as base64 are too large to share
+      imageSrc: s.imageSrc ? await compressImageDataUrl(s.imageSrc).catch(() => s.imageSrc) : undefined,
       htmlPath: undefined,     // machine-specific file path
-    })),
-  }))
+    }))),
+  })))
 }
 
 // Creates a short, readable share code (e.g. SLATE2-K9XF-27PQ-MV4T). The loadout
@@ -59,7 +91,7 @@ function stripLocalFields(scenes: Scene[]) {
 // create and to import — for a fully offline, permanent alternative use "Export
 // layout" instead, which saves a standalone .slate file with no server involved.
 export async function createShareCode(name: string, scenes: Scene[]): Promise<string> {
-  const cleanScenes = stripLocalFields(scenes)
+  const cleanScenes = await stripLocalFields(scenes)
   for (let attempt = 0; attempt < 5; attempt++) {
     const code = randomCode()
     const res = await fetch(`${SUPABASE_URL}/rest/v1/loadout_codes`, {
@@ -69,7 +101,11 @@ export async function createShareCode(name: string, scenes: Scene[]): Promise<st
     })
     if (res.ok) return `SLATE2-${code}`
     const body = await res.json().catch(() => null)
-    if (body?.code !== '23505') throw new Error(body?.message || `Request failed (${res.status})`) // not a collision — a real failure
+    if (body?.code === '23505') continue // extremely unlikely code collision, retry with a fresh random code
+    if (body?.message?.includes('scenes_size_limit')) {
+      throw new Error('This loadout is too large to share as a code — try removing extra scenes, or use "Export layout" instead, which saves a local file with no size limit.')
+    }
+    throw new Error(body?.message || `Request failed (${res.status})`) // not a collision — a real failure
     // else: extremely unlikely code collision, retry with a fresh random code
   }
   throw new Error('Could not generate a unique share code — please try again.')

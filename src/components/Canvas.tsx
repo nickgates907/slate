@@ -11,7 +11,7 @@ import MusicTile from './MusicTile'
 import Tooltip from './Tooltip'
 
 const SUPPORT_URL = 'https://www.paypal.com/donate/?hosted_button_id=ANA7ESGZ5VYDW'
-const DISCORD_URL = 'https://discord.gg/ksgdaEB2Xf'
+const DISCORD_URL = 'https://discord.gg/xx83eYfg3F'
 
 interface CanvasProps {
   scene: Scene

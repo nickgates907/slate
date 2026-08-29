@@ -308,7 +308,7 @@ export default function Sidebar({
             })()}
 
             <div className="rounded-xl bg-gray-100 dark:bg-gray-800/60 px-3.5 py-2.5 text-xs text-gray-500 leading-relaxed">
-              Includes all scenes, overlays, text, and images.{' '}
+              Includes all scenes, overlays, text, and images (images are resized to keep the code shareable).{' '}
               <span className="text-gray-600 dark:text-gray-400">Music files and camera/screen sources need to be re-added on the other PC.</span>
             </div>
             <button

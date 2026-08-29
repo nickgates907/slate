@@ -410,10 +410,15 @@ async fn connect_twitch(client_id: String) -> Result<ConnectedAccount, String> {
     Ok(ConnectedAccount { username, stream_key, platform: "twitch".to_string(), token, broadcaster_id: user_id })
 }
 
-// ── OAuth — YouTube (PKCE — no client secret needed) ─────────────────────────
+// ── OAuth — YouTube (PKCE + client_secret) ────────────────────────────────────
+// Google's token endpoint requires a client_secret on the exchange even for "Desktop
+// app" installed-app clients using PKCE, despite older docs suggesting otherwise --
+// confirmed via a real invalid_request: client_secret is missing error. Per Google's
+// own docs for installed apps this secret "cannot be kept confidential" and isn't
+// treated as one, so embedding it is the expected pattern for this client type.
 
 #[tauri::command]
-async fn connect_youtube(client_id: String, code_verifier: String, code_challenge: String) -> Result<ConnectedAccount, String> {
+async fn connect_youtube(client_id: String, client_secret: String, code_verifier: String, code_challenge: String) -> Result<ConnectedAccount, String> {
     const PORT: u16 = 3738; // different port from Twitch (3737) so both can connect simultaneously
     let redirect_uri = format!("http://localhost:{}", PORT);
 
@@ -430,12 +435,13 @@ async fn connect_youtube(client_id: String, code_verifier: String, code_challeng
 
     let http = reqwest::Client::new();
 
-    // PKCE token exchange — no client_secret required for desktop apps
+    // PKCE token exchange — Google still wants client_secret alongside code_verifier
     let token_resp: serde_json::Value = http
         .post("https://oauth2.googleapis.com/token")
         .form(&[
             ("code", code.as_str()),
             ("client_id", client_id.as_str()),
+            ("client_secret", client_secret.as_str()),
             ("code_verifier", code_verifier.as_str()),
             ("redirect_uri", redirect_uri.as_str()),
             ("grant_type", "authorization_code"),
@@ -443,8 +449,11 @@ async fn connect_youtube(client_id: String, code_verifier: String, code_challeng
         .send().await.map_err(|e| e.to_string())?
         .json().await.map_err(|e| e.to_string())?;
 
-    let access_token = token_resp["access_token"]
-        .as_str().ok_or("No access token from Google — check your credentials")?.to_string();
+    let access_token = token_resp["access_token"].as_str().ok_or_else(|| {
+        let error = token_resp["error"].as_str().unwrap_or("unknown_error");
+        let description = token_resp["error_description"].as_str().unwrap_or("no description provided");
+        format!("No access token from Google — {}: {}", error, description)
+    })?.to_string();
 
     let channel_resp: serde_json::Value = http
         .get("https://www.googleapis.com/youtube/v3/channels")
@@ -452,6 +461,11 @@ async fn connect_youtube(client_id: String, code_verifier: String, code_challeng
         .header("Authorization", format!("Bearer {}", access_token))
         .send().await.map_err(|e| e.to_string())?
         .json().await.map_err(|e| e.to_string())?;
+
+    if let Some(err) = channel_resp.get("error") {
+        let message = err["message"].as_str().unwrap_or("unknown error");
+        return Err(format!("YouTube channel lookup failed — {}", message));
+    }
 
     let username = channel_resp["items"][0]["snippet"]["title"]
         .as_str().unwrap_or("YouTube Channel").to_string();
@@ -463,12 +477,17 @@ async fn connect_youtube(client_id: String, code_verifier: String, code_challeng
         .send().await.map_err(|e| e.to_string())?
         .json().await.map_err(|e| e.to_string())?;
 
+    if let Some(err) = streams_resp.get("error") {
+        let message = err["message"].as_str().unwrap_or("unknown error");
+        return Err(format!("YouTube stream key lookup failed — {}", message));
+    }
+
     let stream_key = streams_resp["items"][0]["cdn"]["ingestionInfo"]["streamName"]
         .as_str()
         .ok_or("No YouTube stream key found. Go to YouTube Studio → Go Live → Stream to create one first.")?
         .to_string();
 
-    Ok(ConnectedAccount { username, stream_key, platform: "youtube".to_string(), token: String::new(), broadcaster_id: String::new() })
+    Ok(ConnectedAccount { username, stream_key, platform: "youtube".to_string(), token: access_token, broadcaster_id: String::new() })
 }
 
 // ── Entry point ───────────────────────────────────────────────────────────────

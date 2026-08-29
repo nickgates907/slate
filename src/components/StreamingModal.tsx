@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { CSSProperties } from 'react'
 import { invoke } from '@tauri-apps/api/tauri'
-import { TWITCH_CLIENT_ID, YOUTUBE_CLIENT_ID, generatePkce } from '../config/platforms'
+import { TWITCH_CLIENT_ID, YOUTUBE_CLIENT_ID, YOUTUBE_CLIENT_SECRET, generatePkce } from '../config/platforms'
 
 type Platform = 'twitch' | 'youtube'
 type StreamStatus = 'idle' | 'connecting' | 'live'
@@ -73,7 +73,7 @@ export default function StreamingModal({ onGoLive, onEndStream, status, liveTime
         result = await invoke<ConnectedAccount>('connect_twitch', { clientId: TWITCH_CLIENT_ID })
       } else {
         const { codeVerifier, codeChallenge } = await generatePkce()
-        result = await invoke<ConnectedAccount>('connect_youtube', { clientId: YOUTUBE_CLIENT_ID, codeVerifier, codeChallenge })
+        result = await invoke<ConnectedAccount>('connect_youtube', { clientId: YOUTUBE_CLIENT_ID, clientSecret: YOUTUBE_CLIENT_SECRET, codeVerifier, codeChallenge })
       }
       set({ status: 'connected', account: result, error: '' })
     } catch (e: unknown) {

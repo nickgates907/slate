@@ -1,9 +1,15 @@
 // Slate — streaming platform credentials
-// Client IDs are baked in at build time from .env — no secrets are stored.
-// YouTube uses PKCE (RFC 7636) so no client_secret is ever needed or embedded.
+// Client IDs are baked in at build time from .env.
+// YouTube uses PKCE (RFC 7636), but Google's token endpoint still requires a
+// client_secret on the exchange even for "Desktop app" installed-app clients using
+// PKCE, despite older docs suggesting otherwise -- confirmed via a real invalid_request:
+// client_secret is missing error. Per Google's own OAuth docs for installed apps, this
+// secret "cannot be kept confidential" and isn't treated as one -- embedding it here is
+// the expected/normal pattern for this client type, not a security compromise.
 
 export const TWITCH_CLIENT_ID = (import.meta.env.VITE_TWITCH_CLIENT_ID ?? '') as string
 export const YOUTUBE_CLIENT_ID = (import.meta.env.VITE_YOUTUBE_CLIENT_ID ?? '') as string
+export const YOUTUBE_CLIENT_SECRET = (import.meta.env.VITE_YOUTUBE_CLIENT_SECRET ?? '') as string
 
 /** Generate a PKCE code_verifier + code_challenge pair using the Web Crypto API. */
 export async function generatePkce(): Promise<{ codeVerifier: string; codeChallenge: string }> {
