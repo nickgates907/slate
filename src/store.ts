@@ -48,6 +48,8 @@ export interface RecordingSettings {
   saveFolder: string   // empty string = default Documents/Slate Recordings
   showTooltips: boolean
   preferredCameraId?: string  // app-wide camera choice, applied to every scene's camera/avatar sources
+  skin?: string  // active UI accent skin, see src/lib/skins.ts — defaults to 'teal'
+  ownedSkins?: string[]  // skin ids this install has unlocked — free skins are always implicitly owned
 }
 
 export const defaultSettings: RecordingSettings = {
@@ -56,6 +58,8 @@ export const defaultSettings: RecordingSettings = {
   bitrate: 6,
   saveFolder: '',
   showTooltips: true,
+  skin: 'teal',
+  ownedSkins: [],
 }
 
 export interface Loadout {

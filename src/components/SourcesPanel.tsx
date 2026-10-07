@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { open } from '@tauri-apps/api/dialog'
 import { readBinaryFile } from '@tauri-apps/api/fs'
 import { Source, saveMediaFile, deleteMediaFile } from '../store'
@@ -17,24 +18,24 @@ interface SourcesPanelProps {
   audioLevel: number
 }
 
-const typeIcon = (type: Source['type']) => {
+const typeIcon = (type: Source['type'], size = 15) => {
   switch (type) {
     case 'camera':
-      return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+      return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/></svg>
     case 'screen':
-      return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>
     case 'avatar':
-      return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
     case 'audio':
-      return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+      return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
     case 'image':
-      return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
     case 'text':
-      return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
+      return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
     case 'music':
-      return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+      return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
     case 'browser':
-      return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+      return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><line x1="2" x2="22" y1="12" y2="12"/></svg>
   }
 }
 
@@ -68,28 +69,55 @@ function AudioMeter({ level }: { level: number }) {
 }
 
 const ADD_SOURCES = [
-  { type: 'camera' as const,  label: 'Add camera', tip: 'Add your webcam to the scene' },
-  { type: 'screen' as const,  label: 'Add screen', tip: 'Capture your entire screen or a game window' },
-  { type: 'avatar' as const,  label: 'Add avatar', tip: 'Circular webcam, great for a face cam overlay' },
-  { type: 'image'  as const,  label: 'Add image',  tip: 'Add a logo, overlay image, or graphic' },
-  { type: 'audio'  as const,  label: 'Add mic',    tip: 'Add your microphone so viewers can hear you' },
-  { type: 'text'   as const,  label: 'Add text',   tip: 'Add text to your scene: name, social handles, alerts' },
-  { type: 'music'  as const,  label: 'Add music',  tip: 'Play background or intro music that loops and plays through the stream' },
-  { type: 'browser' as const, label: 'Add browser source', tip: 'Load a local HTML file for animated overlays, visualizers, custom scenes' },
+  { type: 'camera' as const,  short: 'Camera',  label: 'Add camera', tip: 'Add your webcam to the scene' },
+  { type: 'screen' as const,  short: 'Screen',  label: 'Add screen', tip: 'Capture your entire screen or a game window' },
+  { type: 'avatar' as const,  short: 'Avatar',  label: 'Add avatar', tip: 'Circular webcam, great for a face cam overlay' },
+  { type: 'image'  as const,  short: 'Image',   label: 'Add image',  tip: 'Add a logo, overlay image, or graphic' },
+  { type: 'audio'  as const,  short: 'Mic',     label: 'Add mic',    tip: 'Add your microphone so viewers can hear you' },
+  { type: 'text'   as const,  short: 'Text',    label: 'Add text',   tip: 'Add text to your scene: name, social handles, alerts' },
+  { type: 'music'  as const,  short: 'Music',   label: 'Add music',  tip: 'Play background or intro music that loops and plays through the stream' },
+  { type: 'browser' as const, short: 'Browser', label: 'Add browser source', tip: 'Load a local HTML file for animated overlays, visualizers, custom scenes' },
 ]
+
+const INPUT_SOURCE_TYPES: Source['type'][] = ['camera', 'screen', 'avatar', 'image', 'audio']
+const OUTPUT_SOURCE_TYPES: Source['type'][] = ['music', 'browser']
+const OVERLAY_SOURCE_TYPES: Source['type'][] = ['text']
 
 export default function SourcesPanel({
   sources, onToggleVisible, onAddSource, onRemoveSource, onReorderSource,
   onChangeCameraDevice, onChangeVolume, onUpdateSource, cameraDevices, audioLevel,
 }: SourcesPanelProps) {
-  return (
-    <div className="w-52 flex flex-col bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-800 flex-shrink-0">
+  const [libraryOpen, setLibraryOpen] = useState(true)
 
-      <div className="section-label px-3 pt-3 pb-1 border-b border-gray-100 dark:border-gray-800">
+  const renderDeviceGroup = (title: string, types: Source['type'][]) => (
+    <div className="flex flex-col gap-1">
+      <div className="px-0.5 text-[10px] font-bold tracking-wide uppercase text-text-secondary dark:text-text-dark-secondary">{title}</div>
+      <div className="grid grid-cols-3 gap-1">
+        {ADD_SOURCES.filter(s => types.includes(s.type)).map(({ type, short, tip }) => (
+          <Tooltip key={type} text={tip} position="top" className="w-full">
+            <button
+              onClick={() => onAddSource(type)}
+              className="w-full group flex flex-col items-center justify-center gap-1 py-1.5 px-1 rounded-md bg-surface-card dark:bg-surface-dark-card border border-black/[0.08] dark:border-white/[0.08] transition-all duration-200 hover:bg-surface-card-hover dark:hover:bg-surface-dark-card-hover hover:border-brand-red active:border-brand-red hover:shadow-[0_0_12px_rgb(var(--accent-rgb)/0.3)] select-none"
+            >
+              <span className="flex items-center justify-center w-[26px] h-[26px] text-text-secondary dark:text-text-dark-secondary group-hover:text-brand-red transition-colors duration-200">
+                {typeIcon(type, 24)}
+              </span>
+              <span className="text-[9px] font-semibold text-gray-900 dark:text-white tracking-tight leading-none truncate w-full text-center">{short}</span>
+            </button>
+          </Tooltip>
+        ))}
+      </div>
+    </div>
+  )
+
+  return (
+    <div className="flex flex-col gap-2.5 p-2.5 bg-surface-panel dark:bg-surface-dark-panel rounded-md border border-black/[0.08] dark:border-white/[0.08] flex-shrink-0">
+
+      <div className="section-label flex-shrink-0">
         Sources
       </div>
 
-      <div className="flex-1 overflow-y-auto p-2 flex flex-col gap-2">
+      <div className="flex-1 overflow-y-auto -mx-1 px-1 flex flex-col gap-2">
         {sources.map((source) => (
           <div key={source.id} className="card-panel overflow-hidden">
             <div className="flex items-center gap-1.5 px-2 py-2.5 text-sm text-gray-700 dark:text-gray-300">
@@ -183,7 +211,7 @@ export default function SourcesPanel({
                     onUpdateSource(source.id, { audioFileSrc: savedPath, name: (path as string).split(/[\\/]/).pop() ?? 'Music' })
                     if (previous) deleteMediaFile(previous)
                   }}
-                  className="text-xs px-2 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-left truncate"
+                  className="text-xs px-2 py-1.5 rounded-lg bg-surface-card dark:bg-surface-dark-card text-gray-600 dark:text-gray-400 hover:bg-surface-card-hover dark:hover:bg-surface-dark-card-hover transition-colors text-left truncate"
                 >
                   {source.audioFileSrc ? `♪ ${source.name}` : '♪ Choose audio file…'}
                 </button>
@@ -231,7 +259,7 @@ export default function SourcesPanel({
                 <select
                   value={source.deviceId ?? ''}
                   onChange={e => onChangeCameraDevice(source.id, e.target.value)}
-                  className="w-full text-xs bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded px-1.5 py-1 text-gray-600 dark:text-gray-400"
+                  className="w-full text-xs bg-surface-card dark:bg-surface-dark-card border border-black/[0.08] dark:border-white/[0.08] rounded px-1.5 py-1 text-gray-600 dark:text-gray-400"
                 >
                   {cameraDevices.map(d => (
                     <option key={d.deviceId} value={d.deviceId}>{d.label}</option>
@@ -249,7 +277,7 @@ export default function SourcesPanel({
                     if (!path || Array.isArray(path)) return
                     onUpdateSource(source.id, { htmlPath: path as string })
                   }}
-                  className="text-xs px-2 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-left truncate"
+                  className="text-xs px-2 py-1.5 rounded-lg bg-surface-card dark:bg-surface-dark-card text-gray-600 dark:text-gray-400 hover:bg-surface-card-hover dark:hover:bg-surface-dark-card-hover transition-colors text-left truncate"
                 >
                   {source.htmlPath
                     ? `⬡ ${(source.htmlPath as string).split(/[\\/]/).pop()}`
@@ -273,9 +301,12 @@ export default function SourcesPanel({
 
             {/* Screen capture tip: exclusive fullscreen games capture poorly — recommend Borderless Windowed */}
             {source.type === 'screen' && (
-              <div className="mx-3 mb-2 pl-2.5 pr-2 py-1.5 bg-gold-accent/5 border-l-[3px] border-gold-accent rounded-lg">
-                <p className="text-xs text-amber-700 dark:text-amber-200/80 leading-snug">
-                  <span className="font-semibold">Tip:</span> For games, use <span className="font-semibold">Borderless Windowed</span> mode for best capture quality.
+              <div className="mx-3 mb-2 flex items-start gap-2 px-3 py-2 bg-surface-card dark:bg-surface-dark-card border border-black/[0.08] dark:border-white/[0.08] rounded-md">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-text-secondary dark:text-text-dark-secondary flex-shrink-0 mt-0.5">
+                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+                </svg>
+                <p className="text-xs text-text-secondary dark:text-text-dark-secondary leading-snug">
+                  <span className="font-semibold text-gray-700 dark:text-gray-300">Tip:</span> For games, use <span className="font-semibold text-gray-700 dark:text-gray-300">Borderless Windowed</span> mode for best capture quality.
                 </p>
               </div>
             )}
@@ -331,19 +362,25 @@ export default function SourcesPanel({
         )}
       </div>
 
-      {/* Add source buttons */}
-      <div className="p-2 border-t border-gray-100 dark:border-gray-800 flex flex-col gap-1">
-        {ADD_SOURCES.map(({ type, label, tip }) => (
-          <Tooltip key={type} text={tip} position="left">
-            <button
-              onClick={() => onAddSource(type)}
-              className="btn-solid border-gray-300 dark:border-gray-600 flex items-center gap-2 w-full px-2.5 py-1.5 text-xs text-left"
-            >
-              {typeIcon(type)}
-              {label}
-            </button>
-          </Tooltip>
-        ))}
+      {/* Add source library */}
+      <div className="-mx-2.5 px-2.5 pt-2 border-t border-black/[0.08] dark:border-white/[0.08] flex flex-col gap-1.5 flex-shrink-0">
+        <div className="section-label">Source Library</div>
+
+        <button
+          onClick={() => setLibraryOpen(o => !o)}
+          className="btn-solid flex items-center justify-center gap-1.5 w-full px-2.5 py-1.5 text-[11px]"
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          Add Source
+        </button>
+
+        {libraryOpen && (
+          <>
+            {renderDeviceGroup('Input Devices', INPUT_SOURCE_TYPES)}
+            {renderDeviceGroup('Output Devices', OUTPUT_SOURCE_TYPES)}
+            {renderDeviceGroup('Overlays', OVERLAY_SOURCE_TYPES)}
+          </>
+        )}
       </div>
 
     </div>

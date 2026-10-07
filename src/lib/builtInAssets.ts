@@ -5,190 +5,146 @@ function svg(markup: string): string {
 }
 
 // ── Static overlay SVGs ───────────────────────────────────────────────────────
-// Slate brand: #FF4D4D red (gradient to #cc2200 for depth), #0a0a14 / #0d0d13 dark
-// neutrals. Anime-influenced treatment — speed lines, halftone texture, bold
-// cel-shaded strokes — instead of a plain tech gradient.
-
-// Reusable ingredients, inlined per-asset so each SVG stays self-contained.
-function speedLines(cx: number, cy: number, rInner: number, rOuter: number, count: number, color: string, opacity: number) {
-  let out = ''
-  for (let i = 0; i < count; i++) {
-    const a = (i / count) * Math.PI * 2
-    const len = rOuter - rInner * (0.3 + 0.7 * ((i * 37) % 5) / 5)
-    const x1 = cx + Math.cos(a) * rInner
-    const y1 = cy + Math.sin(a) * rInner
-    const x2 = cx + Math.cos(a) * (rInner + len)
-    const y2 = cy + Math.sin(a) * (rInner + len)
-    out += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${color}" stroke-width="1.4" stroke-opacity="${opacity}" stroke-linecap="round"/>`
-  }
-  return out
-}
-
-const HALFTONE_DEF = `
-  <pattern id="halftone" width="10" height="10" patternUnits="userSpaceOnUse">
-    <circle cx="2" cy="2" r="1.1" fill="#FF4D4D"/>
-  </pattern>`
+// Slate brand: #00E5BF teal (gradient to #00A88F for depth), #0A0E14 / #06090E
+// dark neutrals. Clean HUD/tech treatment — dashed rings, soft glow filters,
+// chamfered corner brackets — matching the app's Modern Dynamic theme.
 
 const FRAME_ROUND = svg(`
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
   <defs>
     <linearGradient id="a" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FF4D4D"/>
-      <stop offset="100%" stop-color="#cc2200"/>
+      <stop offset="0%" stop-color="#00E5BF"/>
+      <stop offset="100%" stop-color="#00A88F"/>
     </linearGradient>
-    <filter id="a-glow"><feGaussianBlur stdDeviation="3" result="b"/>
-      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="a-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
   </defs>
-  ${speedLines(100, 100, 100, 122, 16, '#FF4D4D', 0.4)}
-  <circle cx="100" cy="100" r="97" fill="none" stroke="#0a0a14" stroke-width="8"/>
-  <circle cx="100" cy="100" r="97" fill="none" stroke="url(#a)" stroke-width="5" filter="url(#a-glow)"/>
-  <circle cx="100" cy="100" r="90" fill="none" stroke="white" stroke-opacity="0.12" stroke-width="0.8"/>
+  <circle cx="100" cy="100" r="90" stroke="rgba(0,229,191,0.25)" stroke-width="1" fill="none" stroke-dasharray="4 2"/>
+  <circle cx="100" cy="100" r="85" stroke="url(#a)" stroke-width="2.5" fill="none" filter="url(#a-glow)"/>
+  <circle cx="100" cy="100" r="81" stroke="white" stroke-opacity="0.35" stroke-width="0.8" fill="none"/>
+  <path d="M 94 11 L 106 11" stroke="#00E5BF" stroke-width="2" stroke-linecap="round"/>
+  <path d="M 94 189 L 106 189" stroke="#00E5BF" stroke-width="2" stroke-linecap="round"/>
 </svg>`)
 
 const FRAME_GAMING = svg(`
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
   <defs>
-    <linearGradient id="b" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FF4D4D"/>
-      <stop offset="100%" stop-color="#cc2200"/>
+    <linearGradient id="b" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00E5BF"/>
+      <stop offset="100%" stop-color="#009980"/>
     </linearGradient>
   </defs>
-  <line x1="-14" y1="4" x2="-32" y2="-2" stroke="#FF4D4D" stroke-width="2" stroke-opacity="0.55"/>
-  <line x1="-10" y1="14" x2="-30" y2="16" stroke="#FF4D4D" stroke-width="2" stroke-opacity="0.4"/>
-  <line x1="214" y1="4" x2="232" y2="-2" stroke="#FF4D4D" stroke-width="2" stroke-opacity="0.55"/>
-  <line x1="210" y1="14" x2="230" y2="16" stroke="#FF4D4D" stroke-width="2" stroke-opacity="0.4"/>
-  <polygon points="22,0 178,0 200,22 200,178 178,200 22,200 0,178 0,22"
-           fill="none" stroke="#0a0a14" stroke-width="7"/>
-  <polygon points="22,0 178,0 200,22 200,178 178,200 22,200 0,178 0,22"
+  <polygon points="26,0 174,0 200,26 200,174 174,200 26,200 0,174 0,26"
+           fill="none" stroke="#0A0E14" stroke-width="7"/>
+  <polygon points="26,0 174,0 200,26 200,174 174,200 26,200 0,174 0,26"
            fill="none" stroke="url(#b)" stroke-width="3"/>
-  <polygon points="30,8 170,8 192,30 192,170 170,192 30,192 8,170 8,30"
-           fill="none" stroke="#FF4D4D" stroke-width="0.8" stroke-opacity="0.3"/>
-  <polyline points="0,44 0,0 44,0"   fill="none" stroke="#FF4D4D" stroke-width="5"/>
-  <polyline points="156,0 200,0 200,44"  fill="none" stroke="#FF4D4D" stroke-width="5"/>
-  <polyline points="200,156 200,200 156,200" fill="none" stroke="#FF4D4D" stroke-width="5"/>
-  <polyline points="44,200 0,200 0,156"  fill="none" stroke="#FF4D4D" stroke-width="5"/>
+  <polyline points="0,44 0,0 44,0"   fill="none" stroke="#00E5BF" stroke-width="5"/>
+  <polyline points="156,0 200,0 200,44"  fill="none" stroke="#00E5BF" stroke-width="5"/>
+  <polyline points="200,156 200,200 156,200" fill="none" stroke="#00E5BF" stroke-width="5"/>
+  <polyline points="44,200 0,200 0,156"  fill="none" stroke="#00E5BF" stroke-width="5"/>
+  <rect x="85" y="0" width="30" height="8" rx="4" fill="#00E5BF"/>
 </svg>`)
 
 const FRAME_MINIMAL = svg(`
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
   <rect x="2" y="2" width="196" height="196" rx="16" ry="16"
-        fill="none" stroke="white" stroke-width="2" stroke-opacity="0.55"/>
-  <polyline points="0,32 0,0 32,0"    fill="none" stroke="#FF4D4D" stroke-width="4"/>
-  <polyline points="168,0 200,0 200,32"   fill="none" stroke="#FF4D4D" stroke-width="4"/>
-  <polyline points="200,168 200,200 168,200" fill="none" stroke="#FF4D4D" stroke-width="4"/>
-  <polyline points="32,200 0,200 0,168"   fill="none" stroke="#FF4D4D" stroke-width="4"/>
+        fill="none" stroke="white" stroke-width="2" stroke-opacity="0.45"/>
+  <rect x="2" y="2" width="196" height="196" rx="16" ry="16"
+        fill="none" stroke="#00E5BF" stroke-width="1.5" stroke-dasharray="20 40"/>
+  <polyline points="0,32 0,0 32,0"    fill="none" stroke="#00E5BF" stroke-width="4"/>
+  <polyline points="168,0 200,0 200,32"   fill="none" stroke="#00E5BF" stroke-width="4"/>
+  <polyline points="200,168 200,200 168,200" fill="none" stroke="#00E5BF" stroke-width="4"/>
+  <polyline points="32,200 0,200 0,168"   fill="none" stroke="#00E5BF" stroke-width="4"/>
 </svg>`)
 
 const LOWER_CLEAN = svg(`
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 80">
   <defs>
-    <linearGradient id="c" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
-      <stop offset="0%" stop-color="#0a0a14" stop-opacity="0"/>
-      <stop offset="100%" stop-color="#0a0a14" stop-opacity="0.92"/>
+    <linearGradient id="c" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#121822" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#121822" stop-opacity="0.95"/>
     </linearGradient>
-    ${HALFTONE_DEF}
-    <linearGradient id="c-mask" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-opacity="0"/>
-      <stop offset="100%" stop-opacity="0.5"/>
-    </linearGradient>
-    <mask id="c-fade"><rect width="640" height="80" fill="url(#c-mask)"/></mask>
   </defs>
   <rect width="640" height="80" fill="url(#c)"/>
-  <rect width="640" height="80" fill="url(#halftone)" mask="url(#c-fade)"/>
-  <rect y="76" width="640" height="4" fill="#FF4D4D"/>
+  <rect x="1" y="1" width="638" height="78" rx="10" fill="#141C28" stroke="rgba(0,229,191,0.3)" stroke-width="1"/>
+  <path d="M 0 0 L 10 0 L 10 80 L 0 80 Z" fill="#00E5BF"/>
+  <rect x="28" y="24" width="180" height="14" rx="4" fill="#FFFFFF"/>
+  <rect x="28" y="46" width="110" height="10" rx="3" fill="#7F93A8"/>
 </svg>`)
 
 const LOWER_ACCENT = svg(`
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 60">
-  <rect width="640" height="60" fill="#0d0d13" fill-opacity="0.95"/>
-  <polygon points="0,0 24,0 12,60 0,60" fill="#FF4D4D"/>
-  <polygon points="24,0 32,0 20,60 12,60" fill="#FF4D4D" fill-opacity="0.4"/>
-  <rect x="5" width="635" height="1" fill="#FF4D4D" fill-opacity="0.25"/>
-  <rect x="5" y="59" width="635" height="1" fill="#FF4D4D" fill-opacity="0.25"/>
+  <path d="M 0 0 L 600 0 L 640 60 L 0 60 Z" fill="#121822" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <line x1="0" y1="0" x2="600" y2="0" stroke="#00E5BF" stroke-width="3"/>
+  <rect x="30" y="20" width="190" height="16" rx="4" fill="#FFFFFF"/>
 </svg>`)
 
 const LOWER_NEON = svg(`
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 60">
   <defs>
     <linearGradient id="d" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%"  stop-color="#FF4D4D" stop-opacity="0.95"/>
-      <stop offset="55%" stop-color="#1a0808" stop-opacity="0.95"/>
-      <stop offset="100%" stop-color="#1a0808" stop-opacity="0"/>
+      <stop offset="0%" stop-color="#00E5BF" stop-opacity="0.95"/>
+      <stop offset="55%" stop-color="#0A0E14" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#0A0E14" stop-opacity="0"/>
     </linearGradient>
     <filter id="glow"><feGaussianBlur stdDeviation="2.5" result="b"/>
       <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
   </defs>
   <rect width="640" height="60" fill="url(#d)"/>
-  <rect height="2.5" width="320" fill="#FF9494" filter="url(#glow)" opacity="0.9"/>
-  <rect y="57.5" height="2.5" width="320" fill="#FF9494" filter="url(#glow)" opacity="0.5"/>
+  <rect height="2.5" width="320" fill="#6FF5DC" filter="url(#glow)" opacity="0.9"/>
+  <rect y="57.5" height="2.5" width="320" fill="#6FF5DC" filter="url(#glow)" opacity="0.5"/>
 </svg>`)
 
 const FS_STARTING = svg(`
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720">
   <defs>
     <radialGradient id="e" cx="50%" cy="50%" r="70%">
-      <stop offset="0%" stop-color="#2a0d0d"/>
-      <stop offset="100%" stop-color="#0a0a0f"/>
+      <stop offset="0%" stop-color="#0F1B26"/>
+      <stop offset="100%" stop-color="#06090E"/>
     </radialGradient>
-    <linearGradient id="f" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#FF4D4D"/>
-      <stop offset="100%" stop-color="#cc2200"/>
-    </linearGradient>
-    ${HALFTONE_DEF}
-    <radialGradient id="e-mask" cx="50%" cy="50%" r="60%">
-      <stop offset="0%" stop-opacity="0.35"/>
-      <stop offset="100%" stop-opacity="0"/>
-    </radialGradient>
-    <mask id="e-fade"><rect width="1280" height="720" fill="url(#e-mask)"/></mask>
   </defs>
   <rect width="1280" height="720" fill="url(#e)"/>
-  ${speedLines(640, 360, 130, 420, 40, '#FF4D4D', 0.22)}
-  <rect width="1280" height="720" fill="url(#halftone)" mask="url(#e-fade)"/>
-  <rect width="1280" height="4" fill="url(#f)"/>
-  <rect y="716" width="1280" height="4" fill="url(#f)"/>
-  <polyline points="0,60 0,0 60,0"         fill="none" stroke="#FF4D4D" stroke-width="3" stroke-opacity="0.6"/>
-  <polyline points="1220,0 1280,0 1280,60" fill="none" stroke="#FF4D4D" stroke-width="3" stroke-opacity="0.6"/>
-  <polyline points="1280,660 1280,720 1220,720" fill="none" stroke="#FF4D4D" stroke-width="3" stroke-opacity="0.6"/>
-  <polyline points="60,720 0,720 0,660"    fill="none" stroke="#FF4D4D" stroke-width="3" stroke-opacity="0.6"/>
-  <circle cx="640" cy="360" r="150" fill="none" stroke="#FF4D4D" stroke-width="1.5" stroke-opacity="0.4"/>
+  <circle cx="640" cy="360" r="240" stroke="rgba(0,229,191,0.15)" stroke-width="1" fill="none"/>
+  <circle cx="640" cy="360" r="160" stroke="rgba(0,229,191,0.3)" stroke-width="1" stroke-dasharray="3 3" fill="none"/>
+  <circle cx="640" cy="360" r="80" stroke="#00E5BF" stroke-width="1.5" fill="none"/>
+  <line x1="160" y1="80" x2="1120" y2="640" stroke="rgba(0,229,191,0.08)" stroke-width="1"/>
+  <line x1="1120" y1="80" x2="160" y2="640" stroke="rgba(0,229,191,0.08)" stroke-width="1"/>
+  <rect width="1280" height="4" fill="#00E5BF"/>
+  <rect y="716" width="1280" height="4" fill="#00E5BF"/>
+  <rect x="416" y="544" width="448" height="48" rx="24" fill="#00E5BF"/>
 </svg>`)
 
 const FS_BRB = svg(`
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720">
   <defs>
     <radialGradient id="g" cx="50%" cy="50%" r="70%">
-      <stop offset="0%" stop-color="#15151d"/>
-      <stop offset="100%" stop-color="#08080b"/>
+      <stop offset="0%" stop-color="#121822"/>
+      <stop offset="100%" stop-color="#06090E"/>
     </radialGradient>
-    <linearGradient id="h" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#FF4D4D"/>
-      <stop offset="100%" stop-color="#cc2200"/>
-    </linearGradient>
   </defs>
   <rect width="1280" height="720" fill="url(#g)"/>
-  <rect width="1280" height="3" fill="url(#h)"/>
-  <rect y="717" width="1280" height="3" fill="url(#h)"/>
-  <circle cx="640" cy="360" r="140" fill="none" stroke="#3a2020" stroke-width="1.5"/>
-  <circle cx="640" cy="360" r="180" fill="none" stroke="#3a2020" stroke-width="1"/>
-  <circle cx="640" cy="360" r="220" fill="none" stroke="#3a2020" stroke-width="0.8" stroke-opacity="0.6"/>
-  <circle cx="640" cy="360" r="6" fill="#FF4D4D" fill-opacity="0.8"/>
+  <rect width="1280" height="3" fill="#00E5BF"/>
+  <rect y="717" width="1280" height="3" fill="#00E5BF"/>
+  <circle cx="640" cy="360" r="256" stroke="rgba(0,229,191,0.1)" stroke-width="1" fill="none"/>
+  <circle cx="640" cy="360" r="176" stroke="rgba(0,229,191,0.25)" stroke-width="1" fill="none"/>
+  <circle cx="640" cy="360" r="96" stroke="rgba(0,229,191,0.5)" stroke-width="1" fill="none"/>
+  <circle cx="640" cy="360" r="24" fill="#00E5BF"/>
 </svg>`)
 
 const ALERT_CARD = svg(`
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 90">
   <defs>
-    <linearGradient id="i" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#FF4D4D"/>
-      <stop offset="100%" stop-color="#cc2200"/>
-    </linearGradient>
-    <filter id="sh">
-      <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#FF4D4D" flood-opacity="0.4"/>
+    <filter id="sh" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="8" flood-color="#00E5BF" flood-opacity="0.35"/>
     </filter>
   </defs>
-  ${speedLines(0, 45, 6, 34, 10, '#FF4D4D', 0.5)}
-  <rect rx="14" width="420" height="90" fill="#12121e" filter="url(#sh)"/>
-  <rect rx="14" width="420" height="90" fill="none" stroke="url(#i)" stroke-width="1.5"/>
-  <rect rx="14" width="5" height="90" fill="url(#i)"/>
+  <rect x="24" y="10" width="372" height="70" rx="14" fill="#121822" stroke="#00E5BF" stroke-width="1.5" filter="url(#sh)"/>
+  <circle cx="60" cy="45" r="18" fill="rgba(0,229,191,0.2)"/>
+  <circle cx="60" cy="45" r="9" fill="#00E5BF"/>
+  <rect x="92" y="28" width="150" height="14" rx="4" fill="#FFFFFF"/>
+  <rect x="92" y="50" width="100" height="10" rx="3" fill="#7F93A8"/>
 </svg>`)
 
 // ── Asset definitions ─────────────────────────────────────────────────────────

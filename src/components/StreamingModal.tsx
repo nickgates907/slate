@@ -39,12 +39,12 @@ const NO_CREDENTIALS = !TWITCH_CLIENT_ID && !YOUTUBE_CLIENT_ID
 
 const SlateLogo = () => (
   <svg width="26" height="26" viewBox="0 0 72 72" fill="none">
-    <rect width="72" height="72" rx="18" fill="#FF4D4D"/>
+    <rect width="72" height="72" rx="18" fill="rgb(var(--accent-rgb))"/>
     <circle cx="36" cy="36" r="17" stroke="white" strokeWidth="3" fill="none"/>
     <circle cx="36" cy="36" r="10" stroke="white" strokeWidth="2.5" fill="none"/>
     <circle cx="36" cy="36" r="4" fill="white"/>
     <circle cx="52" cy="20" r="5" fill="white"/>
-    <circle cx="52" cy="20" r="2.5" fill="#FF4D4D"/>
+    <circle cx="52" cy="20" r="2.5" fill="rgb(var(--accent-rgb))"/>
   </svg>
 )
 
@@ -171,7 +171,7 @@ export default function StreamingModal({ onGoLive, onEndStream, status, liveTime
         style={{ background: 'linear-gradient(180deg, #111118 0%, #0d0d13 100%)' }}
       >
         {/* Brand accent bar */}
-        <div className="h-px w-full" style={{ background: 'linear-gradient(90deg, transparent, #FF4D4D 40%, #FF4D4D 60%, transparent)' }} />
+        <div className="h-px w-full" style={{ background: 'linear-gradient(90deg, transparent, rgb(var(--accent-rgb)) 40%, rgb(var(--accent-rgb)) 60%, transparent)' }} />
 
         {/* Header */}
         <div className="px-5 pt-4 pb-3.5 flex items-center justify-between border-b border-white/[0.06]">
@@ -179,7 +179,7 @@ export default function StreamingModal({ onGoLive, onEndStream, status, liveTime
             <SlateLogo />
             {isLive ? (
               <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 bg-brand-red text-white text-[11px] font-bold px-2.5 py-1 rounded-full tracking-wide">
+                <span className="inline-flex items-center gap-1.5 bg-brand-red text-brand-on-accent text-[11px] font-bold px-2.5 py-1 rounded-full tracking-wide">
                   <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
                   LIVE {liveTime}
                 </span>
@@ -321,8 +321,8 @@ export default function StreamingModal({ onGoLive, onEndStream, status, liveTime
             <button
               onClick={handleGoLive}
               disabled={!canGoLive || metaSaving}
-              className={`w-full py-3 rounded-xl font-bold text-sm text-white transition-all disabled:opacity-25 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${!canGoLive ? 'bg-white/[0.06]' : ''}`}
-              style={canGoLive ? { background: 'linear-gradient(135deg, #FF4D4D 0%, #e03030 100%)', boxShadow: '0 4px 20px rgba(255,77,77,0.35)' } : undefined}
+              className={`w-full py-3 rounded-xl font-bold text-sm transition-all disabled:opacity-25 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${!canGoLive ? 'bg-white/[0.06] text-white' : 'text-brand-on-accent'}`}
+              style={canGoLive ? { background: 'linear-gradient(135deg, rgb(var(--accent-rgb)) 0%, rgb(var(--accent-strong-rgb)) 100%)', boxShadow: '0 4px 20px rgb(var(--accent-rgb) / 0.35)' } : undefined}
             >
               {metaSaving ? (
                 <>

@@ -27,7 +27,7 @@ interface TitlebarProps {
 export default function Titlebar({ dark, onToggleDark, onOpenSettings, isRecording, onToggleRecord, recordingTime, streamStatus, onOpenStreaming, liveTime, micEnabled, onToggleMic, audioLevel, streamStats, subCurrent, subGoal, onUpdateSubGoal, onClip, isClipping }: TitlebarProps) {
   const [showGoalEditor, setShowGoalEditor] = useState(false)
   return (
-    <div className="flex items-center gap-3 px-4 h-12 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 flex-shrink-0">
+    <div className="flex items-center gap-2 px-3 h-[46px] border-b border-black/[0.08] dark:border-white/[0.08] flex-shrink-0">
 
       {/* Logo */}
       <div className="flex items-center gap-2">
@@ -45,7 +45,7 @@ export default function Titlebar({ dark, onToggleDark, onOpenSettings, isRecordi
       {/* Stream health — shown while live */}
       {streamStatus === 'live' && streamStats && (streamStats.fps > 0 || streamStats.kbps > 0) && (
         <Tooltip text="Live stream health: frames per second and kilobits per second being sent" position="bottom">
-          <div className="flex items-center gap-3 px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center gap-2 px-2.5 py-1 bg-surface-card dark:bg-surface-dark-card rounded-lg border border-black/[0.08] dark:border-white/[0.08]">
             <div className="flex items-center gap-1.5">
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-green-500">
                 <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
@@ -68,7 +68,7 @@ export default function Titlebar({ dark, onToggleDark, onOpenSettings, isRecordi
           <Tooltip text="Update your sub goal counter live. It updates the scrolling banner on stream instantly." position="bottom">
             <button
               onClick={() => setShowGoalEditor(g => !g)}
-              className="flex items-center gap-1.5 px-3 py-1 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-700 transition-colors"
+              className="flex items-center gap-1.5 px-2.5 py-1 bg-surface-card dark:bg-surface-dark-card hover:bg-surface-card-hover dark:hover:bg-surface-dark-card-hover rounded-lg border border-black/[0.08] dark:border-white/[0.08] transition-colors"
             >
               <span className="text-sm">⭐</span>
               <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 tabular-nums">{subCurrent} / {subGoal}</span>
@@ -80,13 +80,13 @@ export default function Titlebar({ dark, onToggleDark, onOpenSettings, isRecordi
               <div className="flex items-center gap-2">
                 <label className="text-xs text-gray-500 w-14 shrink-0">Current</label>
                 <div className="flex items-center gap-1">
-                  <button onClick={() => onUpdateSubGoal(Math.max(0, subCurrent - 1), subGoal)} className="w-6 h-6 rounded bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-white text-xs font-bold flex items-center justify-center">−</button>
+                  <button onClick={() => onUpdateSubGoal(Math.max(0, subCurrent - 1), subGoal)} className="w-6 h-6 rounded bg-surface-card hover:bg-surface-card-hover dark:bg-surface-dark-card dark:hover:bg-surface-dark-card-hover text-gray-800 dark:text-white text-xs font-bold flex items-center justify-center">−</button>
                   <input
                     type="number" min={0} value={subCurrent}
                     onChange={e => onUpdateSubGoal(Math.max(0, parseInt(e.target.value) || 0), subGoal)}
-                    className="w-10 text-center text-xs font-bold text-gray-800 dark:text-white bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded px-1 py-0.5"
+                    className="w-10 text-center text-xs font-bold text-gray-800 dark:text-white bg-surface-card dark:bg-surface-dark-card border border-black/[0.08] dark:border-white/[0.08] rounded px-1 py-0.5"
                   />
-                  <button onClick={() => onUpdateSubGoal(subCurrent + 1, subGoal)} className="w-6 h-6 rounded bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-white text-xs font-bold flex items-center justify-center">+</button>
+                  <button onClick={() => onUpdateSubGoal(subCurrent + 1, subGoal)} className="w-6 h-6 rounded bg-surface-card hover:bg-surface-card-hover dark:bg-surface-dark-card dark:hover:bg-surface-dark-card-hover text-gray-800 dark:text-white text-xs font-bold flex items-center justify-center">+</button>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -94,7 +94,7 @@ export default function Titlebar({ dark, onToggleDark, onOpenSettings, isRecordi
                 <input
                   type="number" min={1} value={subGoal}
                   onChange={e => onUpdateSubGoal(subCurrent, Math.max(1, parseInt(e.target.value) || 1))}
-                  className="w-16 text-center text-xs font-bold text-gray-800 dark:text-white bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded px-1 py-0.5"
+                  className="w-16 text-center text-xs font-bold text-gray-800 dark:text-white bg-surface-card dark:bg-surface-dark-card border border-black/[0.08] dark:border-white/[0.08] rounded px-1 py-0.5"
                 />
               </div>
               <button onClick={() => setShowGoalEditor(false)} className="text-xs text-gray-500 hover:text-gray-900 dark:hover:text-white text-center mt-0.5 transition-colors">Done</button>
@@ -109,7 +109,7 @@ export default function Titlebar({ dark, onToggleDark, onOpenSettings, isRecordi
       <Tooltip text="Switch between light and dark theme" position="bottom">
       <button
         onClick={onToggleDark}
-        className="btn-secondary flex items-center gap-2 text-xs px-3 py-1.5"
+        className="btn-secondary flex items-center gap-1.5 text-[11px] px-2.5 h-[30px]"
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
@@ -123,7 +123,7 @@ export default function Titlebar({ dark, onToggleDark, onOpenSettings, isRecordi
 
       {/* Settings */}
       <Tooltip text="Change video quality, frame rate, and where recordings are saved" position="bottom">
-      <button onClick={onOpenSettings} className="btn-secondary flex items-center gap-1.5 text-xs px-3 py-1.5">
+      <button onClick={onOpenSettings} className="btn-secondary flex items-center gap-1.5 text-[11px] px-2.5 h-[30px]">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
         </svg>
@@ -137,7 +137,7 @@ export default function Titlebar({ dark, onToggleDark, onOpenSettings, isRecordi
           <button
             onClick={onClip}
             disabled={isClipping}
-            className="btn-secondary flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 disabled:opacity-50 disabled:cursor-wait"
+            className="btn-secondary flex items-center gap-1.5 text-[11px] font-semibold px-2.5 h-[30px] disabled:opacity-50 disabled:cursor-wait"
           >
             {isClipping ? (
               <span className="w-3 h-3 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
@@ -157,12 +157,12 @@ export default function Titlebar({ dark, onToggleDark, onOpenSettings, isRecordi
       <button
         onClick={onOpenStreaming}
         disabled={isRecording}
-        className={`flex items-center gap-2 text-sm font-semibold px-4 py-1.5 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+        className={`flex items-center gap-1.5 text-[11px] font-semibold px-3 h-[30px] transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
           streamStatus === 'live'
-            ? 'bg-purple-600 text-white hover:bg-purple-500'
+            ? 'bg-purple-600 text-white hover:bg-purple-500 rounded-lg'
             : streamStatus === 'connecting'
-            ? 'bg-purple-400 text-white cursor-wait'
-            : 'btn-primary'
+            ? 'bg-purple-400 text-white cursor-wait rounded-lg'
+            : 'border-2 border-brand-red text-brand-red hover:bg-brand-red/10 rounded-full'
         }`}
       >
         {streamStatus === 'live' ? (
@@ -190,7 +190,7 @@ export default function Titlebar({ dark, onToggleDark, onOpenSettings, isRecordi
       <Tooltip text={micEnabled ? 'Microphone is ON, click to mute' : 'Microphone is OFF, click to unmute'} position="bottom">
         <button
           onClick={onToggleMic}
-          className={`relative flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors ${
+          className={`relative flex items-center gap-1.5 text-[11px] font-semibold px-2.5 h-[30px] rounded-lg border transition-colors ${
             micEnabled
               ? 'bg-green-500/10 border-green-500/30 text-green-600 hover:bg-green-500/20 dark:bg-green-500/15 dark:border-green-500/40 dark:text-green-400 dark:hover:bg-green-500/25'
               : 'bg-red-500/10 border-red-500/30 text-red-600 hover:bg-red-500/20 dark:bg-red-500/15 dark:border-red-500/40 dark:text-red-400 dark:hover:bg-red-500/25'
@@ -231,13 +231,13 @@ export default function Titlebar({ dark, onToggleDark, onOpenSettings, isRecordi
       <button
         onClick={onToggleRecord}
         disabled={streamStatus !== 'idle'}
-        className={`flex items-center gap-2 text-sm px-4 py-1.5 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+        className={`flex items-center gap-1.5 text-[11px] px-3 h-[30px] rounded-full transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
           isRecording
-            ? 'bg-gray-800 text-white hover:bg-gray-700 font-semibold'
-            : 'btn-solid'
+            ? 'bg-brand-red text-brand-on-accent hover:bg-brand-red-hover font-semibold'
+            : 'border-2 border-brand-red text-brand-red hover:bg-brand-red/10'
         }`}
       >
-        <div className={`flex-shrink-0 self-center ${isRecording ? 'w-3 h-3 bg-white rounded-sm' : 'w-2 h-2 bg-gray-900 dark:bg-white rounded-full'}`} />
+        <div className={`flex-shrink-0 self-center ${isRecording ? 'w-3 h-3 bg-white rounded-sm' : 'w-2 h-2 bg-brand-red rounded-full'}`} />
         {isRecording ? recordingTime : 'Record'}
       </button>
       </Tooltip>

@@ -33,7 +33,7 @@ export default function OverlaysModal({ onLoad, onAddAsset, onClose }: OverlaysM
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center gap-3 px-5 py-3 border-b border-gray-200 dark:border-gray-800 shrink-0">
+        <div className="flex items-center gap-3 px-5 py-3 border-b border-black/[0.08] dark:border-white/[0.08] shrink-0">
           <span className="text-gray-900 dark:text-white font-semibold text-sm">Overlays</span>
           <div className="flex-1" />
           <button onClick={onClose} className="text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors text-lg leading-none">×</button>
@@ -108,7 +108,7 @@ function TemplateRow({ template, onLoad, affiliate }: { template: OverlayTemplat
       className={`flex items-center gap-3 w-full text-left px-4 py-3 rounded-xl transition-all duration-200 hover:-translate-y-0.5 group ${
         affiliate
           ? 'bg-[#9147ff]/10 hover:bg-[#9147ff]/20 border border-[#9147ff]/20'
-          : 'card-panel hover:bg-gray-100 dark:hover:bg-gray-700'
+          : 'card-panel hover:bg-surface-card-hover dark:hover:bg-surface-dark-card-hover'
       }`}
     >
       <span className="text-2xl">{template.icon}</span>
@@ -136,9 +136,9 @@ function AssetCard({ asset, onAdd }: { asset: BuiltInAsset; onAdd: (src: Omit<So
         height: asset.defaultH,
         imageSrc: asset.src,
       })}
-      className="card-panel hover:bg-gray-100 dark:hover:bg-gray-700 flex flex-col items-center gap-2 p-3 transition-all duration-200 hover:-translate-y-0.5 group"
+      className="card-panel hover:bg-surface-card-hover dark:hover:bg-surface-dark-card-hover hover:border-brand-red flex flex-col items-center gap-2 p-3 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(0,0,0,0.4),0_0_12px_rgb(var(--accent-rgb)/0.25)] group"
     >
-      <div className="w-full h-16 rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-950 flex items-center justify-center">
+      <div className="w-full h-16 rounded-lg overflow-hidden bg-surface-canvas flex items-center justify-center">
         <img src={asset.src} alt={asset.name} className="max-w-full max-h-full object-contain" />
       </div>
       <span className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white transition-colors text-center leading-tight">

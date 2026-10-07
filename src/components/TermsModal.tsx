@@ -54,11 +54,11 @@ export default function TermsModal({ onAccept }: Props) {
         <div style={{ marginBottom: '1.75rem', position: 'relative' }}>
           <div style={{
             position: 'absolute', inset: '-12px',
-            background: 'radial-gradient(circle, rgba(255,77,77,0.18) 0%, transparent 70%)',
+            background: 'radial-gradient(circle, rgb(var(--accent-rgb) / 0.18) 0%, transparent 70%)',
             borderRadius: '50%',
           }} />
           <svg width="52" height="52" viewBox="0 0 32 32" fill="none">
-            <rect width="32" height="32" rx="9" fill="#FF4D4D"/>
+            <rect width="32" height="32" rx="9" fill="rgb(var(--accent-rgb))"/>
             <path d="M8 10h10a6 6 0 010 12H8V10z" fill="white"/>
           </svg>
         </div>
@@ -83,7 +83,7 @@ export default function TermsModal({ onAccept }: Props) {
         {/* Accept button */}
         <button
           onClick={onAccept}
-          className="w-full rounded-xl font-semibold py-3 transition-opacity hover:opacity-90 active:opacity-75 bg-brand-red text-white"
+          className="w-full rounded-xl font-semibold py-3 transition-opacity hover:opacity-90 active:opacity-75 bg-brand-red text-brand-on-accent"
           style={{ fontSize: '0.95rem' }}
         >
           Accept &amp; Get Started

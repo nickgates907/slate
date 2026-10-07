@@ -86,21 +86,20 @@ export default function Sidebar({
 
   return (
     <>
-    <div className="w-52 flex flex-col bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex-shrink-0">
+    <div className="flex flex-col gap-2.5 p-2.5 bg-surface-panel dark:bg-surface-dark-panel rounded-md border border-black/[0.08] dark:border-white/[0.08] flex-shrink-0">
 
-      <div className="section-label px-3 pt-3 pb-1">
+      <div className="section-label">
         Scenes
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto -mx-1">
         {scenes.map((scene, idx) => (
           <div
             key={scene.id}
-            className={`group flex items-center mx-1.5 rounded-lg transition-colors ${
-              scene.id === activeSceneId
-                ? 'bg-gray-100 dark:bg-gray-800'
-                : 'hover:bg-gray-50 dark:hover:bg-gray-800'
+            className={`group flex items-center h-[34px] mx-1 mb-1 rounded-full transition-colors ${
+              scene.id === activeSceneId ? 'shadow-[0_2px_10px_rgb(var(--accent-rgb)/0.3)]' : 'hover:bg-black/[0.03] dark:hover:bg-white/[0.04]'
             }`}
+            style={scene.id === activeSceneId ? { background: 'linear-gradient(90deg, rgb(var(--accent-rgb)) 0%, rgb(var(--accent-hover-rgb)) 100%)' } : undefined}
           >
             {editingId === scene.id ? (
               <input
@@ -111,24 +110,24 @@ export default function Sidebar({
                   if (e.key === 'Enter') commitRename(scene.id, e.currentTarget.value)
                   if (e.key === 'Escape') setEditingId(null)
                 }}
-                className="flex-1 px-3 py-2 text-sm bg-transparent outline-none border-0 text-gray-800 dark:text-white"
+                className="flex-1 px-2.5 py-1.5 text-xs bg-transparent outline-none border-0 text-gray-800 dark:text-white"
               />
             ) : (
               <button
                 onClick={() => onSelectScene(scene.id)}
                 onDoubleClick={() => setEditingId(scene.id)}
-                className={`flex-1 flex items-center gap-2 px-3 py-2 text-sm text-left ${
+                className={`flex-1 flex items-center gap-2 px-2.5 py-1.5 text-xs text-left ${
                   scene.id === activeSceneId
-                    ? 'text-gray-900 dark:text-white font-semibold'
+                    ? 'text-white font-bold'
                     : 'text-gray-600 dark:text-gray-400'
                 }`}
               >
                 <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                  scene.id === activeSceneId ? 'bg-gray-900 dark:bg-white' : 'bg-gray-300 dark:bg-gray-600'
+                  scene.id === activeSceneId ? 'bg-white' : 'bg-gray-300 dark:bg-gray-600'
                 }`} />
                 <span className="truncate">{scene.name}</span>
                 <span className={`ml-auto text-xs flex-shrink-0 ${
-                  scene.id === activeSceneId ? 'text-brand-red font-semibold' : 'text-gray-300 dark:text-gray-700'
+                  scene.id === activeSceneId ? 'text-white/80 font-semibold' : 'text-gray-300 dark:text-gray-700'
                 }`}>{idx + 1}</span>
               </button>
             )}
@@ -148,20 +147,18 @@ export default function Sidebar({
         ))}
       </div>
 
-      <div className="p-2">
-        <button
-          onClick={onAddScene}
-          className="btn-solid w-full py-2 text-xs"
-        >
-          + New Scene
-        </button>
-      </div>
+      <button
+        onClick={onAddScene}
+        className="w-full h-[34px] text-[11px] font-semibold rounded-full border border-brand-red text-brand-red hover:bg-brand-red/10 transition-colors flex-shrink-0"
+      >
+        + New Scene
+      </button>
 
       {/* Loadouts section */}
-      <div className="border-t border-gray-100 dark:border-gray-800">
+      <div className="border-t border-black/[0.08] dark:border-white/[0.08] -mx-2.5 px-2.5 pt-2.5 flex-shrink-0">
         <button
           onClick={() => setShowLoadouts(v => !v)}
-          className="section-label w-full flex items-center justify-between px-3 py-2 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+          className="section-label w-full flex items-center justify-between h-12 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
         >
           <span>Loadouts</span>
           <svg
@@ -181,7 +178,7 @@ export default function Sidebar({
               <div key={l.id} className="group flex items-center gap-1">
                 <button
                   onClick={() => onLoadLoadout(l)}
-                  className="flex-1 text-left px-2 py-1.5 rounded-lg text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white transition-colors truncate"
+                  className="flex-1 text-left px-2 py-1.5 rounded-lg text-xs text-gray-600 dark:text-gray-400 hover:bg-surface-card dark:hover:bg-surface-dark-card hover:text-gray-900 dark:hover:text-white transition-colors truncate"
                 >
                   {l.name}
                 </button>
@@ -215,7 +212,7 @@ export default function Sidebar({
                   onChange={e => setSavingName(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter') handleSaveLoadout(); if (e.key === 'Escape') setShowSaveInput(false) }}
                   placeholder={`Loadout ${loadouts.length + 1}`}
-                  className="flex-1 text-xs px-2 py-1 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-white outline-none border border-gray-300 dark:border-gray-700 focus:border-brand-red"
+                  className="flex-1 text-xs px-2 py-1 rounded-lg bg-surface-card dark:bg-surface-dark-card text-gray-800 dark:text-white outline-none border border-black/[0.08] dark:border-white/[0.08] focus:border-brand-red"
                 />
                 <button onClick={handleSaveLoadout} className="btn-primary text-xs px-2 py-1">
                   Save
@@ -224,33 +221,40 @@ export default function Sidebar({
             ) : (
               <button
                 onClick={() => setShowSaveInput(true)}
-                className="btn-solid w-full py-1.5 text-xs"
+                className="w-full h-9 text-[11px] font-semibold rounded-full border border-brand-red text-brand-red hover:bg-brand-red/10 transition-colors flex items-center justify-center gap-1.5"
               >
-                + Save Loadout
+                <span className="flex items-center justify-center w-[18px] h-[18px]">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>
+                </span>
+                Save Loadout
               </button>
             )}
 
-            <div className="flex flex-col gap-2">
-              <Tooltip text="Share your current scenes as a code others can import" position="right">
+            <div className="flex flex-col gap-1.5">
+              <Tooltip text="Share your current scenes as a code others can import" position="right" className="w-full">
                 <button
                   onClick={() => handleShare('My Setup', scenes)}
-                  className="btn-solid w-full py-2 text-xs border-gray-300 dark:border-gray-600 flex items-center justify-center gap-1.5"
+                  className="w-full h-9 text-[11px] font-semibold rounded-full border border-brand-red text-brand-red hover:bg-brand-red/10 transition-colors flex items-center justify-center gap-1.5"
                 >
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
-                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
-                  </svg>
+                  <span className="flex items-center justify-center w-[18px] h-[18px]">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                      <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                    </svg>
+                  </span>
                   Share Code
                 </button>
               </Tooltip>
-              <Tooltip text="Import a loadout code from another PC" position="right">
+              <Tooltip text="Import a loadout code from another PC" position="right" className="w-full">
                 <button
                   onClick={() => { setImportInput(''); setImportError(null); setShowImport(true) }}
-                  className="btn-solid w-full py-2 text-xs border-gray-300 dark:border-gray-600 flex items-center justify-center gap-1.5"
+                  className="w-full h-9 text-[11px] font-semibold rounded-full border border-brand-red text-brand-red hover:bg-brand-red/10 transition-colors flex items-center justify-center gap-1.5"
                 >
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-                  </svg>
+                  <span className="flex items-center justify-center w-[18px] h-[18px]">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                  </span>
                   Import Code
                 </button>
               </Tooltip>
@@ -259,7 +263,7 @@ export default function Sidebar({
         )}
       </div>
 
-      <div className="px-3 py-2 border-t border-gray-100 dark:border-gray-800">
+      <div className="-mx-2.5 px-2.5 py-2 border-t border-black/[0.08] dark:border-white/[0.08] flex-shrink-0">
         <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="20 6 9 17 4 12"/>
@@ -274,7 +278,7 @@ export default function Sidebar({
     {showShareModal && (
       <div className="modal-backdrop" onClick={() => setShowShareModal(false)}>
         <div className="modal-shell w-[460px] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
-          <div className="flex items-center px-5 py-4 border-b border-gray-200 dark:border-gray-800">
+          <div className="flex items-center px-5 py-4 border-b border-black/[0.08] dark:border-white/[0.08]">
             <div>
               <p className="text-gray-900 dark:text-white font-semibold text-sm">Share Loadout</p>
               <p className="text-gray-500 text-xs mt-0.5">Share this code — paste it into Slate on any PC</p>
@@ -300,14 +304,14 @@ export default function Sidebar({
               return (
                 <div
                   onClick={() => navigator.clipboard.writeText(shareCode)}
-                  className="w-full bg-gray-100 dark:bg-gray-950 border border-gray-300 dark:border-gray-800 hover:border-gray-400 dark:hover:border-gray-700 rounded-xl py-4 text-center font-mono font-bold tracking-wide text-lg cursor-pointer transition-colors select-all"
+                  className="w-full bg-surface-card dark:bg-surface-dark-card border border-black/[0.08] dark:border-white/[0.08] hover:border-black/20 dark:hover:border-white/20 rounded-xl py-4 text-center font-mono font-bold tracking-wide text-lg cursor-pointer transition-colors select-all"
                 >
                   <span className="text-gray-900 dark:text-white">SLATE2-</span><span className="text-brand-red">{short}</span>
                 </div>
               )
             })()}
 
-            <div className="rounded-xl bg-gray-100 dark:bg-gray-800/60 px-3.5 py-2.5 text-xs text-gray-500 leading-relaxed">
+            <div className="rounded-xl bg-surface-card dark:bg-surface-dark-card px-3.5 py-2.5 text-xs text-gray-500 leading-relaxed">
               Includes all scenes, overlays, text, and images (images are resized to keep the code shareable).{' '}
               <span className="text-gray-600 dark:text-gray-400">Music files and camera/screen sources need to be re-added on the other PC.</span>
             </div>
@@ -331,7 +335,7 @@ export default function Sidebar({
     {showImport && (
       <div className="modal-backdrop" onClick={() => setShowImport(false)}>
         <div className="modal-shell w-[460px] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
-          <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-200 dark:border-gray-800">
+          <div className="flex items-center gap-3 px-5 py-4 border-b border-black/[0.08] dark:border-white/[0.08]">
             <div className="w-9 h-9 rounded-xl bg-brand-red/15 flex items-center justify-center flex-shrink-0">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-brand-red">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
@@ -350,14 +354,14 @@ export default function Sidebar({
                 value={importInput}
                 onChange={e => { setImportInput(e.target.value); setImportError(null) }}
                 placeholder="Paste your SLATE2-… code here"
-                className="w-full h-28 text-xs font-mono bg-gray-50 dark:bg-gray-800/60 text-gray-700 dark:text-gray-300 rounded-xl p-3 pr-16 resize-none outline-none border border-gray-300 dark:border-gray-700 placeholder-gray-400 dark:placeholder-gray-600 focus:border-brand-red transition-colors"
+                className="w-full h-28 text-xs font-mono bg-surface-card dark:bg-surface-dark-card text-gray-700 dark:text-gray-300 rounded-xl p-3 pr-16 resize-none outline-none border border-black/[0.08] dark:border-white/[0.08] placeholder-gray-400 dark:placeholder-gray-600 focus:border-brand-red transition-colors"
               />
               <button
                 onClick={async () => {
                   const text = await navigator.clipboard.readText().catch(() => '')
                   if (text) { setImportInput(text); setImportError(null) }
                 }}
-                className="absolute top-2.5 right-2.5 text-[11px] font-semibold text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white bg-gray-200/80 dark:bg-gray-700/80 hover:bg-gray-300 dark:hover:bg-gray-700 rounded-md px-2 py-1 transition-colors"
+                className="absolute top-2.5 right-2.5 text-[11px] font-semibold text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white bg-black/[0.06] dark:bg-white/[0.08] hover:bg-black/10 dark:hover:bg-white/15 rounded-md px-2 py-1 transition-colors"
               >
                 Paste
               </button>
@@ -371,7 +375,7 @@ export default function Sidebar({
               className={`w-full py-2.5 rounded-xl text-sm transition-colors ${
                 importInput.trim()
                   ? 'btn-primary cursor-pointer'
-                  : 'bg-gray-200 dark:bg-gray-800 text-gray-400 dark:text-gray-600 cursor-not-allowed font-semibold'
+                  : 'bg-surface-card dark:bg-surface-dark-card text-gray-400 dark:text-gray-600 cursor-not-allowed font-semibold'
               }`}
             >
               Import &amp; Apply

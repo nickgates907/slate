@@ -26,6 +26,7 @@ import { ActiveAlert } from './hooks/useAlerts'
 import { reportCrash } from './lib/crashReporter'
 import { browserFrameRegistry } from './lib/browserFrameRegistry'
 import TermsModal from './components/TermsModal'
+import { applySkin } from './lib/skins'
 
 function formatTime(seconds: number): string {
   const h = Math.floor(seconds / 3600).toString().padStart(2, '0')
@@ -74,6 +75,10 @@ export default function App() {
   useEffect(() => {
     document.documentElement.classList.toggle('dark', dark)
   }, [dark])
+
+  useEffect(() => {
+    applySkin(project.settings.skin ?? 'teal')
+  }, [project.settings.skin])
 
   // Global JS error reporting — catches uncaught exceptions and unhandled promise rejections
   useEffect(() => {
@@ -562,7 +567,7 @@ export default function App() {
         <TermsModal onAccept={() => { void saveTermsAccepted(); setTermsAccepted(true) }} />
       )}
       {splash && termsAccepted !== false && <SplashScreen onDone={() => setSplash(false)} />}
-      <div className="h-screen flex flex-col bg-gray-50 dark:bg-gray-950 overflow-hidden">
+      <div className="grid grid-rows-[46px_1fr] h-screen w-screen min-w-[960px] min-h-[600px] bg-surface-base dark:bg-surface-dark-base overflow-hidden">
         <Titlebar
           dark={dark}
           onToggleDark={() => setDark(d => !d)}
@@ -585,7 +590,7 @@ export default function App() {
           })}
           isClipping={streamer.isClipping}
         />
-        <div className="flex flex-1 overflow-hidden">
+        <div className="grid grid-cols-[clamp(190px,20vw,230px)_1fr_clamp(260px,26vw,320px)] gap-2 p-2 h-[calc(100vh-46px)] min-h-0 box-border overflow-hidden">
           <Sidebar
             scenes={project.scenes}
             activeSceneId={project.activeSceneId}
@@ -599,7 +604,7 @@ export default function App() {
             onDeleteLoadout={deleteLoadout}
             onImportCode={importLoadoutCode}
           />
-          <div className="relative flex-1 min-w-0 flex flex-col">
+          <div className="relative min-w-0 h-full flex flex-col">
             <Canvas
               scene={activeScene}
               isRecording={isRecording}
@@ -637,7 +642,7 @@ export default function App() {
 
       {/* Toast — brief confirmation messages (clip saved, etc.) */}
       {toast && (
-        <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-[60] flex items-center gap-2 bg-gray-900 border border-gray-700 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-2xl pointer-events-none">
+        <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-[60] flex items-center gap-2 bg-surface-dark-card border border-white/[0.08] text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-card-dark pointer-events-none">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="20 6 9 17 4 12"/>
           </svg>

@@ -79,10 +79,10 @@
         "fullscreen": false,
         "resizable": true,
         "title": "Slate",
-        "width": 1100,
-        "height": 700,
-        "minWidth": 800,
-        "minHeight": 500
+        "width": 1280,
+        "height": 800,
+        "minWidth": 960,
+        "minHeight": 600
       }
     ]
   }

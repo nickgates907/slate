@@ -233,17 +233,17 @@ export default function Canvas({
   const musicSources   = displayScene.sources.filter(s => s.type === 'music')
 
   return (
-    <div className="flex-1 flex flex-col min-w-0">
+    <div className="flex flex-col gap-3 h-full min-w-0">
 
       {/* Preview — outer letterbox */}
-      <div ref={letterboxRef} className="flex-1 m-3 mb-0 rounded-xl bg-gray-950 flex items-center justify-center relative overflow-hidden">
+      <div ref={letterboxRef} className="flex-1 p-3 rounded-lg bg-surface-canvas border border-black/[0.08] dark:border-white/[0.08] shadow-glow-red flex items-center justify-center relative overflow-hidden">
 
         <span className="absolute top-2.5 left-3 z-10 text-xs text-white font-bold tracking-widest uppercase pointer-events-none bg-white/10 px-2.5 py-1 rounded-md">
           Preview
         </span>
 
         {isRecording ? (
-          <div className="absolute top-2.5 right-3 z-10 flex items-center gap-1.5 bg-brand-red text-white text-xs font-bold px-3 py-1 rounded-full">
+          <div className="absolute top-2.5 right-3 z-10 flex items-center gap-1.5 bg-brand-red text-brand-on-accent text-xs font-bold px-3 py-1 rounded-full">
             <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
             {recordingTime}
           </div>
@@ -424,18 +424,18 @@ export default function Canvas({
       )}
 
       {/* Bottom toolbar */}
-      <div className="flex items-center justify-center gap-3 px-3 py-3 overflow-x-auto">
+      <div className="flex items-center gap-1.5 px-2 py-2 overflow-x-auto">
         <Tooltip text="Change the scene background color or image" position="top">
           <button
             onClick={() => setShowBgPicker(p => !p)}
-            className="btn-primary flex items-center gap-1.5 text-xs px-3 py-1.5 flex-shrink-0 whitespace-nowrap"
+            className="btn-pill-subtle flex-1 flex items-center justify-center gap-1.5 text-[11px] h-8 px-2 whitespace-nowrap"
           >
             <span className="w-3 h-3 rounded-sm border border-gray-300 flex-shrink-0" style={{ backgroundColor: bg.type === 'color' ? bg.color : undefined, backgroundImage: bg.type === 'image' && bg.imageSrc ? `url(${bg.imageSrc})` : undefined, backgroundSize: 'cover' }} />
             Background
           </button>
         </Tooltip>
         <Tooltip text="Save your scene layout to share with others or keep as a backup" position="top">
-          <button onClick={onExportLayout} className="btn-primary flex items-center gap-1.5 text-xs px-3 py-1.5 flex-shrink-0 whitespace-nowrap">
+          <button onClick={onExportLayout} className="btn-pill-subtle flex-1 flex items-center justify-center gap-1.5 text-[11px] h-8 px-2 whitespace-nowrap">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/>
             </svg>
@@ -443,7 +443,7 @@ export default function Canvas({
           </button>
         </Tooltip>
         <Tooltip text="Load a previously saved scene layout" position="top">
-          <button onClick={onImportLayout} className="btn-primary flex items-center gap-1.5 text-xs px-3 py-1.5 flex-shrink-0 whitespace-nowrap">
+          <button onClick={onImportLayout} className="btn-pill-subtle flex-1 flex items-center justify-center gap-1.5 text-[11px] h-8 px-2 whitespace-nowrap">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
             </svg>
@@ -451,7 +451,7 @@ export default function Canvas({
           </button>
         </Tooltip>
         <Tooltip text="Browse pre-made overlay templates, including frames, lower thirds, and alerts" position="top">
-          <button onClick={onOpenOverlays} className="btn-primary flex items-center gap-1.5 text-xs px-3 py-1.5 flex-shrink-0 whitespace-nowrap">
+          <button onClick={onOpenOverlays} className="btn-pill-subtle flex-1 flex items-center justify-center gap-1.5 text-[11px] h-8 px-2 whitespace-nowrap">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
             </svg>
@@ -461,7 +461,7 @@ export default function Canvas({
         <Tooltip text="Support development. Voluntary, and helps fund Slate. No features are ever locked behind this." position="top">
           <button
             onClick={() => openUrl(SUPPORT_URL)}
-            className="btn-primary flex items-center gap-1.5 text-xs px-3 py-1.5 flex-shrink-0 whitespace-nowrap"
+            className="btn-pill-subtle flex-1 flex items-center justify-center gap-1.5 text-[11px] h-8 px-2 whitespace-nowrap"
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
@@ -472,7 +472,7 @@ export default function Canvas({
         <Tooltip text="Join the Slate Discord — get help, share your setup, and talk to other streamers" position="top">
           <button
             onClick={() => openUrl(DISCORD_URL)}
-            className="bg-[#5865F2] hover:bg-[#4752C4] text-white rounded-lg font-semibold transition-colors flex items-center gap-1.5 text-xs px-3 py-1.5 flex-shrink-0 whitespace-nowrap"
+            className="bg-[#5865F2] hover:bg-[#4752C4] text-white rounded-full font-semibold transition-colors flex-1 flex items-center justify-center gap-1.5 text-[11px] h-8 px-2 whitespace-nowrap"
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
               <path d="M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.245.198.373.292a.077.077 0 0 1-.006.127 12.3 12.3 0 0 1-1.873.892.076.076 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.84 19.84 0 0 0 6.002-3.03.077.077 0 0 0 .032-.055c.5-5.177-.838-9.674-3.549-13.66a.06.06 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.086-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.332-.955 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.086-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.332-.946 2.418-2.157 2.418z"/>
@@ -511,7 +511,7 @@ function BgPicker({ bg, onChange, onClose }: { bg: SceneBackground; onChange: (b
   }
 
   return (
-    <div className="absolute bottom-12 left-3 z-20 bg-white dark:bg-gray-900 border border-gray-200 dark:border-white/5 rounded-xl shadow-xl p-4 w-56">
+    <div className="absolute bottom-12 left-3 z-20 bg-surface-panel dark:bg-surface-dark-panel border border-black/[0.08] dark:border-white/[0.08] rounded-lg shadow-card dark:shadow-card-dark p-4 w-56">
       <div className="flex items-center justify-between mb-3">
         <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Background</span>
         <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
@@ -525,7 +525,7 @@ function BgPicker({ bg, onChange, onClose }: { bg: SceneBackground; onChange: (b
           type="color"
           value={bg.color}
           onChange={e => onChange({ type: 'color', color: e.target.value })}
-          className="w-8 h-8 rounded cursor-pointer border border-gray-200 dark:border-gray-700 bg-transparent"
+          className="w-8 h-8 rounded cursor-pointer border border-black/[0.08] dark:border-white/[0.08] bg-transparent"
         />
         <span className="text-xs text-gray-500 dark:text-gray-400">Solid color</span>
         {bg.type === 'color' && <span className="ml-auto text-xs text-brand-red font-semibold">Active</span>}
@@ -538,16 +538,16 @@ function BgPicker({ bg, onChange, onClose }: { bg: SceneBackground; onChange: (b
             key={c}
             onClick={() => onChange({ type: 'color', color: c })}
             className="w-6 h-6 rounded-md border-2 transition-all"
-            style={{ backgroundColor: c, borderColor: bg.color === c ? '#FF4D4D' : 'transparent' }}
+            style={{ backgroundColor: c, borderColor: bg.color === c ? 'rgb(var(--accent-rgb))' : 'transparent' }}
           />
         ))}
       </div>
 
       {/* Image */}
-      <div className="border-t border-gray-100 dark:border-gray-800 pt-3 space-y-2">
+      <div className="border-t border-black/[0.08] dark:border-white/[0.08] pt-3 space-y-2">
         <button
           onClick={pickImage}
-          className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+          className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-600 dark:text-gray-400 border border-black/[0.08] dark:border-white/[0.08] rounded-lg hover:bg-surface-card dark:hover:bg-surface-dark-card transition-colors"
         >
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
