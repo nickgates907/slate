@@ -58,7 +58,7 @@ export const defaultSettings: RecordingSettings = {
   bitrate: 6,
   saveFolder: '',
   showTooltips: true,
-  skin: 'teal',
+  skin: 'red',
   ownedSkins: [],
 }
 

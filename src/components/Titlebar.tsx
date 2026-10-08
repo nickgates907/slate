@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import Tooltip from './Tooltip'
+import { SKINS, isSkinOwned, DEFAULT_SKIN_ID } from '../lib/skins'
+import SlateLogo from './SlateLogo'
 
 type StreamStatus = 'idle' | 'connecting' | 'live'
 
@@ -22,23 +24,21 @@ interface TitlebarProps {
   onUpdateSubGoal: (current: number, goal: number) => void
   onClip?: () => void
   isClipping?: boolean
+  activeSkin: string
+  ownedSkins: string[]
+  onChangeSkin: (skinId: string) => void
 }
 
-export default function Titlebar({ dark, onToggleDark, onOpenSettings, isRecording, onToggleRecord, recordingTime, streamStatus, onOpenStreaming, liveTime, micEnabled, onToggleMic, audioLevel, streamStats, subCurrent, subGoal, onUpdateSubGoal, onClip, isClipping }: TitlebarProps) {
+export default function Titlebar({ dark, onToggleDark, onOpenSettings, isRecording, onToggleRecord, recordingTime, streamStatus, onOpenStreaming, liveTime, micEnabled, onToggleMic, audioLevel, streamStats, subCurrent, subGoal, onUpdateSubGoal, onClip, isClipping, activeSkin, ownedSkins, onChangeSkin }: TitlebarProps) {
   const [showGoalEditor, setShowGoalEditor] = useState(false)
+  const [showSkins, setShowSkins] = useState(false)
+  const totalOwnedSkins = Object.values(SKINS).filter(s => isSkinOwned(s, ownedSkins)).length
   return (
     <div className="flex items-center gap-2 px-3 h-[46px] border-b border-black/[0.08] dark:border-white/[0.08] flex-shrink-0">
 
       {/* Logo */}
       <div className="flex items-center gap-2">
-        <svg width="28" height="28" viewBox="0 0 72 72" fill="none" className="text-brand-red">
-          <rect width="72" height="72" rx="18" fill="currentColor"/>
-          <circle cx="36" cy="36" r="17" stroke="white" strokeWidth="3" fill="none"/>
-          <circle cx="36" cy="36" r="10" stroke="white" strokeWidth="2.5" fill="none"/>
-          <circle cx="36" cy="36" r="4" fill="white"/>
-          <circle cx="52" cy="20" r="5" fill="white"/>
-          <circle cx="52" cy="20" r="2.5" fill="currentColor"/>
-        </svg>
+        <SlateLogo size={28} />
         <span className="text-lg font-bold text-gray-900 dark:text-white tracking-tight">Slate</span>
       </div>
 
@@ -105,6 +105,60 @@ export default function Titlebar({ dark, onToggleDark, onOpenSettings, isRecordi
 
       <div className="flex-1" />
 
+      {/* Skins collected */}
+      <div className="relative">
+        <Tooltip text="See every skin — owned and locked" position="bottom">
+          <button
+            onClick={() => setShowSkins(v => !v)}
+            className="btn-secondary flex items-center gap-1.5 text-[11px] px-2.5 h-[30px]"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="13.5" cy="6.5" r="2.5"/><circle cx="19" cy="13" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="10" cy="19" r="2.5"/>
+            </svg>
+            Skins
+            <span className="text-text-secondary dark:text-text-dark-secondary tabular-nums">{totalOwnedSkins}/{Object.keys(SKINS).length}</span>
+          </button>
+        </Tooltip>
+        {showSkins && (
+          <div className="absolute top-full right-0 mt-1.5 modal-shell p-3 z-50 flex flex-col gap-2 w-56">
+            <p className="section-label">Skins Collected</p>
+            <div className="grid grid-cols-4 gap-1.5">
+              {Object.values(SKINS).map(skin => {
+                const owned = isSkinOwned(skin, ownedSkins)
+                const active = activeSkin === skin.id
+                return (
+                  <Tooltip key={skin.id} text={!owned ? `${skin.name} — locked` : skin.id === DEFAULT_SKIN_ID ? `${skin.name} (Default)` : skin.name} position="top">
+                    <button
+                      onClick={() => { if (owned) onChangeSkin(skin.id) }}
+                      disabled={!owned}
+                      className={`w-full flex flex-col items-center gap-1 py-1.5 rounded-lg transition-colors ${active ? 'bg-surface-card dark:bg-surface-dark-card' : 'hover:bg-surface-card dark:hover:bg-surface-dark-card'} ${!owned ? 'cursor-default' : ''}`}
+                    >
+                      <span
+                        className="relative w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
+                        style={{ background: skin.gradient ?? `rgb(${skin.accent})`, opacity: owned ? 1 : 0.4 }}
+                      >
+                        {active && (
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={`rgb(${skin.fg})`} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        )}
+                        {!owned && (
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="absolute -bottom-1 -right-1 text-text-secondary dark:text-text-dark-secondary bg-surface-card dark:bg-surface-dark-card rounded-full border border-black/[0.08] dark:border-white/[0.08] p-0.5">
+                            <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                          </svg>
+                        )}
+                      </span>
+                      <span className="text-[9px] font-medium text-gray-700 dark:text-gray-300 truncate w-full text-center">{skin.name.replace('Slate ', '')}</span>
+                    </button>
+                  </Tooltip>
+                )
+              })}
+            </div>
+            <button onClick={() => { setShowSkins(false); onOpenSettings() }} className="text-[11px] text-brand-red hover:underline text-center mt-0.5">
+              Manage &amp; unlock more →
+            </button>
+          </div>
+        )}
+      </div>
+
       {/* Dark mode toggle */}
       <Tooltip text="Switch between light and dark theme" position="bottom">
       <button
@@ -162,7 +216,7 @@ export default function Titlebar({ dark, onToggleDark, onOpenSettings, isRecordi
             ? 'bg-purple-600 text-white hover:bg-purple-500 rounded-lg'
             : streamStatus === 'connecting'
             ? 'bg-purple-400 text-white cursor-wait rounded-lg'
-            : 'border-2 border-brand-red text-brand-red hover:bg-brand-red/10 rounded-full'
+            : 'accent-gradient-border border-2 border-brand-red text-brand-red hover:bg-brand-red/10 rounded-full'
         }`}
       >
         {streamStatus === 'live' ? (
@@ -233,8 +287,8 @@ export default function Titlebar({ dark, onToggleDark, onOpenSettings, isRecordi
         disabled={streamStatus !== 'idle'}
         className={`flex items-center gap-1.5 text-[11px] px-3 h-[30px] rounded-full transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
           isRecording
-            ? 'bg-brand-red text-brand-on-accent hover:bg-brand-red-hover font-semibold'
-            : 'border-2 border-brand-red text-brand-red hover:bg-brand-red/10'
+            ? 'accent-gradient-bg bg-brand-red text-brand-on-accent hover:bg-brand-red-hover font-semibold'
+            : 'accent-gradient-border border-2 border-brand-red text-brand-red hover:bg-brand-red/10'
         }`}
       >
         <div className={`flex-shrink-0 self-center ${isRecording ? 'w-3 h-3 bg-white rounded-sm' : 'w-2 h-2 bg-brand-red rounded-full'}`} />

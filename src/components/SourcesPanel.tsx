@@ -97,7 +97,7 @@ export default function SourcesPanel({
           <Tooltip key={type} text={tip} position="top" className="w-full">
             <button
               onClick={() => onAddSource(type)}
-              className="w-full group flex flex-col items-center justify-center gap-1 py-1.5 px-1 rounded-md bg-surface-card dark:bg-surface-dark-card border border-black/[0.08] dark:border-white/[0.08] transition-all duration-200 hover:bg-surface-card-hover dark:hover:bg-surface-dark-card-hover hover:border-brand-red active:border-brand-red hover:shadow-[0_0_12px_rgb(var(--accent-rgb)/0.3)] select-none"
+              className="accent-gradient-border-hover w-full group flex flex-col items-center justify-center gap-1 py-1.5 px-1 rounded-md bg-surface-card dark:bg-surface-dark-card border border-black/[0.08] dark:border-white/[0.08] transition-all duration-200 hover:bg-surface-card-hover dark:hover:bg-surface-dark-card-hover hover:border-brand-red active:border-brand-red hover:shadow-[0_0_12px_rgb(var(--accent-rgb)/0.3)] select-none"
             >
               <span className="flex items-center justify-center w-[26px] h-[26px] text-text-secondary dark:text-text-dark-secondary group-hover:text-brand-red transition-colors duration-200">
                 {typeIcon(type, 24)}

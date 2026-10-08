@@ -233,17 +233,17 @@ export default function Canvas({
   const musicSources   = displayScene.sources.filter(s => s.type === 'music')
 
   return (
-    <div className="flex flex-col gap-3 h-full min-w-0">
+    <div className="flex flex-col gap-3 h-full min-w-0 min-h-0">
 
       {/* Preview — outer letterbox */}
-      <div ref={letterboxRef} className="flex-1 p-3 rounded-lg bg-surface-canvas border border-black/[0.08] dark:border-white/[0.08] shadow-glow-red flex items-center justify-center relative overflow-hidden">
+      <div ref={letterboxRef} className="flex-1 min-h-0 p-3 rounded-lg bg-surface-canvas border border-black/[0.08] dark:border-white/[0.08] shadow-glow-red flex items-center justify-center relative overflow-hidden">
 
         <span className="absolute top-2.5 left-3 z-10 text-xs text-white font-bold tracking-widest uppercase pointer-events-none bg-white/10 px-2.5 py-1 rounded-md">
           Preview
         </span>
 
         {isRecording ? (
-          <div className="absolute top-2.5 right-3 z-10 flex items-center gap-1.5 bg-brand-red text-brand-on-accent text-xs font-bold px-3 py-1 rounded-full">
+          <div className="accent-gradient-bg absolute top-2.5 right-3 z-10 flex items-center gap-1.5 bg-brand-red text-brand-on-accent text-xs font-bold px-3 py-1 rounded-full">
             <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
             {recordingTime}
           </div>
@@ -257,7 +257,7 @@ export default function Canvas({
         <div
           className="relative overflow-visible flex-shrink-0"
           style={{
-            ...(canvasDims ? { width: canvasDims.width, height: canvasDims.height } : { width: '100%', aspectRatio: '16/9' }),
+            ...(canvasDims ? { width: canvasDims.width, height: canvasDims.height } : { width: '100%', maxHeight: '100%', aspectRatio: '16/9' }),
             ...(bg.type === 'image' && bg.imageSrc
               ? { backgroundImage: `url(${bg.imageSrc})`, backgroundSize: 'cover', backgroundPosition: 'center' }
               : { backgroundColor: bg.color }),
@@ -305,7 +305,7 @@ export default function Canvas({
                 >
                   {/* Content clipped to source bounds */}
                   <div
-                    className="absolute inset-0 overflow-hidden border border-white/15 group-hover:border-brand-red transition-colors"
+                    className="accent-gradient-border-group-hover absolute inset-0 overflow-hidden border border-white/15 group-hover:border-brand-red transition-colors"
                     style={{ borderRadius: isAvatar ? '50%' : '0.5rem' }}
                   >
                     {(source.type === 'camera' || source.type === 'screen' || source.type === 'avatar') && (
@@ -424,7 +424,7 @@ export default function Canvas({
       )}
 
       {/* Bottom toolbar */}
-      <div className="flex items-center gap-1.5 px-2 py-2 overflow-x-auto">
+      <div className="flex-shrink-0 flex items-center gap-1.5 px-2 py-2 overflow-x-auto">
         <Tooltip text="Change the scene background color or image" position="top">
           <button
             onClick={() => setShowBgPicker(p => !p)}

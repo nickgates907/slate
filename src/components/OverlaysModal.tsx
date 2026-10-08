@@ -136,7 +136,7 @@ function AssetCard({ asset, onAdd }: { asset: BuiltInAsset; onAdd: (src: Omit<So
         height: asset.defaultH,
         imageSrc: asset.src,
       })}
-      className="card-panel hover:bg-surface-card-hover dark:hover:bg-surface-dark-card-hover hover:border-brand-red flex flex-col items-center gap-2 p-3 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(0,0,0,0.4),0_0_12px_rgb(var(--accent-rgb)/0.25)] group"
+      className="accent-gradient-border-hover card-panel hover:bg-surface-card-hover dark:hover:bg-surface-dark-card-hover hover:border-brand-red flex flex-col items-center gap-2 p-3 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(0,0,0,0.4),0_0_12px_rgb(var(--accent-rgb)/0.25)] group"
     >
       <div className="w-full h-16 rounded-lg overflow-hidden bg-surface-canvas flex items-center justify-center">
         <img src={asset.src} alt={asset.name} className="max-w-full max-h-full object-contain" />

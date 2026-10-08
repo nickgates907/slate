@@ -38,6 +38,12 @@ function formatTime(seconds: number): string {
 export default function App() {
   // ── State ──────────────────────────────────────────────────────────────
   const [project, setProject] = useState<SlateProject>(defaultProject)
+  // Guards the autosave effects below from firing with the in-memory default project
+  // (before the real one has loaded from disk) and overwriting the actual saved data —
+  // the settings-save effect in particular has no debounce, so without this it wins the
+  // race against loadProject() on every single launch and silently clobbers whatever
+  // skin/settings were really saved back to the defaults.
+  const hasLoadedRef = useRef(false)
   const [isRecording, setIsRecording] = useState(false)
   const [recordSeconds, setRecordSeconds] = useState(0)
   const [recordingResult, setRecordingResult] = useState<RecordingResult | null>(null)
@@ -77,7 +83,7 @@ export default function App() {
   }, [dark])
 
   useEffect(() => {
-    applySkin(project.settings.skin ?? 'teal')
+    applySkin(project.settings.skin ?? 'red')
   }, [project.settings.skin])
 
   // Global JS error reporting — catches uncaught exceptions and unhandled promise rejections
@@ -103,7 +109,7 @@ export default function App() {
 
   // Load project from AppData on mount
   useEffect(() => {
-    loadProject().then(setProject).catch(() => setProject(defaultProject))
+    loadProject().then(setProject).catch(() => setProject(defaultProject)).finally(() => { hasLoadedRef.current = true })
   }, [])
 
   // Auto-save to AppData — debounced so rapid changes (drag, resize) don't thrash disk.
@@ -113,7 +119,7 @@ export default function App() {
   // saving settings feel laggy since it triggered the same heavy write.
   const saveDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   useEffect(() => {
-    if (!project) return
+    if (!project || !hasLoadedRef.current) return
     if (saveDebounceRef.current) clearTimeout(saveDebounceRef.current)
     saveDebounceRef.current = setTimeout(() => {
       saveProject(project).catch(console.error)
@@ -122,7 +128,7 @@ export default function App() {
 
   // Settings save independently — tiny file, no reason to tie it to scene/source size.
   useEffect(() => {
-    if (!project) return
+    if (!project || !hasLoadedRef.current) return
     saveSettings(project.settings).catch(console.error)
   }, [project.settings])
 
@@ -589,8 +595,11 @@ export default function App() {
             showToast(p ? `Clip saved — ${p.split(/[\\/]/).pop()}` : 'Clip not ready yet — try again in a few seconds')
           })}
           isClipping={streamer.isClipping}
+          activeSkin={project.settings.skin ?? 'red'}
+          ownedSkins={project.settings.ownedSkins ?? []}
+          onChangeSkin={(skinId) => setProject(p => ({ ...p, settings: { ...p.settings, skin: skinId } }))}
         />
-        <div className="grid grid-cols-[clamp(190px,20vw,230px)_1fr_clamp(260px,26vw,320px)] gap-2 p-2 h-[calc(100vh-46px)] min-h-0 box-border overflow-hidden">
+        <div className="grid grid-cols-[clamp(190px,20vw,230px)_1fr_clamp(260px,26vw,320px)] grid-rows-[minmax(0,1fr)] gap-2 p-2 h-[calc(100vh-46px)] min-h-0 box-border overflow-hidden">
           <Sidebar
             scenes={project.scenes}
             activeSceneId={project.activeSceneId}
@@ -604,7 +613,7 @@ export default function App() {
             onDeleteLoadout={deleteLoadout}
             onImportCode={importLoadoutCode}
           />
-          <div className="relative min-w-0 h-full flex flex-col">
+          <div className="relative min-w-0 h-full min-h-0 flex flex-col">
             <Canvas
               scene={activeScene}
               isRecording={isRecording}
@@ -680,6 +689,11 @@ export default function App() {
           onSave={(newSettings, newFolder) =>
             setProject(p => ({ ...p, settings: { ...newSettings, saveFolder: newFolder } }))
           }
+          onChangeSkin={(skinId) => setProject(p => ({ ...p, settings: { ...p.settings, skin: skinId } }))}
+          onUnlockSkins={(skinIds) => setProject(p => ({
+            ...p,
+            settings: { ...p.settings, ownedSkins: Array.from(new Set([...(p.settings.ownedSkins ?? []), ...skinIds])) },
+          }))}
           onRestoreScenes={() => {
             const defaultNames = ['Starting Soon', 'Sub Goal', 'New Sub!', 'Raid!', 'End Screen']
             const existing = new Set(project.scenes.map(s => s.name))

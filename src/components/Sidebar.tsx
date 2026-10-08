@@ -99,7 +99,7 @@ export default function Sidebar({
             className={`group flex items-center h-[34px] mx-1 mb-1 rounded-full transition-colors ${
               scene.id === activeSceneId ? 'shadow-[0_2px_10px_rgb(var(--accent-rgb)/0.3)]' : 'hover:bg-black/[0.03] dark:hover:bg-white/[0.04]'
             }`}
-            style={scene.id === activeSceneId ? { background: 'linear-gradient(90deg, rgb(var(--accent-rgb)) 0%, rgb(var(--accent-hover-rgb)) 100%)' } : undefined}
+            style={scene.id === activeSceneId ? { background: 'var(--accent-gradient)' } : undefined}
           >
             {editingId === scene.id ? (
               <input
@@ -149,7 +149,7 @@ export default function Sidebar({
 
       <button
         onClick={onAddScene}
-        className="w-full h-[34px] text-[11px] font-semibold rounded-full border border-brand-red text-brand-red hover:bg-brand-red/10 transition-colors flex-shrink-0"
+        className="accent-gradient-border w-full h-[34px] text-[11px] font-semibold rounded-full border border-brand-red text-brand-red hover:bg-brand-red/10 transition-colors flex-shrink-0"
       >
         + New Scene
       </button>
@@ -221,7 +221,7 @@ export default function Sidebar({
             ) : (
               <button
                 onClick={() => setShowSaveInput(true)}
-                className="w-full h-9 text-[11px] font-semibold rounded-full border border-brand-red text-brand-red hover:bg-brand-red/10 transition-colors flex items-center justify-center gap-1.5"
+                className="accent-gradient-border w-full h-9 text-[11px] font-semibold rounded-full border border-brand-red text-brand-red hover:bg-brand-red/10 transition-colors flex items-center justify-center gap-1.5"
               >
                 <span className="flex items-center justify-center w-[18px] h-[18px]">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>
@@ -234,7 +234,7 @@ export default function Sidebar({
               <Tooltip text="Share your current scenes as a code others can import" position="right" className="w-full">
                 <button
                   onClick={() => handleShare('My Setup', scenes)}
-                  className="w-full h-9 text-[11px] font-semibold rounded-full border border-brand-red text-brand-red hover:bg-brand-red/10 transition-colors flex items-center justify-center gap-1.5"
+                  className="accent-gradient-border w-full h-9 text-[11px] font-semibold rounded-full border border-brand-red text-brand-red hover:bg-brand-red/10 transition-colors flex items-center justify-center gap-1.5"
                 >
                   <span className="flex items-center justify-center w-[18px] h-[18px]">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -248,7 +248,7 @@ export default function Sidebar({
               <Tooltip text="Import a loadout code from another PC" position="right" className="w-full">
                 <button
                   onClick={() => { setImportInput(''); setImportError(null); setShowImport(true) }}
-                  className="w-full h-9 text-[11px] font-semibold rounded-full border border-brand-red text-brand-red hover:bg-brand-red/10 transition-colors flex items-center justify-center gap-1.5"
+                  className="accent-gradient-border w-full h-9 text-[11px] font-semibold rounded-full border border-brand-red text-brand-red hover:bg-brand-red/10 transition-colors flex items-center justify-center gap-1.5"
                 >
                   <span className="flex items-center justify-center w-[18px] h-[18px]">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

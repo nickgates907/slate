@@ -1,20 +1,51 @@
 import { useState } from 'react'
 import { open } from '@tauri-apps/api/dialog'
+import { open as openUrl } from '@tauri-apps/api/shell'
 import { RecordingSettings } from '../store'
-import { SKINS } from '../lib/skins'
+import { SKINS, BUNDLE_PRICE, isSkinOwned, DEFAULT_SKIN_ID } from '../lib/skins'
+import { redeemSkinCode } from '../lib/skinCodes'
 import Tooltip from './Tooltip'
+
+const SUPPORT_URL = 'https://www.paypal.com/donate/?hosted_button_id=ANA7ESGZ5VYDW'
 
 interface SettingsModalProps {
   settings: RecordingSettings
   saveFolder: string
   onSave: (settings: RecordingSettings, saveFolder: string) => void
+  onChangeSkin: (skinId: string) => void
+  onUnlockSkins: (skinIds: string[]) => void
   onRestoreScenes: () => void
   onClose: () => void
 }
 
-export default function SettingsModal({ settings, saveFolder, onSave, onRestoreScenes, onClose }: SettingsModalProps) {
+export default function SettingsModal({ settings, saveFolder, onSave, onChangeSkin, onUnlockSkins, onRestoreScenes, onClose }: SettingsModalProps) {
   const [s, setS] = useState(settings)
   const [folder, setFolder] = useState(saveFolder)
+  const [redeemInput, setRedeemInput] = useState('')
+  const [redeeming, setRedeeming] = useState(false)
+  const [redeemError, setRedeemError] = useState<string | null>(null)
+  const [redeemSuccess, setRedeemSuccess] = useState<string | null>(null)
+
+  const handleRedeem = async () => {
+    setRedeeming(true)
+    setRedeemError(null)
+    setRedeemSuccess(null)
+    try {
+      const unlocked = await redeemSkinCode(redeemInput)
+      // Applied straight to the saved project, not just the local draft here — a
+      // redeemed code is already consumed server-side the moment this resolves, so
+      // if the unlock only lived in draft state until "Save" was clicked, closing
+      // the modal without saving would burn the code with nothing to show for it.
+      onUnlockSkins(unlocked)
+      setS(prev => ({ ...prev, ownedSkins: Array.from(new Set([...(prev.ownedSkins ?? []), ...unlocked])) }))
+      setRedeemSuccess(unlocked.length > 1 ? `Unlocked all ${unlocked.length} skins — thank you!` : `Unlocked ${SKINS[unlocked[0]]?.name ?? 'your skin'} — thank you!`)
+      setRedeemInput('')
+    } catch (e) {
+      setRedeemError(e instanceof Error ? e.message : 'Could not redeem that code.')
+    } finally {
+      setRedeeming(false)
+    }
+  }
 
   const pickFolder = async () => {
     const chosen = await open({ directory: true, title: 'Choose save folder' }).catch(() => null)
@@ -99,20 +130,20 @@ export default function SettingsModal({ settings, saveFolder, onSave, onRestoreS
           {/* Skins */}
           <div className="card-panel p-3.5">
             <label className="section-label mb-2 block">Skin</label>
-            <div className="flex gap-1">
+            <div className="grid grid-cols-4 gap-1.5">
               {Object.values(SKINS).map(skin => {
-                const owned = !skin.premium || (s.ownedSkins ?? []).includes(skin.id)
+                const owned = isSkinOwned(skin, s.ownedSkins ?? [])
                 const active = s.skin === skin.id
                 return (
-                  <Tooltip key={skin.id} text={owned ? skin.name : `${skin.name} — ${skin.price} (coming soon)`} position="top" className="flex-1">
+                  <Tooltip key={skin.id} text={owned ? skin.name : `${skin.name} — ${skin.price}. Donate to unlock, redeem your code below.`} position="top">
                     <button
-                      onClick={() => { if (owned) setS(prev => ({ ...prev, skin: skin.id })) }}
+                      onClick={() => { if (owned) { onChangeSkin(skin.id); setS(prev => ({ ...prev, skin: skin.id })) } }}
                       disabled={!owned}
                       className={`w-full flex flex-col items-center gap-1.5 py-2 rounded-lg transition-colors ${active ? 'bg-surface-card dark:bg-surface-dark-card' : 'hover:bg-surface-card dark:hover:bg-surface-dark-card'} ${!owned ? 'cursor-default' : ''}`}
                     >
                       <span
                         className="relative w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
-                        style={{ background: `rgb(${skin.accent})`, opacity: owned ? 1 : 0.45 }}
+                        style={{ background: skin.gradient ?? `rgb(${skin.accent})`, opacity: owned ? 1 : 0.45 }}
                       >
                         {active && (
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={`rgb(${skin.fg})`} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -126,15 +157,47 @@ export default function SettingsModal({ settings, saveFolder, onSave, onRestoreS
                         )}
                       </span>
                       <span className="text-[10px] font-medium text-gray-700 dark:text-gray-300 truncate w-full text-center">{skin.name.replace('Slate ', '')}</span>
-                      {skin.premium && (
+                      {skin.premium ? (
                         <span className="text-[9px] text-text-secondary dark:text-text-dark-secondary">{owned ? 'Owned' : skin.price}</span>
-                      )}
+                      ) : skin.id === DEFAULT_SKIN_ID ? (
+                        <span className="text-[9px] text-text-secondary dark:text-text-dark-secondary">Default</span>
+                      ) : null}
                     </button>
                   </Tooltip>
                 )
               })}
             </div>
-            <p className="text-xs text-gray-400 dark:text-gray-600 mt-2">Cosmetic only — Slate's core features are always free. Paid skins aren't purchasable yet; this is a preview.</p>
+
+            <div className="mt-3 pt-3 border-t border-black/[0.08] dark:border-white/[0.08] flex flex-col gap-2">
+              <p className="text-xs text-gray-400 dark:text-gray-600">
+                Cosmetic only — Slate's core features are always free. Donate any amount to unlock a skin, or {BUNDLE_PRICE} for all of them — you'll get a redemption code to enter here.
+              </p>
+              <button
+                onClick={() => openUrl(SUPPORT_URL)}
+                className="btn-solid w-full py-2 text-xs"
+              >
+                Donate to unlock skins
+              </button>
+              <div className="flex gap-1.5">
+                <input
+                  type="text"
+                  value={redeemInput}
+                  onChange={e => { setRedeemInput(e.target.value); setRedeemError(null); setRedeemSuccess(null) }}
+                  onKeyDown={e => { if (e.key === 'Enter' && redeemInput.trim() && !redeeming) handleRedeem() }}
+                  placeholder="SKIN-XXXX-XXXX"
+                  className="flex-1 text-xs px-2.5 py-2 rounded-lg bg-surface-card dark:bg-surface-dark-card text-gray-800 dark:text-white outline-none border border-black/[0.08] dark:border-white/[0.08] focus:border-brand-red placeholder-gray-400 dark:placeholder-gray-600"
+                />
+                <button
+                  onClick={handleRedeem}
+                  disabled={!redeemInput.trim() || redeeming}
+                  className="btn-primary px-3 py-2 text-xs disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {redeeming ? 'Checking…' : 'Redeem'}
+                </button>
+              </div>
+              {redeemError && <p className="text-xs text-red-500 dark:text-red-400">{redeemError}</p>}
+              {redeemSuccess && <p className="text-xs text-brand-red font-semibold">{redeemSuccess}</p>}
+            </div>
           </div>
 
           {/* Save folder */}

@@ -15,10 +15,16 @@
 }
 
 :root {
-  --accent-rgb: 0 229 191;
-  --accent-hover-rgb: 0 200 167;
-  --accent-strong-rgb: 0 122 104;
-  --accent-fg-rgb: 10 14 20;
+  --accent-rgb: 255 77 77;
+  --accent-hover-rgb: 239 68 68;
+  --accent-strong-rgb: 224 48 48;
+  --accent-fg-rgb: 255 255 255;
+  --accent-gradient: linear-gradient(90deg, rgb(255 77 77) 0%, rgb(239 68 68) 100%);
+  --logo-stop-0: rgb(255 77 77);
+  --logo-stop-1: rgb(255 77 77);
+  --logo-stop-2: rgb(255 77 77);
+  --logo-stop-3: rgb(255 77 77);
+  --logo-stop-4: rgb(255 77 77);
 }
 
 @layer components {
@@ -33,6 +39,7 @@
   }
   .btn-primary {
     @apply bg-brand-red hover:bg-brand-red-hover text-brand-on-accent rounded-lg font-semibold transition-colors;
+    background-image: var(--accent-gradient);
   }
   .btn-secondary {
     @apply bg-surface-card dark:bg-surface-dark-card border border-black/[0.08] dark:border-white/[0.08] text-text-secondary dark:text-text-dark-secondary rounded-lg hover:bg-surface-card-hover dark:hover:bg-surface-dark-card-hover transition-colors;
@@ -53,9 +60,31 @@
   }
   .pill-active {
     @apply bg-brand-red text-brand-on-accent shadow-sm;
+    background-image: var(--accent-gradient);
   }
   .section-label {
     @apply text-xs font-bold text-brand-red tracking-widest uppercase;
+  }
+  /* Solid accent fills and outlined-pill borders pick up the active skin's gradient —
+     for every skin except rainbow, --accent-gradient is just a two-stop accent→hover
+     blend, visually indistinguishable from the old solid fill. Only rainbow actually
+     shows a multi-color gradient here. */
+  .accent-gradient-bg {
+    background-image: var(--accent-gradient);
+  }
+  .accent-gradient-border {
+    border-image: var(--accent-gradient) 1;
+  }
+  /* Same idea, but for borders that only turn accent-colored on hover/active (device
+     tiles, overlay asset cards, the Canvas source outline) — border-image can't be
+     toggled by Tailwind's hover: prefix the way border-color can, so these need their
+     own rules instead of a static utility class. */
+  .accent-gradient-border-hover:hover,
+  .accent-gradient-border-hover:active {
+    border-image: var(--accent-gradient) 1;
+  }
+  .group:hover .accent-gradient-border-group-hover {
+    border-image: var(--accent-gradient) 1;
   }
 }
 

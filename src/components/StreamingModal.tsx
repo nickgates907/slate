@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { CSSProperties } from 'react'
 import { invoke } from '@tauri-apps/api/tauri'
 import { TWITCH_CLIENT_ID, YOUTUBE_CLIENT_ID, YOUTUBE_CLIENT_SECRET, generatePkce } from '../config/platforms'
+import SlateLogo from './SlateLogo'
 
 type Platform = 'twitch' | 'youtube'
 type StreamStatus = 'idle' | 'connecting' | 'live'
@@ -37,16 +38,6 @@ function getRtmpUrl(account: ConnectedAccount): string {
 const IDLE: PlatformState = { status: 'idle', account: null, error: '' }
 const NO_CREDENTIALS = !TWITCH_CLIENT_ID && !YOUTUBE_CLIENT_ID
 
-const SlateLogo = () => (
-  <svg width="26" height="26" viewBox="0 0 72 72" fill="none">
-    <rect width="72" height="72" rx="18" fill="rgb(var(--accent-rgb))"/>
-    <circle cx="36" cy="36" r="17" stroke="white" strokeWidth="3" fill="none"/>
-    <circle cx="36" cy="36" r="10" stroke="white" strokeWidth="2.5" fill="none"/>
-    <circle cx="36" cy="36" r="4" fill="white"/>
-    <circle cx="52" cy="20" r="5" fill="white"/>
-    <circle cx="52" cy="20" r="2.5" fill="rgb(var(--accent-rgb))"/>
-  </svg>
-)
 
 export default function StreamingModal({ onGoLive, onEndStream, status, liveTime, onClose }: StreamingModalProps) {
   const [twitch, setTwitch] = useState<PlatformState>(IDLE)
@@ -176,10 +167,10 @@ export default function StreamingModal({ onGoLive, onEndStream, status, liveTime
         {/* Header */}
         <div className="px-5 pt-4 pb-3.5 flex items-center justify-between border-b border-white/[0.06]">
           <div className="flex items-center gap-2.5">
-            <SlateLogo />
+            <SlateLogo size={26} />
             {isLive ? (
               <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 bg-brand-red text-brand-on-accent text-[11px] font-bold px-2.5 py-1 rounded-full tracking-wide">
+                <span className="accent-gradient-bg inline-flex items-center gap-1.5 bg-brand-red text-brand-on-accent text-[11px] font-bold px-2.5 py-1 rounded-full tracking-wide">
                   <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
                   LIVE {liveTime}
                 </span>
@@ -236,7 +227,7 @@ export default function StreamingModal({ onGoLive, onEndStream, status, liveTime
               <div className="relative w-14 h-14 flex items-center justify-center">
                 <div className="absolute inset-0 rounded-full border-2 border-white/5" />
                 <div className="w-10 h-10 rounded-full border-2 border-brand-red border-t-transparent animate-spin" />
-                <div className="absolute"><SlateLogo /></div>
+                <div className="absolute"><SlateLogo size={26} /></div>
               </div>
               <div className="text-center">
                 <p className="text-sm text-white font-semibold">Starting stream…</p>
@@ -322,7 +313,7 @@ export default function StreamingModal({ onGoLive, onEndStream, status, liveTime
               onClick={handleGoLive}
               disabled={!canGoLive || metaSaving}
               className={`w-full py-3 rounded-xl font-bold text-sm transition-all disabled:opacity-25 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${!canGoLive ? 'bg-white/[0.06] text-white' : 'text-brand-on-accent'}`}
-              style={canGoLive ? { background: 'linear-gradient(135deg, rgb(var(--accent-rgb)) 0%, rgb(var(--accent-strong-rgb)) 100%)', boxShadow: '0 4px 20px rgb(var(--accent-rgb) / 0.35)' } : undefined}
+              style={canGoLive ? { backgroundImage: 'var(--accent-gradient)', boxShadow: '0 4px 20px rgb(var(--accent-rgb) / 0.35)' } : undefined}
             >
               {metaSaving ? (
                 <>
