@@ -77,13 +77,12 @@ export const PREMIUM_SKIN_IDS = Object.values(SKINS).filter(s => s.premium).map(
 export const BUNDLE_PRICE = '$9.99'
 export const BUNDLE_CODE_ID = 'bundle'
 
-// Dev builds (npm run tauri dev) normally unlock every skin automatically so
-// they're easy to preview while working on them — temporarily disabled below
-// to test the real locked-but-hoverable-preview experience; flip this back on
-// once that's confirmed.
+// Dev builds (npm run tauri dev) unlock every skin automatically so they're
+// easy to preview while working on them — only production builds actually
+// enforce ownership + the machine-bound signature check in store.ts.
 export function isSkinOwned(skin: Skin, ownedSkins: string[]): boolean {
   if (!skin.premium) return true
-  // if (import.meta.env.DEV) return true
+  if (import.meta.env.DEV) return true
   return ownedSkins.includes(skin.id)
 }
 
