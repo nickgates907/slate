@@ -14,6 +14,11 @@
   100% { transform: translateY(-48px); opacity: 0; }
 }
 
+@keyframes twinkle {
+  0%, 100% { opacity: 0.35; transform: scale(0.85); }
+  50%      { opacity: 1;    transform: scale(1.15); }
+}
+
 :root {
   --accent-rgb: 255 77 77;
   --accent-hover-rgb: 239 68 68;
@@ -25,32 +30,40 @@
   --logo-stop-2: rgb(255 77 77);
   --logo-stop-3: rgb(255 77 77);
   --logo-stop-4: rgb(255 77 77);
+  --surface-dark-base-rgb: 10 14 20;
+  --surface-dark-panel-rgb: 18 24 34;
+  --surface-dark-card-rgb: 24 32 46;
+  --surface-dark-card-hover-rgb: 31 43 62;
+  --panel-border-color: rgba(255, 255, 255, 0.08);
 }
 
 @layer components {
   .card-panel {
-    @apply bg-surface-card dark:bg-surface-dark-card border border-black/[0.06] dark:border-white/[0.08] rounded-md;
+    @apply bg-surface-card dark:bg-surface-dark-card border border-black/[0.06] dark:border-panel-glow rounded-md;
   }
   .modal-shell {
-    @apply bg-surface-panel dark:bg-surface-dark-panel rounded-lg shadow-card dark:shadow-card-dark border border-black/[0.08] dark:border-white/[0.08];
+    @apply bg-surface-panel dark:bg-surface-dark-panel rounded-lg shadow-card dark:shadow-card-dark border border-black/[0.08] dark:border-panel-glow;
   }
   .modal-backdrop {
     @apply fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm;
   }
   .btn-primary {
-    @apply bg-brand-red hover:bg-brand-red-hover text-brand-on-accent rounded-lg font-semibold transition-colors;
+    @apply bg-brand-red hover:bg-brand-red-hover text-brand-on-accent rounded-md font-semibold transition-colors;
     background-image: var(--accent-gradient);
   }
   .btn-secondary {
-    @apply bg-surface-card dark:bg-surface-dark-card border border-black/[0.08] dark:border-white/[0.08] text-text-secondary dark:text-text-dark-secondary rounded-lg hover:bg-surface-card-hover dark:hover:bg-surface-dark-card-hover transition-colors;
+    @apply bg-surface-card dark:bg-surface-dark-card border border-black/[0.08] dark:border-panel-glow text-text-secondary dark:text-text-dark-secondary rounded-md hover:bg-surface-card-hover dark:hover:bg-surface-dark-card-hover hover:text-gray-900 dark:hover:text-white transition-all duration-200
+           hover:border-brand-red active:border-brand-red hover:shadow-[0_0_12px_rgb(var(--accent-rgb)/0.3)];
   }
   .btn-pill-subtle {
     @apply bg-surface-panel dark:bg-surface-dark-panel hover:bg-surface-card-hover dark:hover:bg-surface-dark-card-hover
            text-text-secondary dark:text-text-dark-secondary hover:text-gray-900 dark:hover:text-white
-           border border-black/[0.08] dark:border-white/[0.08] rounded-full font-semibold transition-colors;
+           border border-black/[0.08] dark:border-panel-glow rounded-md font-semibold transition-all duration-200
+           hover:border-brand-red active:border-brand-red hover:shadow-[0_0_12px_rgb(var(--accent-rgb)/0.3)];
   }
   .btn-solid {
-    @apply bg-surface-card dark:bg-surface-dark-card text-gray-900 dark:text-white border border-black/[0.08] dark:border-transparent hover:bg-surface-card-hover dark:hover:bg-surface-dark-card-hover rounded-lg font-semibold transition-colors;
+    @apply bg-surface-card dark:bg-surface-dark-card text-gray-900 dark:text-white border border-black/[0.08] dark:border-transparent hover:bg-surface-card-hover dark:hover:bg-surface-dark-card-hover rounded-md font-semibold transition-all duration-200
+           hover:border-brand-red active:border-brand-red hover:shadow-[0_0_12px_rgb(var(--accent-rgb)/0.3)];
   }
   .pill-group {
     @apply inline-flex items-center gap-1 p-1 bg-surface-card dark:bg-surface-dark-card rounded-full;
@@ -72,19 +85,85 @@
   .accent-gradient-bg {
     background-image: var(--accent-gradient);
   }
+  /* border-image isn't clipped by border-radius in any browser — on a rounded-full
+     pill it paints a square box around the curve instead of following it. These use
+     a masked pseudo-element "ring" instead, which does respect border-radius: a
+     gradient-filled block the exact size of the element, with the inner (content-box)
+     area cut out via mask-composite, leaving only a ring the width of `padding` below. */
   .accent-gradient-border {
-    border-image: var(--accent-gradient) 1;
+    position: relative;
+    border-color: transparent;
   }
-  /* Same idea, but for borders that only turn accent-colored on hover/active (device
-     tiles, overlay asset cards, the Canvas source outline) — border-image can't be
-     toggled by Tailwind's hover: prefix the way border-color can, so these need their
-     own rules instead of a static utility class. */
-  .accent-gradient-border-hover:hover,
-  .accent-gradient-border-hover:active {
-    border-image: var(--accent-gradient) 1;
+  .accent-gradient-border::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 2px;
+    background: var(--accent-gradient);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
   }
-  .group:hover .accent-gradient-border-group-hover {
-    border-image: var(--accent-gradient) 1;
+  /* Same ring, but only shown on hover/active/group-hover (device tiles, overlay
+     asset cards, the Canvas source outline) — these keep their existing neutral
+     border as the default/fallback, with the gradient ring fading in on top. */
+  .accent-gradient-border-hover,
+  .accent-gradient-border-group-hover {
+    position: relative;
+  }
+  .accent-gradient-border-hover::before,
+  .accent-gradient-border-group-hover::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 2px;
+    background: var(--accent-gradient);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+  .accent-gradient-border-hover:hover::before,
+  .accent-gradient-border-hover:active::before {
+    opacity: 1;
+  }
+  .group:hover .accent-gradient-border-group-hover::before {
+    opacity: 1;
+  }
+  /* Midnight Skies app background — the same nebula wash + star speckle as the
+     logo's own radial gradient (#4A2E80 → #1D1145 → #0A0612), scaled up to
+     cover the whole window instead of tiling, since the window doesn't scroll.
+     Unconditional (not dark-mode-gated) — this skin is always a dark cosmic
+     look regardless of the light/dark toggle, so there's no ancestor-class
+     dependency to get wrong. */
+  .midnight-skies-bg {
+    background-color: #0A0713;
+    background-image:
+      radial-gradient(circle at 20% 15%, rgba(74, 46, 128, 0.45) 0%, transparent 40%),
+      radial-gradient(circle at 85% 75%, rgba(162, 155, 254, 0.15) 0%, transparent 45%),
+      radial-gradient(circle at 60% 40%, rgba(253, 121, 168, 0.08) 0%, transparent 35%),
+      radial-gradient(1.5px 1.5px at 10% 20%, white, transparent),
+      radial-gradient(1px 1px at 25% 65%, white, transparent),
+      radial-gradient(1.5px 1.5px at 40% 10%, #FFEAA7, transparent),
+      radial-gradient(1px 1px at 55% 50%, white, transparent),
+      radial-gradient(1px 1px at 70% 80%, #A29BFE, transparent),
+      radial-gradient(1.5px 1.5px at 85% 25%, white, transparent),
+      radial-gradient(1px 1px at 92% 60%, white, transparent),
+      radial-gradient(1px 1px at 15% 85%, #A29BFE, transparent),
+      radial-gradient(1.5px 1.5px at 48% 90%, white, transparent),
+      radial-gradient(1px 1px at 75% 45%, white, transparent),
+      radial-gradient(1px 1px at 33% 35%, white, transparent),
+      radial-gradient(1.5px 1.5px at 95% 90%, #FFEAA7, transparent);
+    background-repeat: no-repeat;
+    background-size: cover;
+  }
+  .animate-twinkle {
+    animation: twinkle 2.6s ease-in-out infinite;
   }
 }
 

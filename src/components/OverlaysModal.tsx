@@ -33,7 +33,7 @@ export default function OverlaysModal({ onLoad, onAddAsset, onClose }: OverlaysM
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center gap-3 px-5 py-3 border-b border-black/[0.08] dark:border-white/[0.08] shrink-0">
+        <div className="flex items-center gap-3 px-5 py-3 border-b border-black/[0.08] dark:border-panel-glow shrink-0">
           <span className="text-gray-900 dark:text-white font-semibold text-sm">Overlays</span>
           <div className="flex-1" />
           <button onClick={onClose} className="text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors text-lg leading-none">×</button>

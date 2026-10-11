@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Tooltip from './Tooltip'
-import { SKINS, isSkinOwned, DEFAULT_SKIN_ID } from '../lib/skins'
+import { SKINS, isSkinOwned, DEFAULT_SKIN_ID, applySkin } from '../lib/skins'
 import SlateLogo from './SlateLogo'
+import { sparklePath } from './ConstellationField'
 
 type StreamStatus = 'idle' | 'connecting' | 'live'
 
@@ -33,19 +34,24 @@ export default function Titlebar({ dark, onToggleDark, onOpenSettings, isRecordi
   const [showGoalEditor, setShowGoalEditor] = useState(false)
   const [showSkins, setShowSkins] = useState(false)
   const totalOwnedSkins = Object.values(SKINS).filter(s => isSkinOwned(s, ownedSkins)).length
+
+  // Hovering a locked skin below previews it live via applySkin() without
+  // touching the real selection. If the dropdown closes mid-hover (no
+  // guaranteed mouseleave), fall back to re-applying the real active skin.
+  useEffect(() => { if (!showSkins) applySkin(activeSkin) }, [showSkins, activeSkin])
   return (
-    <div className="flex items-center gap-2 px-3 h-[46px] border-b border-black/[0.08] dark:border-white/[0.08] flex-shrink-0">
+    <div className="flex items-center gap-2 px-3 h-[46px] border-b border-black/[0.08] dark:border-panel-glow flex-shrink-0">
 
       {/* Logo */}
       <div className="flex items-center gap-2">
-        <SlateLogo size={28} />
+        <SlateLogo size={28} skinId={activeSkin} />
         <span className="text-lg font-bold text-gray-900 dark:text-white tracking-tight">Slate</span>
       </div>
 
       {/* Stream health — shown while live */}
       {streamStatus === 'live' && streamStats && (streamStats.fps > 0 || streamStats.kbps > 0) && (
         <Tooltip text="Live stream health: frames per second and kilobits per second being sent" position="bottom">
-          <div className="flex items-center gap-2 px-2.5 py-1 bg-surface-card dark:bg-surface-dark-card rounded-lg border border-black/[0.08] dark:border-white/[0.08]">
+          <div className="flex items-center gap-2 px-2.5 py-1 bg-surface-card dark:bg-surface-dark-card rounded-lg border border-black/[0.08] dark:border-panel-glow">
             <div className="flex items-center gap-1.5">
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-green-500">
                 <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
@@ -68,7 +74,7 @@ export default function Titlebar({ dark, onToggleDark, onOpenSettings, isRecordi
           <Tooltip text="Update your sub goal counter live. It updates the scrolling banner on stream instantly." position="bottom">
             <button
               onClick={() => setShowGoalEditor(g => !g)}
-              className="flex items-center gap-1.5 px-2.5 py-1 bg-surface-card dark:bg-surface-dark-card hover:bg-surface-card-hover dark:hover:bg-surface-dark-card-hover rounded-lg border border-black/[0.08] dark:border-white/[0.08] transition-colors"
+              className="flex items-center gap-1.5 px-2.5 py-1 bg-surface-card dark:bg-surface-dark-card hover:bg-surface-card-hover dark:hover:bg-surface-dark-card-hover rounded-lg border border-black/[0.08] dark:border-panel-glow transition-colors"
             >
               <span className="text-sm">⭐</span>
               <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 tabular-nums">{subCurrent} / {subGoal}</span>
@@ -84,7 +90,7 @@ export default function Titlebar({ dark, onToggleDark, onOpenSettings, isRecordi
                   <input
                     type="number" min={0} value={subCurrent}
                     onChange={e => onUpdateSubGoal(Math.max(0, parseInt(e.target.value) || 0), subGoal)}
-                    className="w-10 text-center text-xs font-bold text-gray-800 dark:text-white bg-surface-card dark:bg-surface-dark-card border border-black/[0.08] dark:border-white/[0.08] rounded px-1 py-0.5"
+                    className="w-10 text-center text-xs font-bold text-gray-800 dark:text-white bg-surface-card dark:bg-surface-dark-card border border-black/[0.08] dark:border-panel-glow rounded px-1 py-0.5"
                   />
                   <button onClick={() => onUpdateSubGoal(subCurrent + 1, subGoal)} className="w-6 h-6 rounded bg-surface-card hover:bg-surface-card-hover dark:bg-surface-dark-card dark:hover:bg-surface-dark-card-hover text-gray-800 dark:text-white text-xs font-bold flex items-center justify-center">+</button>
                 </div>
@@ -94,7 +100,7 @@ export default function Titlebar({ dark, onToggleDark, onOpenSettings, isRecordi
                 <input
                   type="number" min={1} value={subGoal}
                   onChange={e => onUpdateSubGoal(subCurrent, Math.max(1, parseInt(e.target.value) || 1))}
-                  className="w-16 text-center text-xs font-bold text-gray-800 dark:text-white bg-surface-card dark:bg-surface-dark-card border border-black/[0.08] dark:border-white/[0.08] rounded px-1 py-0.5"
+                  className="w-16 text-center text-xs font-bold text-gray-800 dark:text-white bg-surface-card dark:bg-surface-dark-card border border-black/[0.08] dark:border-panel-glow rounded px-1 py-0.5"
                 />
               </div>
               <button onClick={() => setShowGoalEditor(false)} className="text-xs text-gray-500 hover:text-gray-900 dark:hover:text-white text-center mt-0.5 transition-colors">Done</button>
@@ -103,14 +109,43 @@ export default function Titlebar({ dark, onToggleDark, onOpenSettings, isRecordi
         </div>
       )}
 
-      <div className="flex-1" />
+      <div className="flex-1 relative self-stretch">
+        {activeSkin === 'midnight-skies' && (
+          <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 400 46" preserveAspectRatio="xMidYMid meet" fill="none">
+            {[
+              { pts: [[20, 22, 3, '#FFEAA7'], [38, 16, 2, 'white'], [50, 28, 1.8, 'white']] },
+              { pts: [[85, 16, 3, '#FFEAA7'], [103, 24, 2, 'white'], [70, 30, 1.8, '#A29BFE']] },
+              { pts: [[150, 26, 3, '#FFEAA7'], [168, 18, 2, 'white'], [180, 32, 1.8, 'white']] },
+              { pts: [[215, 18, 3, '#FFEAA7'], [233, 28, 2, 'white'], [200, 32, 1.8, '#A29BFE']] },
+              { pts: [[280, 24, 3, '#FFEAA7'], [298, 14, 2, 'white'], [310, 30, 1.8, 'white']] },
+              { pts: [[345, 18, 3, '#FFEAA7'], [363, 26, 2, 'white'], [330, 30, 1.8, '#A29BFE']] },
+            ].map((cluster, ci) => (
+              <g key={ci}>
+                <path
+                  d={cluster.pts.map((p, j) => `${j === 0 ? 'M' : 'L'}${p[0]} ${p[1]}`).join(' ')}
+                  stroke="#A29BFE" strokeWidth="0.8" strokeOpacity="0.4" fill="none"
+                />
+                {cluster.pts.map((p, j) => (
+                  <path
+                    key={j}
+                    d={sparklePath(Number(p[0]), Number(p[1]), Number(p[2]))}
+                    fill={String(p[3])}
+                    className="animate-twinkle"
+                    style={{ transformBox: 'fill-box', transformOrigin: 'center', animationDelay: `${(ci * 3 + j) * 0.5}s` }}
+                  />
+                ))}
+              </g>
+            ))}
+          </svg>
+        )}
+      </div>
 
       {/* Skins collected */}
       <div className="relative">
         <Tooltip text="See every skin — owned and locked" position="bottom">
           <button
             onClick={() => setShowSkins(v => !v)}
-            className="btn-secondary flex items-center gap-1.5 text-[11px] px-2.5 h-[30px]"
+            className="accent-gradient-border-hover btn-secondary flex items-center gap-1.5 text-[11px] px-2.5 h-[30px]"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="13.5" cy="6.5" r="2.5"/><circle cx="19" cy="13" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="10" cy="19" r="2.5"/>
@@ -127,11 +162,12 @@ export default function Titlebar({ dark, onToggleDark, onOpenSettings, isRecordi
                 const owned = isSkinOwned(skin, ownedSkins)
                 const active = activeSkin === skin.id
                 return (
-                  <Tooltip key={skin.id} text={!owned ? `${skin.name} — locked` : skin.id === DEFAULT_SKIN_ID ? `${skin.name} (Default)` : skin.name} position="top">
+                  <Tooltip key={skin.id} text={!owned ? `${skin.name} — hover to preview, locked` : skin.id === DEFAULT_SKIN_ID ? `${skin.name} (Default)` : skin.name} position="top">
                     <button
                       onClick={() => { if (owned) onChangeSkin(skin.id) }}
-                      disabled={!owned}
-                      className={`w-full flex flex-col items-center gap-1 py-1.5 rounded-lg transition-colors ${active ? 'bg-surface-card dark:bg-surface-dark-card' : 'hover:bg-surface-card dark:hover:bg-surface-dark-card'} ${!owned ? 'cursor-default' : ''}`}
+                      onMouseEnter={() => { if (!owned) applySkin(skin.id) }}
+                      onMouseLeave={() => { if (!owned) applySkin(activeSkin) }}
+                      className={`w-full flex flex-col items-center gap-1 py-1.5 rounded-lg transition-colors ${active ? 'bg-surface-card dark:bg-surface-dark-card' : 'hover:bg-surface-card dark:hover:bg-surface-dark-card'} ${!owned ? 'cursor-pointer' : ''}`}
                     >
                       <span
                         className="relative w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
@@ -141,7 +177,7 @@ export default function Titlebar({ dark, onToggleDark, onOpenSettings, isRecordi
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={`rgb(${skin.fg})`} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                         )}
                         {!owned && (
-                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="absolute -bottom-1 -right-1 text-text-secondary dark:text-text-dark-secondary bg-surface-card dark:bg-surface-dark-card rounded-full border border-black/[0.08] dark:border-white/[0.08] p-0.5">
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="absolute -bottom-1 -right-1 text-text-secondary dark:text-text-dark-secondary bg-surface-card dark:bg-surface-dark-card rounded-full border border-black/[0.08] dark:border-panel-glow p-0.5">
                             <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                           </svg>
                         )}
@@ -163,7 +199,7 @@ export default function Titlebar({ dark, onToggleDark, onOpenSettings, isRecordi
       <Tooltip text="Switch between light and dark theme" position="bottom">
       <button
         onClick={onToggleDark}
-        className="btn-secondary flex items-center gap-1.5 text-[11px] px-2.5 h-[30px]"
+        className="accent-gradient-border-hover btn-secondary flex items-center gap-1.5 text-[11px] px-2.5 h-[30px]"
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
@@ -177,7 +213,7 @@ export default function Titlebar({ dark, onToggleDark, onOpenSettings, isRecordi
 
       {/* Settings */}
       <Tooltip text="Change video quality, frame rate, and where recordings are saved" position="bottom">
-      <button onClick={onOpenSettings} className="btn-secondary flex items-center gap-1.5 text-[11px] px-2.5 h-[30px]">
+      <button onClick={onOpenSettings} className="accent-gradient-border-hover btn-secondary flex items-center gap-1.5 text-[11px] px-2.5 h-[30px]">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
         </svg>
@@ -191,7 +227,7 @@ export default function Titlebar({ dark, onToggleDark, onOpenSettings, isRecordi
           <button
             onClick={onClip}
             disabled={isClipping}
-            className="btn-secondary flex items-center gap-1.5 text-[11px] font-semibold px-2.5 h-[30px] disabled:opacity-50 disabled:cursor-wait"
+            className="accent-gradient-border-hover btn-secondary flex items-center gap-1.5 text-[11px] font-semibold px-2.5 h-[30px] disabled:opacity-50 disabled:cursor-wait"
           >
             {isClipping ? (
               <span className="w-3 h-3 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
@@ -216,7 +252,7 @@ export default function Titlebar({ dark, onToggleDark, onOpenSettings, isRecordi
             ? 'bg-purple-600 text-white hover:bg-purple-500 rounded-lg'
             : streamStatus === 'connecting'
             ? 'bg-purple-400 text-white cursor-wait rounded-lg'
-            : 'accent-gradient-border border-2 border-brand-red text-brand-red hover:bg-brand-red/10 rounded-full'
+            : 'accent-gradient-border border-2 border-transparent text-brand-red hover:bg-brand-red/10 hover:text-gray-900 dark:hover:text-white rounded-md'
         }`}
       >
         {streamStatus === 'live' ? (
@@ -285,10 +321,10 @@ export default function Titlebar({ dark, onToggleDark, onOpenSettings, isRecordi
       <button
         onClick={onToggleRecord}
         disabled={streamStatus !== 'idle'}
-        className={`flex items-center gap-1.5 text-[11px] px-3 h-[30px] rounded-full transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+        className={`flex items-center gap-1.5 text-[11px] px-3 h-[30px] rounded-md transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
           isRecording
             ? 'accent-gradient-bg bg-brand-red text-brand-on-accent hover:bg-brand-red-hover font-semibold'
-            : 'accent-gradient-border border-2 border-brand-red text-brand-red hover:bg-brand-red/10'
+            : 'accent-gradient-border border-2 border-transparent text-brand-red hover:bg-brand-red/10 hover:text-gray-900 dark:hover:text-white'
         }`}
       >
         <div className={`flex-shrink-0 self-center ${isRecording ? 'w-3 h-3 bg-white rounded-sm' : 'w-2 h-2 bg-brand-red rounded-full'}`} />

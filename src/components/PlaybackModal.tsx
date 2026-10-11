@@ -73,7 +73,7 @@ export default function PlaybackModal({ recording, saveFolder, onClose }: Playba
         style={{ width: '72vw', maxWidth: 900 }}>
 
         {/* Header */}
-        <div className="flex items-center gap-3 px-5 py-3 border-b border-black/[0.08] dark:border-white/[0.08]">
+        <div className="flex items-center gap-3 px-5 py-3 border-b border-black/[0.08] dark:border-panel-glow">
           <div className="w-2 h-2 rounded-full bg-brand-red" />
           <span className="text-gray-900 dark:text-white font-semibold text-sm">Recording</span>
           <span className="text-gray-500 text-xs">
@@ -163,7 +163,7 @@ export default function PlaybackModal({ recording, saveFolder, onClose }: Playba
         </div>
 
         {/* Footer */}
-        <div className="px-5 pb-5 flex items-center justify-end border-t border-black/[0.08] dark:border-white/[0.08] pt-4">
+        <div className="px-5 pb-5 flex items-center justify-end border-t border-black/[0.08] dark:border-panel-glow pt-4">
           <button
             onClick={onClose}
             className="btn-secondary px-4 py-1.5 text-xs font-semibold"

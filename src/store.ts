@@ -1,6 +1,6 @@
 import { writeTextFile, readTextFile, writeBinaryFile, removeFile, createDir } from '@tauri-apps/api/fs'
 import { appDataDir, join } from '@tauri-apps/api/path'
-import { convertFileSrc } from '@tauri-apps/api/tauri'
+import { convertFileSrc, invoke } from '@tauri-apps/api/tauri'
 
 export interface Source {
   id: string
@@ -273,16 +273,31 @@ export async function saveProject(project: SlateProject): Promise<void> {
 // caused a resave of the entire scenes+sources blob, including any embedded media,
 // which showed up as a real UI stutter right after saving settings. This keeps that
 // save tiny and independent of scene/source size.
+// ownedSkins is signed against this machine's hardware GUID (see main.rs) before
+// being written, and re-verified on load — settings.json has no account/server
+// backing it, so without this, copying the file to another PC would carry any
+// unlocked skins over with it. A mismatched or missing signature just drops back
+// to the free skins rather than failing the whole settings load.
 export async function saveSettings(settings: RecordingSettings): Promise<void> {
   const path = await getSettingsPath()
-  await writeTextFile(path, JSON.stringify(settings))
+  const ownedSkins = settings.ownedSkins ?? []
+  const ownedSkinsSig = ownedSkins.length > 0
+    ? await invoke<string>('sign_owned_skins', { skins: ownedSkins }).catch(() => undefined)
+    : undefined
+  await writeTextFile(path, JSON.stringify({ ...settings, ownedSkinsSig }))
 }
 
 export async function loadSettings(): Promise<RecordingSettings | null> {
   try {
     const path = await getSettingsPath()
     const text = await readTextFile(path)
-    return JSON.parse(text) as RecordingSettings
+    const parsed = JSON.parse(text) as RecordingSettings & { ownedSkinsSig?: string }
+    const ownedSkins = parsed.ownedSkins ?? []
+    if (ownedSkins.length > 0) {
+      const valid = await invoke<boolean>('verify_owned_skins', { skins: ownedSkins, signature: parsed.ownedSkinsSig ?? '' }).catch(() => false)
+      if (!valid) parsed.ownedSkins = []
+    }
+    return parsed
   } catch {
     return null
   }

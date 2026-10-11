@@ -238,7 +238,7 @@ function VideoTile({ source }: VideoTileProps) {
             <button
               onMouseDown={e => e.stopPropagation()}
               onClick={startScreenCapture}
-              className="accent-gradient-bg bg-brand-red hover:bg-brand-red-hover text-brand-on-accent rounded-full font-bold px-5 py-2 text-xs transition-colors"
+              className="accent-gradient-bg bg-brand-red hover:bg-brand-red-hover text-brand-on-accent rounded-md font-bold px-5 py-2 text-xs transition-colors"
             >
               Select screen
             </button>

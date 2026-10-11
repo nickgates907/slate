@@ -241,6 +241,60 @@ fn stop_stream(state: tauri::State<Mutex<StreamState>>) -> Result<(), String> {
     Ok(())
 }
 
+// ── Skin ownership signing ──────────────────────────────────────────────────
+// Unlocked skins live in the frontend's plain-JSON settings file, which has no
+// account/license-server backing it (per the skin-codes design — codes are
+// redeemed by hand, not through a login system). Signing the owned-skins list
+// with a hash of this specific machine's GUID means copying that settings
+// file to another PC no longer carries the unlock over: the signature won't
+// match a different machine's GUID, so the frontend resets ownedSkins to
+// empty on load rather than trusting it. Plain encryption with a key baked
+// into the app wouldn't achieve this — the whole file (ciphertext included)
+// would just copy over and decrypt fine on any machine running the same app.
+
+fn machine_guid() -> String {
+    #[cfg(target_os = "windows")]
+    {
+        if let Ok(out) = Command::new("powershell")
+            .args([
+                "-NoProfile", "-Command",
+                "(Get-ItemProperty 'HKLM:\\SOFTWARE\\Microsoft\\Cryptography').MachineGuid",
+            ])
+            .output()
+        {
+            let guid = String::from_utf8_lossy(&out.stdout).trim().to_string();
+            if !guid.is_empty() { return guid; }
+        }
+    }
+    // Non-Windows / lookup failure — falls back to a fixed string, which still
+    // signs consistently on this machine but won't block copying on that
+    // platform. Slate currently ships Windows-only, so this is a safety net
+    // rather than the expected path.
+    "slate-unknown-machine".to_string()
+}
+
+fn sign_skins_with(machine_id: &str, skins: &[String]) -> String {
+    use sha2::{Digest, Sha256};
+    let mut sorted = skins.to_vec();
+    sorted.sort();
+    let joined = sorted.join(",");
+    let mut hasher = Sha256::new();
+    hasher.update(machine_id.as_bytes());
+    hasher.update(b"::");
+    hasher.update(joined.as_bytes());
+    format!("{:x}", hasher.finalize())
+}
+
+#[tauri::command]
+fn sign_owned_skins(skins: Vec<String>) -> String {
+    sign_skins_with(&machine_guid(), &skins)
+}
+
+#[tauri::command]
+fn verify_owned_skins(skins: Vec<String>, signature: String) -> bool {
+    sign_skins_with(&machine_guid(), &skins) == signature
+}
+
 // ── OAuth helpers ─────────────────────────────────────────────────────────────
 
 fn open_url(url: &str) {
@@ -502,6 +556,8 @@ fn main() {
             stop_stream,
             connect_twitch,
             connect_youtube,
+            sign_owned_skins,
+            verify_owned_skins,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Slate");

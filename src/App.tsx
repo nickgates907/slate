@@ -10,6 +10,7 @@ import { TooltipContext } from './contexts/TooltipContext'
 import SettingsModal from './components/SettingsModal'
 import StreamingModal from './components/StreamingModal'
 import SplashScreen from './components/SplashScreen'
+import ConstellationField from './components/ConstellationField'
 import { useRecorder, RecordingResult } from './hooks/useRecorder'
 import { useStreamer } from './hooks/useStreamer'
 import { useAlerts } from './hooks/useAlerts'
@@ -572,8 +573,9 @@ export default function App() {
       {termsAccepted === false && (
         <TermsModal onAccept={() => { void saveTermsAccepted(); setTermsAccepted(true) }} />
       )}
-      {splash && termsAccepted !== false && <SplashScreen onDone={() => setSplash(false)} />}
-      <div className="grid grid-rows-[46px_1fr] h-screen w-screen min-w-[960px] min-h-[600px] bg-surface-base dark:bg-surface-dark-base overflow-hidden">
+      {splash && termsAccepted !== false && <SplashScreen onDone={() => setSplash(false)} skinId={project.settings.skin ?? 'red'} />}
+      <div className={`relative grid grid-rows-[46px_1fr] h-screen w-screen min-w-[960px] min-h-[600px] bg-surface-base dark:bg-surface-dark-base overflow-hidden ${project.settings.skin === 'midnight-skies' ? 'midnight-skies-bg' : ''}`}>
+        {project.settings.skin === 'midnight-skies' && <ConstellationField />}
         <Titlebar
           dark={dark}
           onToggleDark={() => setDark(d => !d)}
@@ -625,6 +627,7 @@ export default function App() {
               onImportLayout={handleImportLayout}
               onOpenOverlays={() => setShowOverlays(true)}
               isActiveScene={true}
+              skinId={project.settings.skin ?? 'red'}
               qualityLabel={(() => {
                 const res = project.settings?.resolution ?? '1080p'
                 const dims = { '720p': '1280 × 720', '1080p': '1920 × 1080', '1440p': '2560 × 1440' }[res]
@@ -645,6 +648,7 @@ export default function App() {
             onUpdateSource={updateSource}
             cameraDevices={cameraDevices}
             audioLevel={audio.level}
+            skinId={project.settings.skin ?? 'red'}
           />
         </div>
       </div>

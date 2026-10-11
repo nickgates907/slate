@@ -27,12 +27,17 @@ export default {
           'card-hover': '#E9ECF1',
           canvas: '#06090E',
         },
+        // CSS-var driven (defaults set in index.css, overridden per skin in
+        // applySkin()) so a flagship skin like Midnight Skies can recolor the
+        // actual panel surfaces, not just accents — every other skin just
+        // leaves these at their normal dark-mode defaults.
         'surface-dark': {
-          base: '#0A0E14',
-          panel: '#121822',
-          card: '#18202E',
-          'card-hover': '#1F2B3E',
+          base: 'rgb(var(--surface-dark-base-rgb) / <alpha-value>)',
+          panel: 'rgb(var(--surface-dark-panel-rgb) / <alpha-value>)',
+          card: 'rgb(var(--surface-dark-card-rgb) / <alpha-value>)',
+          'card-hover': 'rgb(var(--surface-dark-card-hover-rgb) / <alpha-value>)',
         },
+        'panel-glow': 'var(--panel-border-color)',
         text: {
           secondary: '#5B6472',
           disabled: '#A6AEBB',

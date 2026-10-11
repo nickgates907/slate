@@ -9,6 +9,7 @@ import VideoTile from './VideoTile'
 import TextTile from './TextTile'
 import MusicTile from './MusicTile'
 import Tooltip from './Tooltip'
+import { sparklePath } from './ConstellationField'
 
 const SUPPORT_URL = 'https://www.paypal.com/donate/?hosted_button_id=ANA7ESGZ5VYDW'
 const DISCORD_URL = 'https://discord.gg/xx83eYfg3F'
@@ -25,6 +26,7 @@ interface CanvasProps {
   onOpenOverlays: () => void
   isActiveScene: boolean  // true = this scene is currently shown in preview
   qualityLabel: string    // e.g. "1920 × 1080 · 30fps" — from settings
+  skinId?: string
 }
 
 type ResizeHandle = 'nw' | 'ne' | 'sw' | 'se'
@@ -38,7 +40,7 @@ const RESIZE_HANDLES: Array<{ h: ResizeHandle; pos: string; cursor: string }> = 
 
 export default function Canvas({
   scene, isRecording, recordingTime, onUpdateSource, onUpdateBackground, previewRef,
-  onExportLayout, onImportLayout, onOpenOverlays, isActiveScene, qualityLabel,
+  onExportLayout, onImportLayout, onOpenOverlays, isActiveScene, qualityLabel, skinId,
 }: CanvasProps) {
   // ── Scene transition: fade out → swap → fade in when scene.id changes ──
   // renderedScene only changes on scene.id switch — source/bg updates use the live `scene` prop
@@ -236,7 +238,7 @@ export default function Canvas({
     <div className="flex flex-col gap-3 h-full min-w-0 min-h-0">
 
       {/* Preview — outer letterbox */}
-      <div ref={letterboxRef} className="flex-1 min-h-0 p-3 rounded-lg bg-surface-canvas border border-black/[0.08] dark:border-white/[0.08] shadow-glow-red flex items-center justify-center relative overflow-hidden">
+      <div ref={letterboxRef} className="flex-1 min-h-0 p-3 rounded-lg bg-surface-canvas border border-black/[0.08] dark:border-panel-glow shadow-glow-red flex items-center justify-center relative overflow-hidden">
 
         <span className="absolute top-2.5 left-3 z-10 text-xs text-white font-bold tracking-widest uppercase pointer-events-none bg-white/10 px-2.5 py-1 rounded-md">
           Preview
@@ -394,9 +396,71 @@ export default function Canvas({
           </div>
 
           {visibleSources.length === 0 && (
-            <div className="absolute inset-0 flex items-center justify-center text-white/20 text-sm">
-              No sources — add one from the panel →
-            </div>
+            skinId === 'midnight-skies' ? (
+              // Decorative only — the actual "no sources" guidance text is still
+              // shown below the star so this never becomes the only way to know
+              // what to do. A real source always takes over this area normally.
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
+                <svg className="absolute inset-0 w-full h-full" viewBox="0 0 500 300" preserveAspectRatio="xMidYMid meet">
+                  <defs>
+                    <filter id="idle-gold-glow" x="-80%" y="-80%" width="260%" height="260%">
+                      <feDropShadow dx="0" dy="0" stdDeviation="2" floodColor="#FFEAA7" floodOpacity="0.8" />
+                    </filter>
+                  </defs>
+                  <ellipse cx="250" cy="150" rx="180" ry="80" stroke="rgba(162,155,254,0.15)" fill="none" strokeDasharray="4 6" />
+                  <ellipse cx="250" cy="150" rx="110" ry="50" stroke="rgba(162,155,254,0.25)" fill="none" />
+                  <g opacity="0.75">
+                    <path d="M60 60 L100 40 L150 55 L130 95 L85 85 Z" stroke="#A29BFE" strokeWidth="1.2" fill="none" />
+                    <path d={sparklePath(60, 60, 5)} fill="#FFEAA7" filter="url(#idle-gold-glow)" />
+                    <circle cx="100" cy="40" r="2.5" fill="#fff" />
+                    <circle cx="150" cy="55" r="2.5" fill="#fff" /><circle cx="130" cy="95" r="2.5" fill="#fff" />
+                    <circle cx="85" cy="85" r="2.5" fill="#fff" />
+                    <text x="55" y="112" fill="#A29BFE" fontSize="9" letterSpacing="1">CAMERA</text>
+                  </g>
+                  <g opacity="0.75">
+                    <circle cx="400" cy="55" r="22" stroke="#A29BFE" strokeWidth="1.2" fill="none" />
+                    <path d={sparklePath(400, 55, 5)} fill="#FFEAA7" filter="url(#idle-gold-glow)" />
+                    <circle cx="378" cy="55" r="2" fill="#A29BFE" />
+                    <circle cx="422" cy="55" r="2" fill="#A29BFE" />
+                    <text x="376" y="92" fill="#A29BFE" fontSize="9" letterSpacing="1">SCREEN</text>
+                  </g>
+                  <g opacity="0.75">
+                    <path d="M70 220 L95 250 L125 215 L150 245" stroke="#A29BFE" strokeWidth="1.2" fill="none" />
+                    <path d={sparklePath(70, 220, 5)} fill="#FFEAA7" filter="url(#idle-gold-glow)" />
+                    <circle cx="95" cy="250" r="2.5" fill="#fff" />
+                    <circle cx="125" cy="215" r="2.5" fill="#fff" /><circle cx="150" cy="245" r="2.5" fill="#fff" />
+                    <text x="76" y="270" fill="#A29BFE" fontSize="9" letterSpacing="1">AUDIO</text>
+                  </g>
+                  <g opacity="0.75">
+                    <path d="M350 215 L375 235 L405 210 L430 240" stroke="#A29BFE" strokeWidth="1.2" fill="none" />
+                    <path d={sparklePath(350, 215, 5)} fill="#FFEAA7" filter="url(#idle-gold-glow)" />
+                    <circle cx="375" cy="235" r="2.5" fill="#fff" />
+                    <circle cx="405" cy="210" r="2.5" fill="#fff" /><circle cx="430" cy="240" r="2.5" fill="#fff" />
+                    <text x="353" y="262" fill="#A29BFE" fontSize="9" letterSpacing="1">BROWSER</text>
+                  </g>
+                </svg>
+                <div className="relative z-10 flex flex-col items-center gap-3">
+                  <div
+                    className="w-16 h-16 rounded-full flex items-center justify-center animate-pulse"
+                    style={{
+                      background: 'radial-gradient(circle, #FFEAA7 0%, #A29BFE 55%, rgba(108,92,231,0.15) 100%)',
+                      boxShadow: '0 0 30px rgba(162,155,254,0.6), 0 0 60px rgba(253,121,168,0.3)',
+                    }}
+                  >
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#120B20" strokeWidth="2.5">
+                      <circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="4" /><circle cx="12" cy="12" r="0.5" fill="#120B20" />
+                    </svg>
+                  </div>
+                  <span className="text-[10px] font-bold tracking-widest uppercase text-center px-4" style={{ color: '#FFEAA7', textShadow: '0 0 8px rgba(255,234,167,0.5)' }}>
+                    No sources — add one from the panel →
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center text-white/20 text-sm">
+                No sources — add one from the panel →
+              </div>
+            )
           )}
 
           {/* Music sources — invisible audio players, play when this scene is active */}
@@ -428,14 +492,14 @@ export default function Canvas({
         <Tooltip text="Change the scene background color or image" position="top">
           <button
             onClick={() => setShowBgPicker(p => !p)}
-            className="btn-pill-subtle flex-1 flex items-center justify-center gap-1.5 text-[11px] h-8 px-2 whitespace-nowrap"
+            className="accent-gradient-border-hover btn-pill-subtle flex-1 flex items-center justify-center gap-1.5 text-[11px] h-8 px-2 whitespace-nowrap"
           >
             <span className="w-3 h-3 rounded-sm border border-gray-300 flex-shrink-0" style={{ backgroundColor: bg.type === 'color' ? bg.color : undefined, backgroundImage: bg.type === 'image' && bg.imageSrc ? `url(${bg.imageSrc})` : undefined, backgroundSize: 'cover' }} />
             Background
           </button>
         </Tooltip>
         <Tooltip text="Save your scene layout to share with others or keep as a backup" position="top">
-          <button onClick={onExportLayout} className="btn-pill-subtle flex-1 flex items-center justify-center gap-1.5 text-[11px] h-8 px-2 whitespace-nowrap">
+          <button onClick={onExportLayout} className="accent-gradient-border-hover btn-pill-subtle flex-1 flex items-center justify-center gap-1.5 text-[11px] h-8 px-2 whitespace-nowrap">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/>
             </svg>
@@ -443,7 +507,7 @@ export default function Canvas({
           </button>
         </Tooltip>
         <Tooltip text="Load a previously saved scene layout" position="top">
-          <button onClick={onImportLayout} className="btn-pill-subtle flex-1 flex items-center justify-center gap-1.5 text-[11px] h-8 px-2 whitespace-nowrap">
+          <button onClick={onImportLayout} className="accent-gradient-border-hover btn-pill-subtle flex-1 flex items-center justify-center gap-1.5 text-[11px] h-8 px-2 whitespace-nowrap">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
             </svg>
@@ -451,7 +515,7 @@ export default function Canvas({
           </button>
         </Tooltip>
         <Tooltip text="Browse pre-made overlay templates, including frames, lower thirds, and alerts" position="top">
-          <button onClick={onOpenOverlays} className="btn-pill-subtle flex-1 flex items-center justify-center gap-1.5 text-[11px] h-8 px-2 whitespace-nowrap">
+          <button onClick={onOpenOverlays} className="accent-gradient-border-hover btn-pill-subtle flex-1 flex items-center justify-center gap-1.5 text-[11px] h-8 px-2 whitespace-nowrap">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
             </svg>
@@ -461,7 +525,7 @@ export default function Canvas({
         <Tooltip text="Support development. Voluntary, and helps fund Slate. No features are ever locked behind this." position="top">
           <button
             onClick={() => openUrl(SUPPORT_URL)}
-            className="btn-pill-subtle flex-1 flex items-center justify-center gap-1.5 text-[11px] h-8 px-2 whitespace-nowrap"
+            className="accent-gradient-border-hover btn-pill-subtle flex-1 flex items-center justify-center gap-1.5 text-[11px] h-8 px-2 whitespace-nowrap"
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
@@ -472,7 +536,16 @@ export default function Canvas({
         <Tooltip text="Join the Slate Discord — get help, share your setup, and talk to other streamers" position="top">
           <button
             onClick={() => openUrl(DISCORD_URL)}
-            className="bg-[#5865F2] hover:bg-[#4752C4] text-white rounded-full font-semibold transition-colors flex-1 flex items-center justify-center gap-1.5 text-[11px] h-8 px-2 whitespace-nowrap"
+            className={
+              skinId === 'midnight-skies'
+                ? 'text-white rounded-md font-semibold transition-colors flex-1 flex items-center justify-center gap-1.5 text-[11px] h-8 px-2 whitespace-nowrap border'
+                : 'bg-[#5865F2] hover:bg-[#4752C4] text-white rounded-md font-semibold transition-colors flex-1 flex items-center justify-center gap-1.5 text-[11px] h-8 px-2 whitespace-nowrap'
+            }
+            style={skinId === 'midnight-skies' ? {
+              background: 'rgba(162, 155, 254, 0.08)',
+              borderColor: 'rgba(162, 155, 254, 0.3)',
+              boxShadow: '0 0 12px rgba(162, 155, 254, 0.25)',
+            } : undefined}
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
               <path d="M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.245.198.373.292a.077.077 0 0 1-.006.127 12.3 12.3 0 0 1-1.873.892.076.076 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.84 19.84 0 0 0 6.002-3.03.077.077 0 0 0 .032-.055c.5-5.177-.838-9.674-3.549-13.66a.06.06 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.086-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.332-.955 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.086-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.332-.946 2.418-2.157 2.418z"/>
@@ -511,7 +584,7 @@ function BgPicker({ bg, onChange, onClose }: { bg: SceneBackground; onChange: (b
   }
 
   return (
-    <div className="absolute bottom-12 left-3 z-20 bg-surface-panel dark:bg-surface-dark-panel border border-black/[0.08] dark:border-white/[0.08] rounded-lg shadow-card dark:shadow-card-dark p-4 w-56">
+    <div className="absolute bottom-12 left-3 z-20 bg-surface-panel dark:bg-surface-dark-panel border border-black/[0.08] dark:border-panel-glow rounded-lg shadow-card dark:shadow-card-dark p-4 w-56">
       <div className="flex items-center justify-between mb-3">
         <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Background</span>
         <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
@@ -525,7 +598,7 @@ function BgPicker({ bg, onChange, onClose }: { bg: SceneBackground; onChange: (b
           type="color"
           value={bg.color}
           onChange={e => onChange({ type: 'color', color: e.target.value })}
-          className="w-8 h-8 rounded cursor-pointer border border-black/[0.08] dark:border-white/[0.08] bg-transparent"
+          className="w-8 h-8 rounded cursor-pointer border border-black/[0.08] dark:border-panel-glow bg-transparent"
         />
         <span className="text-xs text-gray-500 dark:text-gray-400">Solid color</span>
         {bg.type === 'color' && <span className="ml-auto text-xs text-brand-red font-semibold">Active</span>}
@@ -544,10 +617,10 @@ function BgPicker({ bg, onChange, onClose }: { bg: SceneBackground; onChange: (b
       </div>
 
       {/* Image */}
-      <div className="border-t border-black/[0.08] dark:border-white/[0.08] pt-3 space-y-2">
+      <div className="border-t border-black/[0.08] dark:border-panel-glow pt-3 space-y-2">
         <button
           onClick={pickImage}
-          className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-600 dark:text-gray-400 border border-black/[0.08] dark:border-white/[0.08] rounded-lg hover:bg-surface-card dark:hover:bg-surface-dark-card transition-colors"
+          className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-600 dark:text-gray-400 border border-black/[0.08] dark:border-panel-glow rounded-lg hover:bg-surface-card dark:hover:bg-surface-dark-card transition-colors"
         >
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>

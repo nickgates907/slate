@@ -16,6 +16,7 @@ interface SourcesPanelProps {
   onUpdateSource: (sourceId: string, updates: Partial<Source>) => void
   cameraDevices: CameraDevice[]
   audioLevel: number
+  skinId?: string
 }
 
 const typeIcon = (type: Source['type'], size = 15) => {
@@ -85,7 +86,7 @@ const OVERLAY_SOURCE_TYPES: Source['type'][] = ['text']
 
 export default function SourcesPanel({
   sources, onToggleVisible, onAddSource, onRemoveSource, onReorderSource,
-  onChangeCameraDevice, onChangeVolume, onUpdateSource, cameraDevices, audioLevel,
+  onChangeCameraDevice, onChangeVolume, onUpdateSource, cameraDevices, audioLevel, skinId,
 }: SourcesPanelProps) {
   const [libraryOpen, setLibraryOpen] = useState(true)
 
@@ -97,12 +98,15 @@ export default function SourcesPanel({
           <Tooltip key={type} text={tip} position="top" className="w-full">
             <button
               onClick={() => onAddSource(type)}
-              className="accent-gradient-border-hover w-full group flex flex-col items-center justify-center gap-1 py-1.5 px-1 rounded-md bg-surface-card dark:bg-surface-dark-card border border-black/[0.08] dark:border-white/[0.08] transition-all duration-200 hover:bg-surface-card-hover dark:hover:bg-surface-dark-card-hover hover:border-brand-red active:border-brand-red hover:shadow-[0_0_12px_rgb(var(--accent-rgb)/0.3)] select-none"
+              className="accent-gradient-border-hover w-full group flex flex-col items-center justify-center gap-1 py-1.5 px-1 rounded-md bg-surface-card dark:bg-surface-dark-card border border-black/[0.08] dark:border-panel-glow transition-all duration-200 hover:bg-surface-card-hover dark:hover:bg-surface-dark-card-hover hover:border-brand-red active:border-brand-red hover:shadow-[0_0_12px_rgb(var(--accent-rgb)/0.3)] select-none"
             >
               <span className="flex items-center justify-center w-[26px] h-[26px] text-text-secondary dark:text-text-dark-secondary group-hover:text-brand-red transition-colors duration-200">
                 {typeIcon(type, 24)}
               </span>
-              <span className="text-[9px] font-semibold text-gray-900 dark:text-white tracking-tight leading-none truncate w-full text-center">{short}</span>
+              <span
+                className={`text-[9px] font-semibold tracking-tight leading-none truncate w-full text-center ${skinId === 'midnight-skies' ? '' : 'text-gray-900 dark:text-white'}`}
+                style={skinId === 'midnight-skies' ? { color: '#FFEAA7' } : undefined}
+              >{short}</span>
             </button>
           </Tooltip>
         ))}
@@ -111,15 +115,15 @@ export default function SourcesPanel({
   )
 
   return (
-    <div className="flex flex-col gap-2.5 p-2.5 bg-surface-panel dark:bg-surface-dark-panel rounded-md border border-black/[0.08] dark:border-white/[0.08] flex-shrink-0">
+    <div className="flex flex-col gap-2.5 p-2.5 bg-surface-panel dark:bg-surface-dark-panel rounded-md border border-black/[0.08] dark:border-panel-glow h-full min-h-0">
 
       <div className="section-label flex-shrink-0">
         Sources
       </div>
 
-      <div className="flex-1 overflow-y-auto -mx-1 px-1 flex flex-col gap-2">
+      <div className="flex-1 min-h-0 overflow-y-auto -mx-1 px-1 flex flex-col gap-2">
         {sources.map((source) => (
-          <div key={source.id} className="card-panel overflow-hidden">
+          <div key={source.id} className="accent-gradient-border-hover card-panel overflow-hidden flex-shrink-0 transition-all duration-200 hover:border-brand-red hover:shadow-[0_0_12px_rgb(var(--accent-rgb)/0.3)]">
             <div className="flex items-center gap-1.5 px-2 py-2.5 text-sm text-gray-700 dark:text-gray-300">
 
               {/* Reorder arrows */}
@@ -259,7 +263,7 @@ export default function SourcesPanel({
                 <select
                   value={source.deviceId ?? ''}
                   onChange={e => onChangeCameraDevice(source.id, e.target.value)}
-                  className="w-full text-xs bg-surface-card dark:bg-surface-dark-card border border-black/[0.08] dark:border-white/[0.08] rounded px-1.5 py-1 text-gray-600 dark:text-gray-400"
+                  className="w-full text-xs bg-surface-card dark:bg-surface-dark-card border border-black/[0.08] dark:border-panel-glow rounded px-1.5 py-1 text-gray-600 dark:text-gray-400"
                 >
                   {cameraDevices.map(d => (
                     <option key={d.deviceId} value={d.deviceId}>{d.label}</option>
@@ -301,7 +305,7 @@ export default function SourcesPanel({
 
             {/* Screen capture tip: exclusive fullscreen games capture poorly — recommend Borderless Windowed */}
             {source.type === 'screen' && (
-              <div className="mx-3 mb-2 flex items-start gap-2 px-3 py-2 bg-surface-card dark:bg-surface-dark-card border border-black/[0.08] dark:border-white/[0.08] rounded-md">
+              <div className="mx-3 mb-2 flex items-start gap-2 px-3 py-2 bg-surface-card dark:bg-surface-dark-card border border-black/[0.08] dark:border-panel-glow rounded-md">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-text-secondary dark:text-text-dark-secondary flex-shrink-0 mt-0.5">
                   <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
                 </svg>
@@ -363,12 +367,12 @@ export default function SourcesPanel({
       </div>
 
       {/* Add source library */}
-      <div className="-mx-2.5 px-2.5 pt-2 border-t border-black/[0.08] dark:border-white/[0.08] flex flex-col gap-1.5 flex-shrink-0">
+      <div className="-mx-2.5 px-2.5 pt-2 border-t border-black/[0.08] dark:border-panel-glow flex flex-col gap-1.5 flex-shrink-0">
         <div className="section-label">Source Library</div>
 
         <button
           onClick={() => setLibraryOpen(o => !o)}
-          className="btn-solid flex items-center justify-center gap-1.5 w-full px-2.5 py-1.5 text-[11px]"
+          className="accent-gradient-border-hover btn-solid flex items-center justify-center gap-1.5 w-full px-2.5 py-1.5 text-[11px]"
         >
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>
           Add Source
