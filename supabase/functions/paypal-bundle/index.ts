@@ -29,6 +29,23 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
+// The app runs inside a Tauri webview, which (unlike a plain Node/curl fetch
+// used to test this function directly) enforces CORS — without these headers
+// every response gets silently turned into a "Failed to fetch" in the app
+// even though the function itself ran fine and returned 200.
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+}
+
+function json(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json', ...CORS_HEADERS },
+  })
+}
+
 const PAYPAL_API_BASE = Deno.env.get('PAYPAL_API_BASE') ?? 'https://api-m.paypal.com'
 const PAYPAL_CLIENT_ID = Deno.env.get('PAYPAL_CLIENT_ID') ?? ''
 const PAYPAL_CLIENT_SECRET = Deno.env.get('PAYPAL_CLIENT_SECRET') ?? ''
@@ -86,17 +103,15 @@ async function handleCreateOrder(req: Request): Promise<Response> {
   })
   if (!orderRes.ok) {
     const body = await orderRes.text().catch(() => '')
-    return new Response(JSON.stringify({ error: `Could not create PayPal order (${orderRes.status}): ${body}` }), { status: 502 })
+    return json({ error: `Could not create PayPal order (${orderRes.status}): ${body}` }, 502)
   }
   const order = await orderRes.json()
   const approvalUrl = (order.links ?? []).find((l: { rel: string; href: string }) => l.rel === 'approve')?.href
   if (!approvalUrl) {
-    return new Response(JSON.stringify({ error: 'PayPal order created but had no approval link' }), { status: 502 })
+    return json({ error: 'PayPal order created but had no approval link' }, 502)
   }
 
-  return new Response(JSON.stringify({ token, approvalUrl }), {
-    headers: { 'Content-Type': 'application/json' },
-  })
+  return json({ token, approvalUrl })
 }
 
 async function verifyWebhookSignature(req: Request, rawBody: string): Promise<boolean> {
@@ -127,20 +142,20 @@ async function handleWebhook(req: Request): Promise<Response> {
 
   const verified = await verifyWebhookSignature(req, rawBody).catch(() => false)
   if (!verified) {
-    return new Response(JSON.stringify({ error: 'Webhook signature verification failed' }), { status: 401 })
+    return json({ error: 'Webhook signature verification failed' }, 401)
   }
 
   const event = JSON.parse(rawBody)
   if (event.event_type !== 'PAYMENT.CAPTURE.COMPLETED') {
     // Not an event we act on (e.g. a refund, a denial) — acknowledge so PayPal stops retrying.
-    return new Response(JSON.stringify({ ok: true, ignored: event.event_type }), { status: 200 })
+    return json({ ok: true, ignored: event.event_type })
   }
 
   const resource = event.resource ?? {}
   const token: string | undefined = resource.custom_id
   const amount = resource.amount ?? {}
   if (!token || amount.currency_code !== 'USD' || parseFloat(amount.value) < parseFloat(BUNDLE_PRICE_USD)) {
-    return new Response(JSON.stringify({ error: 'Payment did not match the expected bundle amount' }), { status: 400 })
+    return json({ error: 'Payment did not match the expected bundle amount' }, 400)
   }
 
   const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
@@ -148,19 +163,20 @@ async function handleWebhook(req: Request): Promise<Response> {
   // A duplicate webhook delivery for the same payment re-inserts the same token —
   // treat a primary-key conflict as success rather than an error.
   if (error && error.code !== '23505') {
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 })
+    return json({ error: error.message }, 500)
   }
 
-  return new Response(JSON.stringify({ ok: true }), { status: 200 })
+  return json({ ok: true })
 }
 
 Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response(null, { headers: CORS_HEADERS })
   const path = new URL(req.url).pathname
   try {
     if (req.method === 'POST' && path.endsWith('/create-order')) return await handleCreateOrder(req)
     if (req.method === 'POST' && path.endsWith('/webhook')) return await handleWebhook(req)
-    return new Response(JSON.stringify({ error: 'Not found' }), { status: 404 })
+    return json({ error: 'Not found' }, 404)
   } catch (e) {
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : String(e) }), { status: 500 })
+    return json({ error: e instanceof Error ? e.message : String(e) }, 500)
   }
 })
