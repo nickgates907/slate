@@ -60,7 +60,16 @@ export function useRecorder() {
     const imgCache = new Map<string, HTMLImageElement>()
     const scrollOffsets = new Map<string, number>()
 
-    const draw = () => {
+    // captureStream only samples `fps` frames/s; on a 120/144Hz monitor rAF would
+    // otherwise composite 4-5x more full-resolution frames than ever get recorded
+    const minFrameGap = 1000 / fps - 2
+    let lastDraw = -Infinity
+    const draw = (now: number = performance.now()) => {
+      if (now - lastDraw < minFrameGap) {
+        rafRef.current = requestAnimationFrame(draw)
+        return
+      }
+      lastDraw = now
       // A single bad frame (e.g. a screen-capture source flickering/resizing) must
       // never kill this loop — the requestAnimationFrame reschedule is in `finally`
       // so recording keeps going even if one frame throws.

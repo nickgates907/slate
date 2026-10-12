@@ -34,10 +34,16 @@ export function useAudioCapture() {
       gainNode.connect(destination)
 
       const data = new Uint8Array(analyser.frequencyBinCount)
-      const tick = () => {
-        analyser.getByteFrequencyData(data)
-        const avg = data.reduce((a, b) => a + b, 0) / data.length
-        setLevel(avg / 128)
+      let lastUpdate = 0
+      const tick = (now: number = 0) => {
+        // level lives in App's root state, so every setLevel re-renders the whole
+        // app — cap at ~20/s and round so unchanged levels skip the render entirely
+        if (now - lastUpdate >= 50) {
+          lastUpdate = now
+          analyser.getByteFrequencyData(data)
+          const avg = data.reduce((a, b) => a + b, 0) / data.length
+          setLevel(Math.round((avg / 128) * 50) / 50)
+        }
         rafRef.current = requestAnimationFrame(tick)
       }
       tick()

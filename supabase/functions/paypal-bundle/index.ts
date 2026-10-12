@@ -51,6 +51,10 @@ const PAYPAL_CLIENT_ID = Deno.env.get('PAYPAL_CLIENT_ID') ?? ''
 const PAYPAL_CLIENT_SECRET = Deno.env.get('PAYPAL_CLIENT_SECRET') ?? ''
 const PAYPAL_WEBHOOK_ID = Deno.env.get('PAYPAL_WEBHOOK_ID') ?? ''
 const BUNDLE_PRICE_USD = '9.99'
+// Hosted in the public "product-images" Storage bucket (PayPal fetches this
+// URL itself to render the item thumbnail on checkout — it can't read a
+// local file, so the image has to live somewhere publicly reachable).
+const BUNDLE_IMAGE_URL = 'https://rzwandbnldnyoyzpevtr.supabase.co/storage/v1/object/public/product-images/bundle.png'
 
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789' // avoids 0/O, 1/I/L
 function randomToken(): string {
@@ -97,10 +101,11 @@ async function handleCreateOrder(req: Request): Promise<Response> {
         },
         items: [{
           name: 'Slate Origins Skin Bundle',
-          description: 'Unlocks every cosmetic skin in Slate, forever.',
+          description: 'Unlocks all 13 premium skins in Slate, forever.',
           quantity: '1',
           unit_amount: { currency_code: 'USD', value: BUNDLE_PRICE_USD },
           category: 'DIGITAL_GOODS',
+          image_url: BUNDLE_IMAGE_URL,
         }],
       }],
       application_context: {
@@ -148,6 +153,20 @@ async function verifyWebhookSignature(req: Request, rawBody: string): Promise<bo
   return result.verification_status === 'SUCCESS'
 }
 
+async function grantBundle(token: string | undefined, currencyCode: string | undefined, value: string | undefined): Promise<Response> {
+  if (!token || currencyCode !== 'USD' || !value || parseFloat(value) < parseFloat(BUNDLE_PRICE_USD)) {
+    return json({ error: 'Payment did not match the expected bundle amount' }, 400)
+  }
+  const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
+  const { error } = await supabase.from('skin_codes').insert({ code: token, skin_id: 'bundle', redeemed: false })
+  // A duplicate webhook delivery for the same payment re-inserts the same token —
+  // treat a primary-key conflict as success rather than an error.
+  if (error && error.code !== '23505') {
+    return json({ error: error.message }, 500)
+  }
+  return json({ ok: true })
+}
+
 async function handleWebhook(req: Request): Promise<Response> {
   const rawBody = await req.text()
 
@@ -157,27 +176,40 @@ async function handleWebhook(req: Request): Promise<Response> {
   }
 
   const event = JSON.parse(rawBody)
-  if (event.event_type !== 'PAYMENT.CAPTURE.COMPLETED') {
-    // Not an event we act on (e.g. a refund, a denial) — acknowledge so PayPal stops retrying.
-    return json({ ok: true, ignored: event.event_type })
-  }
-
   const resource = event.resource ?? {}
-  const token: string | undefined = resource.custom_id
-  const amount = resource.amount ?? {}
-  if (!token || amount.currency_code !== 'USD' || parseFloat(amount.value) < parseFloat(BUNDLE_PRICE_USD)) {
-    return json({ error: 'Payment did not match the expected bundle amount' }, 400)
+
+  // The buyer approving the order in their browser is the only signal we get —
+  // there's no return_url redirect back into the app to trigger a capture from.
+  // So the capture itself happens right here, server-side, the moment PayPal
+  // tells us the order was approved.
+  if (event.event_type === 'CHECKOUT.ORDER.APPROVED') {
+    const orderId = resource.id
+    const token: string | undefined = (resource.purchase_units ?? [])[0]?.custom_id
+    if (!orderId) return json({ error: 'Approved event had no order id' }, 400)
+
+    const accessToken = await paypalAccessToken()
+    const captureRes = await fetch(`${PAYPAL_API_BASE}/v2/checkout/orders/${orderId}/capture`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+    })
+    const captureBody = await captureRes.json().catch(() => ({}))
+    if (!captureRes.ok) {
+      // Already captured by a retried webhook delivery — nothing left to do.
+      if (captureBody?.details?.[0]?.issue === 'ORDER_ALREADY_CAPTURED') return json({ ok: true })
+      return json({ error: `Capture failed: ${JSON.stringify(captureBody)}` }, 502)
+    }
+    const capture = (captureBody.purchase_units ?? [])[0]?.payments?.captures?.[0]
+    return await grantBundle(token, capture?.amount?.currency_code, capture?.amount?.value)
   }
 
-  const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
-  const { error } = await supabase.from('skin_codes').insert({ code: token, skin_id: 'bundle', redeemed: false })
-  // A duplicate webhook delivery for the same payment re-inserts the same token —
-  // treat a primary-key conflict as success rather than an error.
-  if (error && error.code !== '23505') {
-    return json({ error: error.message }, 500)
+  if (event.event_type === 'PAYMENT.CAPTURE.COMPLETED') {
+    const token: string | undefined = resource.custom_id
+    const amount = resource.amount ?? {}
+    return await grantBundle(token, amount.currency_code, amount.value)
   }
 
-  return json({ ok: true })
+  // Not an event we act on (e.g. a refund, a denial) — acknowledge so PayPal stops retrying.
+  return json({ ok: true, ignored: event.event_type })
 }
 
 Deno.serve(async (req) => {

@@ -165,7 +165,7 @@ export default function SettingsModal({ settings, saveFolder, onSave, onChangeSk
                 const owned = isSkinOwned(skin, s.ownedSkins ?? [])
                 const active = s.skin === skin.id
                 return (
-                  <Tooltip key={skin.id} text={owned ? skin.name : `${skin.name} — hover to preview. Click to unlock the bundle (${BUNDLE_PRICE}, every skin).`} position="top">
+                  <Tooltip key={skin.id} text={owned ? skin.name : `${skin.name} — hover to preview. Click to unlock the bundle (${BUNDLE_PRICE}, all 13 premium skins).`} position="top">
                     <button
                       onClick={() => { if (owned) { onChangeSkin(skin.id); setS(prev => ({ ...prev, skin: skin.id })) } else if (!purchasing) { handleBuyBundle() } }}
                       onMouseEnter={() => { if (!owned) applySkin(skin.id) }}
@@ -204,7 +204,7 @@ export default function SettingsModal({ settings, saveFolder, onSave, onChangeSk
 
             <div className="mt-3 pt-3 border-t border-black/[0.08] dark:border-panel-glow flex flex-col gap-2">
               <p className="text-xs text-gray-400 dark:text-gray-600">
-                Cosmetic only — Slate's core features are always free. One purchase unlocks every skin, forever.
+                Cosmetic only — Slate's core features are always free. One purchase unlocks all 13 premium skins, forever.
               </p>
               <button
                 onClick={handleBuyBundle}
