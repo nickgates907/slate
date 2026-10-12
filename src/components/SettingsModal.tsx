@@ -1,12 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { open } from '@tauri-apps/api/dialog'
-import { open as openUrl } from '@tauri-apps/api/shell'
 import { RecordingSettings } from '../store'
 import { SKINS, BUNDLE_PRICE, isSkinOwned, DEFAULT_SKIN_ID, applySkin } from '../lib/skins'
 import { redeemSkinCode } from '../lib/skinCodes'
+import { purchaseBundle, BundlePurchaseStatus } from '../lib/bundlePurchase'
 import Tooltip from './Tooltip'
-
-const SUPPORT_URL = 'https://www.paypal.com/donate/?hosted_button_id=ANA7ESGZ5VYDW'
 
 interface SettingsModalProps {
   settings: RecordingSettings
@@ -25,6 +23,10 @@ export default function SettingsModal({ settings, saveFolder, onSave, onChangeSk
   const [redeeming, setRedeeming] = useState(false)
   const [redeemError, setRedeemError] = useState<string | null>(null)
   const [redeemSuccess, setRedeemSuccess] = useState<string | null>(null)
+  const [showRedeemInput, setShowRedeemInput] = useState(false)
+  const [purchasing, setPurchasing] = useState(false)
+  const [purchaseStatus, setPurchaseStatus] = useState<BundlePurchaseStatus | null>(null)
+  const [purchaseError, setPurchaseError] = useState<string | null>(null)
 
   // Hovering a locked skin swatch below previews it live via applySkin() without
   // touching `s.skin` or persisting anything. This ref always tracks the real
@@ -53,6 +55,25 @@ export default function SettingsModal({ settings, saveFolder, onSave, onChangeSk
       setRedeemError(e instanceof Error ? e.message : 'Could not redeem that code.')
     } finally {
       setRedeeming(false)
+    }
+  }
+
+  const handleBuyBundle = async () => {
+    setPurchasing(true)
+    setPurchaseError(null)
+    try {
+      const unlocked = await purchaseBundle(setPurchaseStatus)
+      // Same reasoning as handleRedeem above — the purchase is already consumed
+      // server-side the moment this resolves, so apply it straight to the saved
+      // project rather than leaving it stuck in unsaved draft state.
+      onUnlockSkins(unlocked)
+      setS(prev => ({ ...prev, ownedSkins: Array.from(new Set([...(prev.ownedSkins ?? []), ...unlocked])) }))
+      setRedeemSuccess(`Unlocked all ${unlocked.length} skins — thank you!`)
+    } catch (e) {
+      setPurchaseError(e instanceof Error ? e.message : 'Could not complete the purchase.')
+    } finally {
+      setPurchasing(false)
+      setPurchaseStatus(null)
     }
   }
 
@@ -144,9 +165,9 @@ export default function SettingsModal({ settings, saveFolder, onSave, onChangeSk
                 const owned = isSkinOwned(skin, s.ownedSkins ?? [])
                 const active = s.skin === skin.id
                 return (
-                  <Tooltip key={skin.id} text={owned ? skin.name : `${skin.name} — hover to preview. ${skin.price} to unlock, redeem your code below.`} position="top">
+                  <Tooltip key={skin.id} text={owned ? skin.name : `${skin.name} — hover to preview. Click to unlock the bundle (${BUNDLE_PRICE}, every skin).`} position="top">
                     <button
-                      onClick={() => { if (owned) { onChangeSkin(skin.id); setS(prev => ({ ...prev, skin: skin.id })) } }}
+                      onClick={() => { if (owned) { onChangeSkin(skin.id); setS(prev => ({ ...prev, skin: skin.id })) } else if (!purchasing) { handleBuyBundle() } }}
                       onMouseEnter={() => { if (!owned) applySkin(skin.id) }}
                       onMouseLeave={() => { if (!owned) applySkin(activeSkinRef.current) }}
                       className={`w-full flex flex-col items-center gap-1.5 py-2 rounded-lg transition-colors ${active ? 'bg-surface-card dark:bg-surface-dark-card' : 'hover:bg-surface-card dark:hover:bg-surface-dark-card'} ${!owned ? 'cursor-pointer' : ''}`}
@@ -171,7 +192,7 @@ export default function SettingsModal({ settings, saveFolder, onSave, onChangeSk
                         style={skin.id === 'midnight-skies' ? { color: '#FFEAA7' } : undefined}
                       >{skin.name.replace('Slate ', '')}</span>
                       {skin.premium ? (
-                        <span className="text-[9px] text-text-secondary dark:text-text-dark-secondary">{owned ? 'Owned' : skin.price}</span>
+                        <span className="text-[9px] text-text-secondary dark:text-text-dark-secondary">{owned ? 'Owned' : 'Locked'}</span>
                       ) : skin.id === DEFAULT_SKIN_ID ? (
                         <span className="text-[9px] text-text-secondary dark:text-text-dark-secondary">Default</span>
                       ) : null}
@@ -183,31 +204,44 @@ export default function SettingsModal({ settings, saveFolder, onSave, onChangeSk
 
             <div className="mt-3 pt-3 border-t border-black/[0.08] dark:border-panel-glow flex flex-col gap-2">
               <p className="text-xs text-gray-400 dark:text-gray-600">
-                Cosmetic only — Slate's core features are always free. Donate any amount to unlock a skin, or {BUNDLE_PRICE} for all of them — you'll get a redemption code to enter here.
+                Cosmetic only — Slate's core features are always free. One purchase unlocks every skin, forever.
               </p>
               <button
-                onClick={() => openUrl(SUPPORT_URL)}
-                className="btn-solid w-full py-2 text-xs"
+                onClick={handleBuyBundle}
+                disabled={purchasing}
+                className="btn-primary w-full py-2 text-xs disabled:opacity-60 disabled:cursor-wait"
               >
-                Donate to unlock skins
+                {purchasing
+                  ? (purchaseStatus === 'creating-order' ? 'Starting checkout…' : purchaseStatus === 'awaiting-payment' ? 'Waiting for payment in your browser…' : 'Unlocking…')
+                  : `Unlock all skins — ${BUNDLE_PRICE}`}
               </button>
-              <div className="flex gap-1.5">
-                <input
-                  type="text"
-                  value={redeemInput}
-                  onChange={e => { setRedeemInput(e.target.value); setRedeemError(null); setRedeemSuccess(null) }}
-                  onKeyDown={e => { if (e.key === 'Enter' && redeemInput.trim() && !redeeming) handleRedeem() }}
-                  placeholder="SKIN-XXXX-XXXX"
-                  className="flex-1 text-xs px-2.5 py-2 rounded-lg bg-surface-card dark:bg-surface-dark-card text-gray-800 dark:text-white outline-none border border-black/[0.08] dark:border-panel-glow focus:border-brand-red placeholder-gray-400 dark:placeholder-gray-600"
-                />
-                <button
-                  onClick={handleRedeem}
-                  disabled={!redeemInput.trim() || redeeming}
-                  className="btn-primary px-3 py-2 text-xs disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  {redeeming ? 'Checking…' : 'Redeem'}
-                </button>
-              </div>
+              {purchaseError && <p className="text-xs text-red-500 dark:text-red-400">{purchaseError}</p>}
+
+              <button
+                onClick={() => setShowRedeemInput(v => !v)}
+                className="text-xs text-text-secondary dark:text-text-dark-secondary hover:text-gray-900 dark:hover:text-white text-left transition-colors"
+              >
+                {showRedeemInput ? 'Hide code redemption' : 'Already have a code?'}
+              </button>
+              {showRedeemInput && (
+                <div className="flex gap-1.5">
+                  <input
+                    type="text"
+                    value={redeemInput}
+                    onChange={e => { setRedeemInput(e.target.value); setRedeemError(null); setRedeemSuccess(null) }}
+                    onKeyDown={e => { if (e.key === 'Enter' && redeemInput.trim() && !redeeming) handleRedeem() }}
+                    placeholder="SKIN-XXXX-XXXX"
+                    className="flex-1 text-xs px-2.5 py-2 rounded-lg bg-surface-card dark:bg-surface-dark-card text-gray-800 dark:text-white outline-none border border-black/[0.08] dark:border-panel-glow focus:border-brand-red placeholder-gray-400 dark:placeholder-gray-600"
+                  />
+                  <button
+                    onClick={handleRedeem}
+                    disabled={!redeemInput.trim() || redeeming}
+                    className="btn-solid px-3 py-2 text-xs disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    {redeeming ? 'Checking…' : 'Redeem'}
+                  </button>
+                </div>
+              )}
               {redeemError && <p className="text-xs text-red-500 dark:text-red-400">{redeemError}</p>}
               {redeemSuccess && <p className="text-xs text-brand-red font-semibold">{redeemSuccess}</p>}
             </div>

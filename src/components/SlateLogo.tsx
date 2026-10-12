@@ -36,14 +36,22 @@ export default function SlateLogo({ size = 28, skinId }: { size?: number; skinId
             <feGaussianBlur stdDeviation="2" />
           </filter>
         </defs>
-        {/* Stem — a thick dark outline separates it from the body so it reads
-            clearly as a stem rather than blending into the pumpkin's edge. */}
-        <path d="M30 2 Q28 -4 34 -5 Q40 -6 39 0 Q38 5 32 6 Z" fill="#4B5320" stroke="#241C06" strokeWidth="1.6" strokeLinejoin="round" />
+        {/* Stem — bigger and curved like a real pumpkin stem, with a highlight
+            stripe for dimension and a thick dark outline so it reads clearly
+            as a stem rather than blending into the pumpkin's edge. */}
+        <path d="M28 4 Q23 -11 34 -13 Q45 -15 42 -2 Q40 7 29 9 Z" fill="#4B5320" stroke="#241C06" strokeWidth="1.8" strokeLinejoin="round" />
+        <path d="M31 2 Q28 -8 36 -11" stroke="#6B7A3A" strokeWidth="1.3" strokeLinecap="round" fill="none" opacity="0.8" />
         {/* Pumpkin body — same rounded-square tile as the normal mark, with a
             thick dark outline so the whole silhouette reads as a carved
             jack-o'-lantern rather than a plain colored tile. */}
         <rect width="72" height="72" rx="18" fill="#E8650C" stroke="#3A1A02" strokeWidth="3" />
         <rect width="72" height="72" rx="18" fill="url(#pumpkin-glow)" opacity="0.4" />
+        {/* Ribbing — curved vertical grooves like a real pumpkin's ridges */}
+        <path d="M13 6 Q7 36 13 66" stroke="#3A1A02" strokeWidth="1.5" strokeOpacity="0.35" fill="none" />
+        <path d="M24 3 Q19 36 24 69" stroke="#3A1A02" strokeWidth="1.5" strokeOpacity="0.3" fill="none" />
+        <path d="M48 3 Q53 36 48 69" stroke="#3A1A02" strokeWidth="1.5" strokeOpacity="0.3" fill="none" />
+        <path d="M59 6 Q65 36 59 66" stroke="#3A1A02" strokeWidth="1.5" strokeOpacity="0.35" fill="none" />
+        <path d="M36 2 Q33 36 36 70" stroke="#FFF4C2" strokeWidth="1.2" strokeOpacity="0.2" fill="none" />
         {/* Carved grooves — dark rings tracing the normal target-icon shape */}
         <circle cx="36" cy="36" r="17" stroke="#3A1A02" strokeWidth="4" fill="none" />
         <circle cx="36" cy="36" r="10" stroke="#3A1A02" strokeWidth="3.5" fill="none" />
