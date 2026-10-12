@@ -20,3 +20,4 @@ src-tauri/binaries/*.dll
 # OS
 .DS_Store
 Thumbs.db
+scratch_skin_collection.html
