@@ -1,0 +1,535 @@
+<title>Slate Skin Collection</title>
+<style>
+/* Layout: header wordmark, then four tiered sections (Free / Premium Solids /
+   Patterns / Holiday & Flagship), each a wrapping grid of icon tiles with a
+   name + exact brand-color caption beneath — a real swatch reference sheet,
+   not a decorative poster. Committed dark: these icons are designed for a
+   dark app surface and are shown the way they actually appear in Slate. */
+:root {
+  --bg: #0A0E14;
+  --surface: #121823;
+  --surface-border: rgba(255,255,255,0.08);
+  --text: #F3F5F8;
+  --text-dim: #8A99AD;
+  --text-faint: #4F5D73;
+  --accent: #FF4D4D;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  padding: 56px 24px 72px;
+}
+
+.page {
+  max-width: 1120px;
+  margin: 0 auto;
+}
+
+/* ---------- Header ---------- */
+
+.eyebrow {
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 14px;
+}
+
+h1 {
+  font-family: "Space Grotesk", "Plus Jakarta Sans", sans-serif;
+  font-weight: 700;
+  font-size: clamp(40px, 7vw, 64px);
+  line-height: 1.02;
+  letter-spacing: -0.01em;
+  margin: 0 0 14px;
+  text-wrap: balance;
+}
+
+.subtitle {
+  font-size: 16px;
+  color: var(--text-dim);
+  max-width: 560px;
+  line-height: 1.55;
+  margin: 0;
+}
+
+header {
+  margin-bottom: 56px;
+  padding-bottom: 40px;
+  border-bottom: 1px solid var(--surface-border);
+}
+
+/* ---------- Sections ---------- */
+
+section {
+  margin-bottom: 48px;
+}
+
+.section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+
+.section-title {
+  font-family: "Space Grotesk", sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text);
+  margin: 0;
+}
+
+.section-note {
+  font-size: 13px;
+  color: var(--text-faint);
+  margin: 0;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
+  gap: 14px;
+}
+
+/* ---------- Tiles ---------- */
+
+.tile {
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: 14px;
+  padding: 20px 14px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+}
+
+.icon-wrap {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tile-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.3;
+}
+
+.tile-meta {
+  font-family: "Space Grotesk", monospace;
+  font-size: 10px;
+  letter-spacing: 0.03em;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.tile-meta.price {
+  color: var(--text-dim);
+}
+
+/* ---------- Footer ---------- */
+
+footer {
+  margin-top: 64px;
+  padding-top: 24px;
+  border-top: 1px solid var(--surface-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 12.5px;
+  color: var(--text-faint);
+}
+
+footer strong { color: var(--text-dim); font-weight: 600; }
+
+@media (max-width: 480px) {
+  body { padding: 40px 16px 56px; }
+  .grid { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); }
+}
+</style>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<div class="page">
+
+  <header>
+    <p class="eyebrow">Brand reference</p>
+    <h1>Slate Skin Collection</h1>
+    <p class="subtitle">All fifteen app-icon skins, rendered exactly as they appear in the app — same gradients, same stroke weights, same artwork. For marketing, store listings, and anywhere the full set needs to show up together.</p>
+  </header>
+
+  <!-- FREE -->
+  <section>
+    <div class="section-head">
+      <p class="section-title">Free forever</p>
+      <p class="section-note">2 skins</p>
+    </div>
+    <div class="grid">
+
+      <div class="tile">
+        <div class="icon-wrap">
+          <svg width="64" height="64" viewBox="0 0 72 72" fill="none">
+            <rect width="72" height="72" rx="18" fill="#FF4D4D"/>
+            <circle cx="36" cy="36" r="17" stroke="white" stroke-width="3" fill="none"/>
+            <circle cx="36" cy="36" r="10" stroke="white" stroke-width="2.5" fill="none"/>
+            <circle cx="36" cy="36" r="4" fill="white"/>
+            <circle cx="52" cy="20" r="5" fill="white"/>
+            <circle cx="52" cy="20" r="2.5" fill="#FF4D4D"/>
+          </svg>
+        </div>
+        <div class="tile-name">Slate Red</div>
+        <div class="tile-meta price">Default · #FF4D4D</div>
+      </div>
+
+      <div class="tile">
+        <div class="icon-wrap">
+          <svg width="64" height="64" viewBox="0 0 72 72" fill="none">
+            <rect width="72" height="72" rx="18" fill="#00E5BF"/>
+            <circle cx="36" cy="36" r="17" stroke="white" stroke-width="3" fill="none"/>
+            <circle cx="36" cy="36" r="10" stroke="white" stroke-width="2.5" fill="none"/>
+            <circle cx="36" cy="36" r="4" fill="white"/>
+            <circle cx="52" cy="20" r="5" fill="white"/>
+            <circle cx="52" cy="20" r="2.5" fill="#00E5BF"/>
+          </svg>
+        </div>
+        <div class="tile-name">Slate Teal</div>
+        <div class="tile-meta price">Free · #00E5BF</div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- PREMIUM SOLIDS -->
+  <section>
+    <div class="section-head">
+      <p class="section-title">Premium solids</p>
+      <p class="section-note">7 skins · $2.99 each</p>
+    </div>
+    <div class="grid">
+
+      <div class="tile">
+        <div class="icon-wrap">
+          <svg width="64" height="64" viewBox="0 0 72 72" fill="none">
+            <rect width="72" height="72" rx="18" fill="#8B5CF6"/>
+            <circle cx="36" cy="36" r="17" stroke="white" stroke-width="3" fill="none"/>
+            <circle cx="36" cy="36" r="10" stroke="white" stroke-width="2.5" fill="none"/>
+            <circle cx="36" cy="36" r="4" fill="white"/>
+            <circle cx="52" cy="20" r="5" fill="white"/>
+            <circle cx="52" cy="20" r="2.5" fill="#8B5CF6"/>
+          </svg>
+        </div>
+        <div class="tile-name">Slate Violet</div>
+        <div class="tile-meta price">$2.99 · #8B5CF6</div>
+      </div>
+
+      <div class="tile">
+        <div class="icon-wrap">
+          <svg width="64" height="64" viewBox="0 0 72 72" fill="none">
+            <rect width="72" height="72" rx="18" fill="#FF6B00"/>
+            <circle cx="36" cy="36" r="17" stroke="white" stroke-width="3" fill="none"/>
+            <circle cx="36" cy="36" r="10" stroke="white" stroke-width="2.5" fill="none"/>
+            <circle cx="36" cy="36" r="4" fill="white"/>
+            <circle cx="52" cy="20" r="5" fill="white"/>
+            <circle cx="52" cy="20" r="2.5" fill="#FF6B00"/>
+          </svg>
+        </div>
+        <div class="tile-name">Electric Orange</div>
+        <div class="tile-meta price">$2.99 · #FF6B00</div>
+      </div>
+
+      <div class="tile">
+        <div class="icon-wrap">
+          <svg width="64" height="64" viewBox="0 0 72 72" fill="none">
+            <rect width="72" height="72" rx="18" fill="#ADFF2F"/>
+            <circle cx="36" cy="36" r="17" stroke="white" stroke-width="3" fill="none"/>
+            <circle cx="36" cy="36" r="10" stroke="white" stroke-width="2.5" fill="none"/>
+            <circle cx="36" cy="36" r="4" fill="white"/>
+            <circle cx="52" cy="20" r="5" fill="white"/>
+            <circle cx="52" cy="20" r="2.5" fill="#ADFF2F"/>
+          </svg>
+        </div>
+        <div class="tile-name">Acid Lime</div>
+        <div class="tile-meta price">$2.99 · #ADFF2F</div>
+      </div>
+
+      <div class="tile">
+        <div class="icon-wrap">
+          <svg width="64" height="64" viewBox="0 0 72 72" fill="none">
+            <rect width="72" height="72" rx="18" fill="#FF007A"/>
+            <circle cx="36" cy="36" r="17" stroke="white" stroke-width="3" fill="none"/>
+            <circle cx="36" cy="36" r="10" stroke="white" stroke-width="2.5" fill="none"/>
+            <circle cx="36" cy="36" r="4" fill="white"/>
+            <circle cx="52" cy="20" r="5" fill="white"/>
+            <circle cx="52" cy="20" r="2.5" fill="#FF007A"/>
+          </svg>
+        </div>
+        <div class="tile-name">Cyber Magenta</div>
+        <div class="tile-meta price">$2.99 · #FF007A</div>
+      </div>
+
+      <div class="tile">
+        <div class="icon-wrap">
+          <svg width="64" height="64" viewBox="0 0 72 72" fill="none">
+            <rect width="72" height="72" rx="18" fill="#3B82F6"/>
+            <circle cx="36" cy="36" r="17" stroke="white" stroke-width="3" fill="none"/>
+            <circle cx="36" cy="36" r="10" stroke="white" stroke-width="2.5" fill="none"/>
+            <circle cx="36" cy="36" r="4" fill="white"/>
+            <circle cx="52" cy="20" r="5" fill="white"/>
+            <circle cx="52" cy="20" r="2.5" fill="#3B82F6"/>
+          </svg>
+        </div>
+        <div class="tile-name">Slate Sapphire</div>
+        <div class="tile-meta price">$2.99 · #3B82F6</div>
+      </div>
+
+      <div class="tile">
+        <div class="icon-wrap">
+          <svg width="64" height="64" viewBox="0 0 72 72" fill="none">
+            <rect width="72" height="72" rx="18" fill="#500000"/>
+            <circle cx="36" cy="36" r="17" stroke="white" stroke-width="3" fill="none"/>
+            <circle cx="36" cy="36" r="10" stroke="white" stroke-width="2.5" fill="none"/>
+            <circle cx="36" cy="36" r="4" fill="white"/>
+            <circle cx="52" cy="20" r="5" fill="white"/>
+            <circle cx="52" cy="20" r="2.5" fill="#500000"/>
+          </svg>
+        </div>
+        <div class="tile-name">Slate Maroon</div>
+        <div class="tile-meta price">$2.99 · #500000</div>
+      </div>
+
+      <div class="tile">
+        <div class="icon-wrap">
+          <svg width="64" height="64" viewBox="0 0 72 72" fill="none">
+            <rect width="72" height="72" rx="18" fill="#355E3B"/>
+            <circle cx="36" cy="36" r="17" stroke="white" stroke-width="3" fill="none"/>
+            <circle cx="36" cy="36" r="10" stroke="white" stroke-width="2.5" fill="none"/>
+            <circle cx="36" cy="36" r="4" fill="white"/>
+            <circle cx="52" cy="20" r="5" fill="white"/>
+            <circle cx="52" cy="20" r="2.5" fill="#355E3B"/>
+          </svg>
+        </div>
+        <div class="tile-name">Hunter Green</div>
+        <div class="tile-meta price">$2.99 · #355E3B</div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- PATTERNS -->
+  <section>
+    <div class="section-head">
+      <p class="section-title">Patterns</p>
+      <p class="section-note">3 skins · $2.99 each</p>
+    </div>
+    <div class="grid">
+
+      <div class="tile">
+        <div class="icon-wrap">
+          <svg width="64" height="64" viewBox="0 0 72 72" fill="none">
+            <defs>
+              <linearGradient id="grad-rainbow" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#ff0040"/>
+                <stop offset="25%" stop-color="#ffee00"/>
+                <stop offset="50%" stop-color="#00c853"/>
+                <stop offset="75%" stop-color="#2979ff"/>
+                <stop offset="100%" stop-color="#aa00ff"/>
+              </linearGradient>
+            </defs>
+            <rect width="72" height="72" rx="18" fill="url(#grad-rainbow)"/>
+            <circle cx="36" cy="36" r="17" stroke="white" stroke-width="3" fill="none"/>
+            <circle cx="36" cy="36" r="10" stroke="white" stroke-width="2.5" fill="none"/>
+            <circle cx="36" cy="36" r="4" fill="white"/>
+            <circle cx="52" cy="20" r="5" fill="white"/>
+            <circle cx="52" cy="20" r="2.5" fill="url(#grad-rainbow)"/>
+          </svg>
+        </div>
+        <div class="tile-name">Rainbow</div>
+        <div class="tile-meta price">$2.99 · 6-stop gradient</div>
+      </div>
+
+      <div class="tile">
+        <div class="icon-wrap">
+          <svg width="64" height="64" viewBox="0 0 72 72" fill="none">
+            <defs>
+              <linearGradient id="grad-tiedye" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#ff0040"/>
+                <stop offset="25%" stop-color="#ffcc00"/>
+                <stop offset="50%" stop-color="#00e5ff"/>
+                <stop offset="75%" stop-color="#7c4dff"/>
+                <stop offset="100%" stop-color="#00e676"/>
+              </linearGradient>
+            </defs>
+            <rect width="72" height="72" rx="18" fill="url(#grad-tiedye)"/>
+            <circle cx="36" cy="36" r="17" stroke="white" stroke-width="3" fill="none"/>
+            <circle cx="36" cy="36" r="10" stroke="white" stroke-width="2.5" fill="none"/>
+            <circle cx="36" cy="36" r="4" fill="white"/>
+            <circle cx="52" cy="20" r="5" fill="white"/>
+            <circle cx="52" cy="20" r="2.5" fill="url(#grad-tiedye)"/>
+          </svg>
+        </div>
+        <div class="tile-name">Tie-Dye</div>
+        <div class="tile-meta price">$2.99 · radial blend</div>
+      </div>
+
+      <div class="tile">
+        <div class="icon-wrap">
+          <svg width="64" height="64" viewBox="0 0 72 72" fill="none">
+            <defs>
+              <linearGradient id="grad-camo" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#4b5320"/>
+                <stop offset="25%" stop-color="#3b3c36"/>
+                <stop offset="50%" stop-color="#78866b"/>
+                <stop offset="75%" stop-color="#5c4033"/>
+                <stop offset="100%" stop-color="#4b5320"/>
+              </linearGradient>
+            </defs>
+            <rect width="72" height="72" rx="18" fill="url(#grad-camo)"/>
+            <circle cx="36" cy="36" r="17" stroke="white" stroke-width="3" fill="none"/>
+            <circle cx="36" cy="36" r="10" stroke="white" stroke-width="2.5" fill="none"/>
+            <circle cx="36" cy="36" r="4" fill="white"/>
+            <circle cx="52" cy="20" r="5" fill="white"/>
+            <circle cx="52" cy="20" r="2.5" fill="url(#grad-camo)"/>
+          </svg>
+        </div>
+        <div class="tile-name">Camo</div>
+        <div class="tile-meta price">$2.99 · radial blend</div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- HOLIDAY & FLAGSHIP -->
+  <section>
+    <div class="section-head">
+      <p class="section-title">Holiday &amp; flagship</p>
+      <p class="section-note">3 skins · custom artwork</p>
+    </div>
+    <div class="grid">
+
+      <!-- Yule Glow -->
+      <div class="tile">
+        <div class="icon-wrap" style="position:relative; width:64px; height:64px;">
+          <svg width="64" height="64" viewBox="0 0 72 72" fill="none">
+            <defs>
+              <linearGradient id="grad-yule" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#FF1E43"/>
+                <stop offset="25%" stop-color="#00C853"/>
+                <stop offset="50%" stop-color="#FFD700"/>
+                <stop offset="75%" stop-color="#00C853"/>
+                <stop offset="100%" stop-color="#FF1E43"/>
+              </linearGradient>
+            </defs>
+            <rect width="72" height="72" rx="18" fill="url(#grad-yule)"/>
+            <circle cx="36" cy="36" r="17" stroke="white" stroke-width="3" fill="none"/>
+            <circle cx="36" cy="36" r="10" stroke="white" stroke-width="2.5" fill="none"/>
+            <circle cx="36" cy="36" r="4" fill="white"/>
+            <circle cx="52" cy="20" r="5" fill="white"/>
+            <circle cx="52" cy="20" r="2.5" fill="url(#grad-yule)"/>
+          </svg>
+          <img src="santa-hat.png" alt="" style="position:absolute; top:-6.4px; left:21.1px; width:57.6px; height:66.2px; pointer-events:none;">
+        </div>
+        <div class="tile-name">Yule Glow</div>
+        <div class="tile-meta price">$2.99 · Christmas</div>
+      </div>
+
+      <!-- Spooky Night -->
+      <div class="tile">
+        <div class="icon-wrap">
+          <svg width="64" height="64" viewBox="0 0 72 72" fill="none" style="overflow:visible;">
+            <defs>
+              <radialGradient id="pumpkin-glow" cx="50%" cy="50%" r="55%">
+                <stop offset="0%" stop-color="#FFF4C2"/>
+                <stop offset="35%" stop-color="#FFB347"/>
+                <stop offset="100%" stop-color="#E8650C"/>
+              </radialGradient>
+              <filter id="pumpkin-blur" x="-60%" y="-60%" width="220%" height="220%">
+                <feGaussianBlur stdDeviation="2"/>
+              </filter>
+            </defs>
+            <path d="M28 4 Q23 -11 34 -13 Q45 -15 42 -2 Q40 7 29 9 Z" fill="#4B5320" stroke="#241C06" stroke-width="1.8" stroke-linejoin="round"/>
+            <path d="M31 2 Q28 -8 36 -11" stroke="#6B7A3A" stroke-width="1.3" stroke-linecap="round" fill="none" opacity="0.8"/>
+            <rect width="72" height="72" rx="18" fill="#E8650C" stroke="#3A1A02" stroke-width="3"/>
+            <rect width="72" height="72" rx="18" fill="url(#pumpkin-glow)" opacity="0.4"/>
+            <path d="M13 6 Q7 36 13 66" stroke="#3A1A02" stroke-width="1.5" stroke-opacity="0.35" fill="none"/>
+            <path d="M24 3 Q19 36 24 69" stroke="#3A1A02" stroke-width="1.5" stroke-opacity="0.3" fill="none"/>
+            <path d="M48 3 Q53 36 48 69" stroke="#3A1A02" stroke-width="1.5" stroke-opacity="0.3" fill="none"/>
+            <path d="M59 6 Q65 36 59 66" stroke="#3A1A02" stroke-width="1.5" stroke-opacity="0.35" fill="none"/>
+            <path d="M36 2 Q33 36 36 70" stroke="#FFF4C2" stroke-width="1.2" stroke-opacity="0.2" fill="none"/>
+            <circle cx="36" cy="36" r="17" stroke="#3A1A02" stroke-width="4" fill="none"/>
+            <circle cx="36" cy="36" r="10" stroke="#3A1A02" stroke-width="3.5" fill="none"/>
+            <circle cx="36" cy="36" r="4.5" fill="#3A1A02"/>
+            <circle cx="52" cy="20" r="5" fill="#3A1A02"/>
+            <circle cx="36" cy="36" r="17" stroke="#FFD27A" stroke-width="1.6" fill="none" filter="url(#pumpkin-blur)"/>
+            <circle cx="36" cy="36" r="10" stroke="#FFD27A" stroke-width="1.6" fill="none" filter="url(#pumpkin-blur)"/>
+            <circle cx="36" cy="36" r="3" fill="#FFF4C2" filter="url(#pumpkin-blur)"/>
+            <circle cx="52" cy="20" r="2.2" fill="#FFF4C2" filter="url(#pumpkin-blur)"/>
+          </svg>
+        </div>
+        <div class="tile-name">Spooky Night</div>
+        <div class="tile-meta price">$2.99 · Halloween</div>
+      </div>
+
+      <!-- Midnight Skies -->
+      <div class="tile">
+        <div class="icon-wrap" style="box-shadow: 0 0 26px rgba(162,155,254,0.45); border-radius: 16px;">
+          <svg width="64" height="64" viewBox="0 0 72 72" fill="none">
+            <defs>
+              <radialGradient id="nebula-grad" cx="30%" cy="30%" r="90%">
+                <stop offset="0%" stop-color="#4A2E80"/>
+                <stop offset="40%" stop-color="#1D1145"/>
+                <stop offset="90%" stop-color="#0A0612"/>
+              </radialGradient>
+            </defs>
+            <rect width="72" height="72" rx="18" fill="url(#nebula-grad)"/>
+            <circle cx="12" cy="14" r="0.9" fill="white" opacity="0.8"/>
+            <circle cx="58" cy="10" r="0.7" fill="white" opacity="0.6"/>
+            <circle cx="64" cy="52" r="0.8" fill="white" opacity="0.7"/>
+            <circle cx="18" cy="62" r="0.6" fill="#A29BFE" opacity="0.7"/>
+            <circle cx="44" cy="8" r="0.6" fill="#A29BFE" opacity="0.6"/>
+            <circle cx="8" cy="40" r="0.7" fill="white" opacity="0.5"/>
+            <circle cx="36" cy="36" r="17" stroke="#120B20" stroke-width="3" fill="none"/>
+            <circle cx="36" cy="36" r="10" stroke="#120B20" stroke-width="2.5" fill="none"/>
+            <circle cx="36" cy="36" r="4" fill="#FFEAA7"/>
+            <circle cx="52" cy="20" r="5" fill="#120B20"/>
+            <circle cx="52" cy="20" r="2.2" fill="white"/>
+            <path d="M14 56 L22 48 L10 46" stroke="white" stroke-opacity="0.3" stroke-width="0.8" fill="none"/>
+            <path d="M14 50 L16 54 L20 56 L16 58 L14 62 L12 58 L8 56 L12 54 Z" fill="#FFD700"/>
+            <path d="M22 44.5 L23.2 46.8 L25.5 48 L23.2 49.2 L22 51.5 L20.8 49.2 L18.5 48 L20.8 46.8 Z" fill="white"/>
+            <path d="M10 43.5 L10.9 45.1 L12.5 46 L10.9 46.9 L10 48.5 L9.1 46.9 L7.5 46 L9.1 45.1 Z" fill="white"/>
+          </svg>
+        </div>
+        <div class="tile-name">Midnight Skies</div>
+        <div class="tile-meta price">$4.99 · Flagship</div>
+      </div>
+
+    </div>
+  </section>
+
+  <footer>
+    <span>Cosmetic only — Slate's core features are always free.</span>
+    <span><strong>15</strong> skins · <strong>2</strong> free · <strong>1</strong> bundle unlock, $9.99</span>
+  </footer>
+
+</div>

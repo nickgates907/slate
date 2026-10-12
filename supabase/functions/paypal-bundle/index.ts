@@ -89,14 +89,14 @@ async function handleCreateOrder(req: Request): Promise<Response> {
       intent: 'CAPTURE',
       purchase_units: [{
         custom_id: token,
-        description: 'Slate — Unlock all skins (bundle)',
+        description: 'Slate Origins Skin Bundle',
         amount: {
           currency_code: 'USD',
           value: BUNDLE_PRICE_USD,
           breakdown: { item_total: { currency_code: 'USD', value: BUNDLE_PRICE_USD } },
         },
         items: [{
-          name: 'Slate — All Skins Bundle',
+          name: 'Slate Origins Skin Bundle',
           description: 'Unlocks every cosmetic skin in Slate, forever.',
           quantity: '1',
           unit_amount: { currency_code: 'USD', value: BUNDLE_PRICE_USD },
