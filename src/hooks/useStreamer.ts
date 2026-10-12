@@ -411,7 +411,11 @@ export function useStreamer() {
           drawScene(ctx, sceneRef.current, outW, outH, scaleX, scaleY, imgCache, scrollOffsets, bgImgRef, bgImgSrcRef)
           if (alertRef?.current) drawAlert(ctx, alertRef.current, outW, outH)
 
-          if (videoEncoder.state === 'configured') {
+          // Backpressure: a PC that can't keep up builds an unbounded encode queue
+          // (memory growth + ever-growing delay). Drop the frame instead — fast
+          // machines never hit this, slow ones settle at whatever fps they can
+          // sustain, and the titlebar fps (counts encoded frames) shows it.
+          if (videoEncoder.state === 'configured' && videoEncoder.encodeQueueSize <= 2) {
             const isKeyFrame = frameCount++ % keyFrameInterval === 0
             const frame = new VideoFrame(canvas, { timestamp: now * 1000 })
             videoEncoder.encode(frame, { keyFrame: isKeyFrame })
